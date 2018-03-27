@@ -4,6 +4,7 @@ require ('events').EventEmitter.prototype._maxListeners = 100;
 //CONSTANT DECLARATIONS
 const Discord = require("discord.js");
 const lcars47 = new Discord.Client();
+const prefix = "!"
 
 const lcarsColor = "#f4eb42"
 const lcarsAlertColor = "#d3150e"
