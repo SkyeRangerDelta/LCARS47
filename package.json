@@ -1,0 +1,24 @@
+{
+  "name": "lcars47bot",
+  "version": "47.3.1",
+  "description": "LCARS47 Version 47.3.1 NPM",
+  "main": "botv2.js",
+  "dependencies": {
+    "bufferutil": "^3.0.3",
+    "discord.js": "^11.3.2",
+    "gamedig": "^1.0.41",
+    "latest-version": "^3.1.0",
+    "nodemon": "^1.17.1",
+    "npm": "^5.7.1",
+    "ytdl-core": "^0.20.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "!help"
+  },
+  "author": "SkyeRangerDelta",
+  "license": "ISC",
+  "optionalDependencies": {
+    "bufferutil": "^3.0.3"
+  }
+}
