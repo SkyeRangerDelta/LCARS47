@@ -11,8 +11,13 @@ const Discord = require('discord.js');
 const lcars = new Discord.Client();
 const fs = require('fs');
 
+const commands = require('./Commands');
+
+console.log(commands);
+
 const prefix = "!";
 
+const thumbnail = './thumbnail.png'
 const mainColor = "#f4eb42";
 const emerColor = "#d3150e";
 
@@ -62,30 +67,21 @@ lcars.on('ready', () => {
 
 //COMMANDS AND CORE SYSTEMS
 lcars.on('message', async msg => {
+    if (!msg.member || msg.member.id === lcars.user.id) return
+
+    let args = msg.content.substring(prefix.length).split(' ');
+    let cmd = commands[args.splice(0, 1)[0]]; if (!cmd) return
+
+    cmd.run({msg, lcars}).then( 
+        return msg.channel.send({content});
 
     //INTER-SYSTEM VARIABLES
 
     //FUNCTION SYSTEMS
     //Command Structure
-    function command(cmd, msg) {
+    /*function commandis(cmd, msg) {
         return msg.content.startsWith(prefix + cmd);
-    }
-
-    function engm() {
-
-        engmode = !engmode;
-
-        console.log("[ENG-MODE] Toggled to: " + engmode + " by " + msg.author.tag);
-
-        msg.reply("[ENG-MODE] Toggled to " + engmode + ". Tier 2+ level commands denied.").then(sent => sent.delete(15000));
-
-        if (engmode == true) {
-            lcars.user.setActivity("ENGM | V" + lcarsVersion);
-        }
-        else {
-            lcars.user.setActivity("!help | V" + lcarsVersion);
-        }
-    }
+    }*/
 
     //COMMANDS (Sorted Alphabetically)
         //Engineering Mode
@@ -116,7 +112,7 @@ lcars.on('message', async msg => {
 
     //COMMAND CALLS
     //Engineering Mode
-    if (command("engm", msg)) {
+    /*if (commandis("engm", msg)) {
         msg.delete();
 
         if (msg.member.roles.find('name', 'Dev Team')) {
@@ -128,11 +124,11 @@ lcars.on('message', async msg => {
     }
 
     //Version
-    if (command("version", msg)) {
+    if (commandis("version", msg)) {
         msg.delete();
 
         msg.channel.send({embed: version}).then(sent => sent.delete(30000));
-    }
+    }*/
 
 });
 
