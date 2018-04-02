@@ -21,17 +21,12 @@ const thumbnail = './thumbnail.png'
 const mainColor = "#f4eb42";
 const emerColor = "#d3150e";
 
-const lcarsVersion = "47.5.1.00";
+const lcarsVersion = "47.5.2.00";
 
 //GLOBAL SYSTEM VARIABLES
 let engmode = false;
 
 //STARTUP PROCEDURES
-lcars.on('ready', () => {
-
-    //Channel Definitions
-    var serverAnnouncements = lcars.channels.get('341454723771138048');
-
     //SESSION RECORDING SYSTEM
     var lcarsVarsDoc = JSON.parse(fs.readFileSync('./lcars_vars.json', 'utf8'));
     var lcarsSessionNum = lcarsVarsDoc.sessionnum++;
@@ -39,6 +34,12 @@ lcars.on('ready', () => {
     console.log("[SESSION#] " + lcarsSessionNum);
 
     fs.writeFileSync("./lcars_vars.json", JSON.stringify(lcarsVarsDoc));
+
+//READY EVENT HANDLER
+lcars.on('ready', () => {
+
+    //Channel Definitions
+    var serverAnnouncements = lcars.channels.get('341454723771138048');
 
     //Startup Embed
     var startupseq = new Discord.RichEmbed();
@@ -70,10 +71,19 @@ lcars.on('message', async msg => {
     if (!msg.member || msg.member.id === lcars.user.id) return
 
     let args = msg.content.substring(prefix.length).split(' ');
-    let cmd = commands[args.splice(0, 1)[0]]; if (!cmd) return
+    let cmd = commands[args.splice(0, 1)[0]]; 
 
-    cmd.run({msg, lcars}).then( 
-        return msg.channel.send({content});
+    console.log(args);
+    console.log(cmd);
+
+    if (!cmd) {
+        return
+    }
+
+    cmd.run({args, lcars, msg})
+    .then((t) => {
+        msg.channel.send(t);
+    });
 
     //INTER-SYSTEM VARIABLES
 
@@ -105,7 +115,7 @@ lcars.on('message', async msg => {
         engembed.setTitle("o0o...LCARS SESSION STATUS REPORT...o0o");
         engembed.setColor(mainColor);
         engembed.setDescription(
-            "LCARS self-diagnostics report for session " + sessionnum + ".\n"+
+            "LCARS self-diagnostics report for session " + lcarsSessionNum + ".\n"+
             ""
         );
 
