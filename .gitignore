@@ -7,6 +7,8 @@
 
 # dependencies & random data stuff
 /node_modules
+/Subsystems
+lcars_subsystem.json
 
 # IDEs and editors
 /.idea
