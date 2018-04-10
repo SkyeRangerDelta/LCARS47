@@ -1,11 +1,11 @@
 //HELP
 
 const Discord = require('discord.js');
-const system = require('./lcars_subsystem.json');
+const system = require('../lcars_subsystem.json');
 
 const lcarsColor = "#f4eb42"
 
-var lcarsVersion = system.version;
+var version = system.version;
 
 exports.run = (lcars, msg, cmd) => {
     var help = new Discord.RichEmbed();
