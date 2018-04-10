@@ -48,14 +48,11 @@ lcars.on("message", msg => {
         cmdFile.run(lcars, msg, cmd);
     } catch (err) {
         console.error(err);
+        msg.reply("Invalid command ID. Use `!help` to find valid IDs and parameters.");
     }
 });
 
 //SYSTEM STARTUP
-
-//Channels
-var engdeckID = lcars.channels.get(ch.ch_engdeck);
-
 //Responder
 lcars.on("ready", () => {
     var startupseq = new Discord.RichEmbed();
@@ -63,7 +60,7 @@ lcars.on("ready", () => {
         startupseq.setColor(lcarsColor);
         startupseq.setDescription(
             "LCARS Shipboard Operating System\n"+
-            "Version " + lcarsVersion + " on session:" + session + ".\n"+
+            "Version " + lcarsVersion + " on session: " + session + ".\n"+
             "===================================\n"+
             "Booting from isolinear storage...\n"+
             "LCARS47 is now online."
@@ -72,11 +69,12 @@ lcars.on("ready", () => {
     console.log("LCARS V" + lcarsVersion + " | System Startup");
     console.log("====================================");
     console.log("[SESSION#] " + session);
+    console.log("[ENG-MODE] Currently: " + engmode);
+
+    const engdeckID = lcars.channels.get(ch.engdeck);
+    
 
     lcars.user.setActivity("!help | V" + lcarsVersion);
-
-    console.log(engdeckID);
-    console.log("JSON: " + ch.ch_engdeck);
 
     engdeckID.send({embed: startupseq}).then(sent => sent.delete(30000));
 });
