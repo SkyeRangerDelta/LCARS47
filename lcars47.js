@@ -18,18 +18,25 @@ const prefix = system.prefix;
 const lcarsColor = system.lcarscolor;
 const lcarsAlertColor = system.lcarsalertcolor;
 
-var lcarsVersion = system.version;
-
 //LCARS SYSTEM WIDE VARIABLES
 lcars.queue = new Map();
 lcars.commandAttempts = 0;
 lcars.commandFailures = 0;
 lcars.commandSuccess = 0;
+lcars.acAttempts = 0;
+lcars.acFailures = 0;
+lcars.acSuccess = 0;
+lcars.pcAttempts = 0;
+lcars.pcFailures = 0;
+lcars.pcSuccess = 0;
 lcars.pldynGuildID = "107205223985999872";
 lcars.pldynGuild = lcars.guilds.get(lcars.pldynGuildID);
 lcars.musicPlaying = false;
 lcars.vc;
 lcars.version = system.version;
+lcars.systemStatus;
+lcars.activeSubroutine;
+lcars.passiveSubroutine;
 
 //SESSION RECORDING & ENGINEERING MODE
 lcars.engmode;
@@ -55,27 +62,37 @@ lcars.on("message", msg => {
     if (msg.content.charAt(0) == prefix) {
         console.log("[ACT-COMM] Attempting Resolution for command: " + cmdID);
         lcars.commandAttempts++;
+        lcars.acAttempts++;
         try {
             let cmdFile = require(`./Commands/Active/${cmdID}.js`);
             cmdFile.run(lcars, msg, cmd);
-            console.log("[ACT-COMM] Success")
+            console.log("[ACT-COMM] Success");
             lcars.commandSuccess++;
+            lcars.acSuccess++;
+            lcars.activeSubroutine = "Online";
         }
         catch (err) {
             console.log("[ACT-COMM] Failed:\n" + err);
             msg.reply("Command input rejected. Please specify a more concise command; see `!help` for assistance.");
+            lcars.activeSubroutine = "Last Command Failed";
+            lcars.acFailures++;
         }
     }
     else {//PASSIVE COMMANDS
         console.log("[PAS-COMM] Attempting Resolution for command: " + pcmd[0]);
         lcars.commandAttempts++;
+        lcars.pcAttempts++;
         try {
             let pCmdFile = require(`./Commands/Passive/${pcmd[0]}.js`);
             pCmdFile.run(lcars, msg, cmd);
             console.log("[PAS-COMM] Success");
             lcars.commandSuccess++;
+            lcars.pcSuccess++;
+            lcars.passiveSubroutine = "Online";
         } catch (err) {
             console.log("[PAS-COMM] Failed: " + err);
+            lcars.passiveSubroutine = "Reading Chat";
+            lcars.pcFailures++;
         }
     }
 });
@@ -88,21 +105,21 @@ lcars.on("ready", () => {
         startupseq.setColor(lcarsColor);
         startupseq.setDescription(
             "LCARS Shipboard Operating System\n"+
-            "Version " + lcarsVersion + " on session #: " + lcars.session + ".\n"+
+            "Version " + lcars.version + " on session #: " + lcars.session + ".\n"+
             "===================================\n"+
             "Booting from isolinear storage...\n"+
             "LCARS47 is now online."
         );
         
-    console.log("LCARS V" + lcarsVersion + " | System Startup");
+    console.log("LCARS V" + lcars.version + " | System Startup");
     console.log("====================================");
     console.log("[SESSION#] " + lcars.session);
     console.log("[ENG-MODE] Currently: " + engmode);
 
     const engdeckID = lcars.channels.get(ch.engdeck);
     
-
-    lcars.user.setActivity("!help | V" + lcarsVersion);
+    lcars.systemStatus = "Online";
+    lcars.user.setActivity("!help | V" + lcars.version);
 
     engdeckID.send({embed: startupseq}).then(sent => sent.delete(30000));
 });

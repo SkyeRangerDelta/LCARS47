@@ -1,6 +1,6 @@
 //PASSIVES
 const Discord = require('discord.js');
-const system = rtequire('../../Subsystems/lcars_subsystem.json');
+const system = require('../../Subsystems/lcars_subsystem.json');
 
 exports.run = (lcars, msg, cmd) => {
     var passives = new Discord.RichEmbed();

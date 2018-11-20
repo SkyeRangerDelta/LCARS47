@@ -15,7 +15,9 @@ exports.run = (lcars, msg, cmd) => {
             "===============================================\n"+
             "`!help`: Displays this menu\n"+
             "`!passives`: Displays the passive command list.\n"+
-            "`!play [link/searchTerm]`: Adds a YouTube video/playlist to the queue to be played.\n\n"+
+            "`!play [link/searchTerm]`: Adds a YouTube video/playlist to the queue to be played.\n"+
+            "`!role [gameRole]`: Will assign or remove a PlDyn game role to you. (Yes, it is a toggle).\n"+
+            "`!status`: Reports a comprehensive list of LCARS47's session statistics information.\n\n"+
             "`This message will delete itself in 1 minute.`"
         );
 
