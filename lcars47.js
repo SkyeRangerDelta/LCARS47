@@ -83,7 +83,7 @@ lcars.on("message", msg => {
         lcars.commandAttempts++;
         lcars.pcAttempts++;
         try {
-            let pCmdFile = require(`./Commands/Passive/${pcmd[0]}.js`);
+            let pCmdFile = require(`./Commands/Passive/${pcmd[0].toLowerCase()}.js`);
             pCmdFile.run(lcars, msg, cmd);
             console.log("[PAS-COMM] Success");
             lcars.commandSuccess++;

@@ -19,8 +19,8 @@ exports.run = (lcars, msg, cmd) => {
         lcars.passiveSubroutine = "Offline";
     }
 
-    if (lcars.pcAttempted == undefined) {
-        lcars.pcAttempted = "Unknown";
+    if (lcars.pcAttempts == undefined) {
+        lcars.pcAttempts = "Unknown";
     }
 
     var status = new Discord.RichEmbed();
@@ -40,7 +40,7 @@ exports.run = (lcars, msg, cmd) => {
         );
         status.addField("__Passive Command Subroutine__",
             "**Status**: `" + lcars.passiveSubroutine + "`\n"+
-            "**Attempted**: `" + lcars.pcAttempted + "`\n" +
+            "**Attempted**: `" + lcars.pcAttempts + "`\n" +
             "**Succeeded**: `" + lcars.pcSuccess + "`\n" +
             "**Failed**: `" + lcars.pcFailures + "`\n", true
         );
