@@ -102,6 +102,7 @@ exports.run = (lcars, msg, cmd) => {
             break;
         default:
             return msg.reply("Failed. Invalid role parameter.").then(sent => sent.delete(20000));
+            break;
     }
 
     function role(role2) {
