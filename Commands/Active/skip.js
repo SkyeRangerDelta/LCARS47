@@ -17,15 +17,15 @@ exports.run = (lcars, msg, cmd) => {
                 msg.reply("Command ignored. Player is not active.");
             }
             else {
+                lcars.serverQueue.connection.dispatcher.end();
+
                 var skipInfoPanel = new Discord.RichEmbed();
                     skipInfoPanel.setTitle("o0o - SKIP - o0o");
                     skipInfoPanel.setColor(system.fscolor);
                     skipInfoPanel.setDescription(
                         "Playback skipped a song. Authorized by " + msg.author.tag + "\n"+
-                        `**Now Playing**: ${fishsticks.serverQueue.songs[0].title}`
+                        `**Now Playing**: ${lcars.serverQueue.songs[0].title}`
                     )
-
-                lcars.serverQueue.connection.dispatcher.end();
 
                 console.log("[MUSI-SYS] Playback skipped a song by " + msg.author.tag);
                 musicLog.send({embed: skipInfoPanel});
