@@ -19,7 +19,7 @@ exports.run = (lcars, msg, cmd) => {
             else {
                 var skipInfoPanel = new Discord.RichEmbed();
                     skipInfoPanel.setTitle("o0o - SKIP - o0o");
-                    skipInfoPanel.setColor(config.fscolor);
+                    skipInfoPanel.setColor(system.fscolor);
                     skipInfoPanel.setDescription(
                         "Playback skipped a song. Authorized by " + msg.author.tag + "\n"+
                         `**Now Playing**: ${fishsticks.serverQueue.songs[0].title}`
