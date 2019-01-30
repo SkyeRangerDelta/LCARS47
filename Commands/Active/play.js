@@ -4,6 +4,7 @@
 const Discord = require('discord.js');
 const system = require('../../Subsystems/lcars_subsystem.json');
 const sysch = require('../../Subsystems/subs_channels.json');
+const fs = require('fs');
 
 const ytdl = require('ytdl-core');
 const YouTube = require('simple-youtube-api');
@@ -16,6 +17,8 @@ var lcarsColor = system.lcarscolor;
 
 exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
     msg.delete();
+
+    console.log("[MUSI-SYS] Complete Command: " + cmd);
 
     lcars.playlist = lcars.queue.get(lcars.pldynGuildID);
 
@@ -56,7 +59,7 @@ exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
     async function accept() {
         console.log("[MUSI-SYS] Permissions Granted");
 
-        //Playlist Initialization
+        //YouTube Playlist Initialization
         if (url.match(/^https?:\/\/(www.youtube.com|youtube.com)\/playlist(.*)$/)) {
             console.log("[MUSI-SYS] Playlist Detected");
 
@@ -139,7 +142,7 @@ exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
         }
     }
 
-    async function handleAccept(video, msg, voiceChannel, playlist = false) {
+    async function handleAccept(video, msg, playlist = false) {
         lcars.playlist = lcars.queue.get(lcars.pldynGuildID);
 
         if (video.duration.hours == 0) {
@@ -276,6 +279,7 @@ exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
             }
             else {
                 console.log("[MUSI-SYS] Song Ended.");
+                lcars.musicPlaying = false;
             }
 
             lcars.serverQueue.songs.shift();
@@ -295,7 +299,454 @@ exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
             );
 
         musicLog.send({embed: nowPlayingPanel});
+        lcars.musicPlaying = true;
 
+    }
+
+    //CUSTOM PLAYLIST HANDLING
+    async function handlePlaylist() {
+
+        const userPlaylistFolder = "./Subsystems/Custom Playlists/" + msg.author.id + "/";
+        var playlistDir;
+
+        try {
+            fs.access(userPlaylistFolder, fs.constants.F_OK, (err) => {
+                if (err) {
+                    console.log("[MUSI-SYS]" + `${userPlaylistFolder} ${err ? ' couldnt be located.' : ' was found.'}\n[MUSI-SYS] Attempting to create a new directory...`);
+                    try {
+                        fs.mkdir(userPlaylistFolder, {recursive: true}, (err) => {
+                            if (err) {
+                                console.log("[MUSI-SYS] Folder creation failed.\n" + err);
+                            }
+                            else {
+                                console.log("[MUSI-SYS] Folder creation succeeded.");
+                                msg.reply("A custom playlist folder has been created within LCARS47. Your custom playlists will be stored here.").then(sent => sent.delete(15000));
+                            }
+                        });
+                    } catch (folderCreateErr) {
+                        
+                    }
+                }
+                else {
+                    console.log(`${userPlaylistFolder} was located.`);
+                }
+            });
+        } catch (cusPlayError) {
+            return console.log("[MUSI-SYS] Something concerning playlist creation has gone wrong.\n\n" + cusPlayError);
+        }
+
+        if (cmd[1] == null) {
+            return msg.reply("Command invalidated; Seriously? Give me something here.");
+        }
+
+        // == PLAYLIST PARAMETERS ==
+        // -- NEW PARAMETER --
+        if (cmd[1] == "new") {
+            if (cmd[2] == null) {
+                return msg.reply("Playlist invalidated, new playlists must have names.").then(sent => sent.delete(15000));
+            }
+
+            var playlistName = cmd[2];
+            var playlistFile = playlistName + ".json";
+            playlistDir = userPlaylistFolder + playlistFile;
+
+            fs.access(playlistFile, fs.constants.F_OK, (err) => {
+                if (!err) {
+                    console.log("[MUSI-SYS] This playlist already exists!");
+                    return msg.reply("That playlist already exists!").then(sent => sent.delete(15000));
+                }
+            });
+
+            try {
+                fs.writeFileSync(playlistDir, '{"songs":[]}');
+                console.log("[MUSI-SYS] Created the playlist file: " + playlistFile);
+            } catch (createFile) {
+                console.log("[MUSI-SYS] Failed to create the playlist file.");
+            }
+
+            console.log("CMD[3] " + cmd[3]);
+
+            if (typeof cmd[3] !== 'undefined') {
+                var flag = cmd[3];
+                flag = flag.toLowerCase();
+
+                switch (flag) {
+                    case "a":
+                        console.log("[MUSI-SYS] Add flag found");
+
+                        try {
+                            let intake = cmd[4].toLowerCase();
+                            if (intake == "c" || intake == "current") {
+                                console.log("[MUSI-SYS] Attempting to add the current song to the " + playlistName + " playlist.");
+                                if (!lcars.serverQueue) {
+                                    return msg.reply("There's no song currently playing!").then(sent => sent.delete(15000));
+                                } else {
+                                    let value = lcars.serverQueue.songs[0].url;
+                                    let identifier = lcars.serverQueue.songs[0].title;
+
+                                    addToPlaylist(playlistDir, identifier, value);
+                                }
+                            }
+                            else if (cmd[4].includes(".com")) {
+                                try {
+                                    var tempVid = await yt.getVideo(cmd[4]);
+                                    addToPlaylist(playlistDir, tempVid.title, tempVid.url);
+                                } catch (newLinkAdd) {
+                                    console.log("[MP-NPBL] Failed to create a new playlist with a link:\n" + newLinkAdd);
+                                    return msg.reply("Failed to add the requested link to the new playlist.").then(sent => sent.delete(15000));
+                                }
+                            }
+                            else {
+                                try {
+                                    let vidLink = cmd[4] ? cmd[4].replace(/<(.+)>/g, '$1') : '';
+                                    let vid;
+
+                                    try {
+                                        console.log("[MUSI-SYS] Attempting to collect video.");
+                                        vid = await yt.getVideo(vidLink);
+                                    } catch (collectionError) {
+                                        return console.log("[MUSI-SYS] Video collection in for a new playlist's addition failed.");
+                                    }
+
+                                    console.log("[MUSI-SYS] Attempting to add the linked song to the " + playlistName + " playlist.");
+                                    addToPlaylist(playlistDir, vid.title, vid.url);
+                                } catch (linkedSongError) {
+                                    return console.log("[MUSI-SYS] Failed to add the linked video to the playlist.");
+                                }
+                            }
+                        } catch (addError) {
+                            msg.reply("We're HAVING TROUBLE HERE...").then(sent => sent.delete(15000));
+                            console.log("We're HAVING TROUBLE HERE....\n" + addError);
+                        }
+                    break;
+                    default:
+                        msg.reply("Was that a flag?")
+                        console.log("[MUSI-SYS] No or invalid flag found.");
+                    break;
+                }
+            }
+            else {
+                console.log("[MUSI-SYS] No or invalid flag found.");
+            }
+        }
+        // -- ADD PARAMETER --
+        else if (cmd[1] == "add") {
+            if (cmd[2] == null) {
+                return msg.reply("Command invalidated; you have to specify where to add the song.").then(sent => sent.delete(15000));
+            }
+            else if (cmd[3] == null) {
+                return msg.reply("Command invalidated; you cannot add nothing to a playlist.").then(sent => sent.delete(15000));
+            }
+
+            var currentParam = cmd[3].toLowerCase();
+            let vidLink = cmd[3] ? cmd[3].replace(/<(.+)>/g, '$1') : '';
+            let vidResponse;
+            var vids;
+            var playlistSearchResultNum;
+            var playlistSearch = cmd.splice(3).join(' ');
+            playlistDir = userPlaylistFolder + cmd[2] + ".json";
+
+            if (currentParam == "c" || currentParam == "current") {
+                return addToPlaylist(playlistDir, lcars.serverQueue.songs[0].title, lcars.serverQueue.songs[0].url);
+            }
+
+            try {
+                vidResponse = await yt.getVideo(vidLink);
+                addToPlaylist(playlistDir, vidResponse.title, vidResponse.url);
+            } catch (vidAddErr) {
+
+                console.log("[MP-ATP] Listed command: " + cmd);
+                console.log("[MP-ATP] Playlist Search Term: " + playlistSearch);
+
+                vids = await yt.searchVideos(playlistSearch);
+                playlistSearchResultNum = vids.length;
+
+                console.log("[MUSI-SYS] Listing Videos...");
+                for (var t = 0; t < vids.length; t++) {
+                    resp = await yt.getVideoByID(vids[t].id);
+                    console.log(t + ": " + resp.title);
+                }
+
+                let vidSearchInd = 0;
+
+                //Search result Info Report
+                var searchResultPanel = new Discord.RichEmbed();
+                    searchResultPanel.setTitle("o0o - Library Search Results - o0o");
+                    searchResultPanel.setColor(lcarsColor);
+                    searchResultPanel.setDescription(
+                        "**Search Term**: " + playlistSearch + "\n" +
+                        "**Result Count**: Top " + numResults + "\n" +
+                        "**========================================**\n" +
+                        `${vids.map(songresults => `${++vidSearchInd} => ${songresults.title}`).join('\n')}\nSelect a result using 1-` + numResults + ` as a next message.`
+                    );
+                msg.reply({embed: searchResultPanel}).then(sent => sent.delete(15000));
+
+                var vidResp = 1;
+                    
+                try {
+                    vidResp = await msg.channel.awaitMessages(playlistSelect => playlistSelect.content > 0 && playlistSelect.content < playlistSearchResultNum, {
+                        maxMatches: 1,
+                        time: 15000,
+                        errors: ['time']
+                    });
+                } catch (searchErr) {
+                    console.log("[MUSI-SYS] Add to Playlist Failed: Reponse Timed Out (MP-LTO)");
+                    msg.reply("`[MP-ATP]` Add to Playlist Failed: Reponse Timed Out").then(sent => sent.delete(30000));
+                    return;
+                }
+
+                var vidInd = parseInt(vidResp.first().content);
+
+                playlistVid = await yt.getVideoByID(vids[vidInd - 1].id);
+
+                addToPlaylist(playlistDir, playlistVid.title, playlistVid.url);
+            }
+        }
+        // -- REMOVE PARAMETER --
+        else if (cmd[1] == "remove") {
+
+            playlistDir = userPlaylistFolder + cmd[2] + ".json";
+
+            if (cmd[2] == null) {
+                return msg.reply("Command invalidated; you didn't specify anything to remove.").then(sent => sent.delete(15000));
+            }
+            else if (cmd[3] != null) {
+                if (cmd[3].toLowerCase() == "c" || cmd[3].toLowerCase() == "current") {
+                    if (!lcars.serverQueue) {
+                        return msg.reply("There's no current song playing!").then(sent => sent.delete(15000));
+                    }
+                    else {
+                        console.log("[MP-RFP] Value indicates current song.")
+                        removeFromPlaylist(playlistDir, lcars.serverQueue.songs[0].url, false);
+                    }
+                }
+                else if (cmd[3].includes(".com")) {
+                    console.log("[MP-RFP] Value includes a url.")
+                    removeFromPlaylist(playlistDir, cmd[3], false);
+                }
+                else {
+                    console.log("[MP-RFP] Value is considered a title.")
+                    removeFromPlaylist(playlistDir, cmd[3], true);
+                }
+            }
+            else {
+                msg.reply("Are you sure you want to remove the " + cmd[2] + " playlist? (Yes to confirm)").then(sent => sent.delete(20000));
+
+                var verifyCheck = false;
+                try {
+                    verifyCheck = await msg.channel.awaitMessages(verification => verification.content == "Yes" || verification.content == "yes", {
+                        maxMatches: 1,
+                        time: 15000,
+                        errors: ['time']
+                    })
+                } catch (verifyError) {
+                    msg.reply("`[MP-RP]` No confirm response: Playlist not deleted.").then(sent => sent.delete(10000));
+                    return;
+                }
+
+                if (verifyCheck) {
+                    try {
+                        fs.access(playlistFile, fs.constants.F_OK, (err) => {
+                            if (!err) {
+                                console.log("[MUSI-RP] Playlist exists...deleting...");
+                                fs.delete(playlistDir);
+                                msg.reply("Playlist deleted.").then(sent => sent.delete(10000));
+                            }
+                        });
+                    } catch (deleteErr) {
+                        console.log("[MP-RP] Something's come up.");
+                        msg.reply("`[MP-RP]` Mmmmm, circuit wasn't strong enough...that playlist didn't get deleted. Aherm, " + ranger);
+                        return;
+                    }
+                }
+            }
+        }
+        // -- DOWNLOAD PARAMETER --
+        else if (cmd[1].toLowerCase() == "dl" || cmd[1].toLowerCase() == "download") {
+
+            let playlist = userPlaylistFolder + cmd[2] + ".json";
+
+            if (cmd[2] == null) {
+                return msg.reply("Command invalidated; you cannot download a playlist that doesn't exist.").then(sent => sent.delete(15000));
+            }
+
+            try {
+                fs.access(playlist, fs.constants.F_OK, (err) => {
+                    if (!err) {
+                        console.log("[MUSI-VPI] Playlist exists.");
+                        
+                        try {
+                            msg.channel.send("Playlist Download Request:\n\tPlaylist: " + cmd[2] + "\n\tAuthor: " + msg.author.username, {files:[playlist]});
+                        } catch (fileUploadError) {
+                            console.log("[MP-DLP] Upload failed:\n" + fileUploadError);
+                            return msg.reply("Something went wrong in the upload process. Perhaps your playlist is too powerful for a file upload?\nError: " + fileUploadError);
+                        }
+
+                    }
+                    else {
+                        console.log("[MUSI-VPI] Playlist doesn't exist.");
+                    }
+                });
+            } catch (deleteErr) {
+                console.log("[MP-VPI] Something's come up.");
+                msg.reply("Hmmm, what....happened here.\n" + deleteErr).then(sent => sent.delete(15000));
+            }
+        }
+        // -- PLAY PARAMETER --
+        else {
+            if (cmd[1] == null) return msg.reply("Command invalidated; no playlist specified.");
+
+            var playlist = userPlaylistFolder + cmd[1] + ".json";
+
+            try {
+                fs.access(playlist, fs.constants.F_OK, (err) => {
+                    if (!err) {
+                        console.log("[MUSI-RP] Playlist exists.");
+                    }
+                });
+            } catch (playErr) {
+                console.log("[MP-PLPL] Something's come up.");
+                msg.reply("`[MP-PLPL]` Mmmmm, circuit wasn't strong enough...couldn't queue up the playlist.");
+                return;
+            }
+
+            var playlistFile = JSON.parse(fs.readFileSync(playlist, 'utf8'));
+
+            try {
+                for (y in playlistFile.songs) {
+                    const media = await yt.getVideo(playlistFile.songs[y].url);
+                    await handleAccept(media, msg, userVC, true);
+                }
+            } catch (queueAddErr) {
+                console.log("[MP-QDE] Something isn't right in the custom playlist player.\n" + queueAddErr);
+                return msg.reply("[MP-QDE] Mmmm, something's not right on the inside. CHeck the circuits " + ranger + "?");
+            }
+        }
+    }
+
+    function addToPlaylist(fileDir, entry, entryVal) {
+        try {
+            console.log("[MUSI-SYS] Attempting to check the existence of the playlist " + fileDir);
+            fs.access(fileDir, fs.constants.F_OK, (err) => {
+                if (err) {
+                    console.log("[MUSI-SYS] Couldn't find the playlist file whilst attempting to add a song.");
+                    msg.reply("I couldn't add a song to the file because I couldn't find the playlist file.");
+                    return;
+                }
+                else {
+                    var playlistJson = JSON.parse(fs.readFileSync(fileDir, 'utf8'));
+
+                    try {
+                        for (song in playlistJson.songs) {
+                            if (song == entry) {
+                                msg.reply("This song is already in this playlist, are you sure you want to add it again?\nYes/No").then(sent => sent.delete(15000));                      
+
+                                if (getResponse) {
+                                    let newEntry = {"title": entry, "url": entryVal};
+                                    playlistJson.songs.push(newEntry);
+                                    msg.reply("Song added to playlist " + cmd[2] + "!").then(sent => sent.delete(15000));
+                                    return;
+                                }
+                                else {
+                                    msg.reply("Command invalidated.").then(sent => sent.delete(15000));
+                                    return;
+                                }
+                            }
+                        }
+
+                        let newEntry = {"title": entry, "url": entryVal};
+                        playlistJson.songs.push(newEntry);
+
+                    } 
+                    catch (jsonReadErr) {
+                                
+                    }
+
+                    console.log("[MUSI-SYS] Saving changes...");
+                    fs.writeFileSync(fileDir, JSON.stringify(playlistJson));
+
+                    msg.reply("Song added to playlist.").then(sent => sent.delete(10000));
+                }
+            });
+        } catch (addErr) {
+            
+        }
+    }
+
+    function removeFromPlaylist(fileDir, value, name) {
+
+        var playlist = JSON.parse(fs.readFileSync(fileDir, 'utf8'));
+
+        try {
+            if (name) {
+                for (i in playlist.songs) {
+                    console.log("Sifting through keys...\n" + i.title);
+                    if (i.title == value) {
+                        console.log("[MP-RFP] Flagged a title remove value in playlist. Deleting...");
+                        delete(i);
+                        fs.writeFileSync(fileDir, JSON.stringify(playlist));
+                        msg.reply("Value deleted from playlist.").then(sent => sent.delete(10000));
+                    }
+                }
+
+                performCleanup(fileDir);
+
+                return msg.reply("Couldn't find that title value. Perhaps it's in a different playlist?").then(sent => sent.delete(10000));
+            }
+            else {
+
+                let flagged = false;
+
+                for (t in playlist.songs) {
+                    console.log("Sifting through keys...\n" + playlist.songs[t].url);
+                    if (playlist.songs[t].url == value) {
+                        console.log("[MP-RFP] Flagged a url remove value in playlist. Deleting...");
+                        delete(playlist.songs[t]);
+                        flagged = true;
+                        fs.writeFileSync(fileDir, JSON.stringify(playlist));
+                        msg.reply("Value deleted from playlist.").then(sent => sent.delete(10000));
+                    }
+                }
+
+                performCleanup(fileDir);
+
+                if (!flagged) {
+                    return msg.reply("Couldn't find that url value. Perhaps it's in a different playlist?").then(sent => sent.delete(10000));
+                }
+            }
+        } catch (removeErr) {
+            console.log("[MP-RFP] Failed to remove an item from a playlist.\n" + removeErr);
+            return msg.reply("Command failed, couldn't remove the song from the playlist.");
+        }
+    }
+
+    function performCleanup(playDir) {
+
+        console.log("[MP-PLCU] ====ATTEMPTING PLAYLIST CLEANUP====\n" + 
+                    "Requested Playlist Directory: " + playDir);
+
+        var playlistToClean = JSON.parse(fs.readFileSync(playDir, 'utf8'));
+
+        try {
+            playlistToClean.songs = playlistToClean.songs.filter(e => e !== null && e !== "");
+
+            fs.writeFileSync(playDir, JSON.stringify(playlistToClean));
+            return;
+        } catch (cleanupErr) {
+            console.log("[MP-PLCU] Cleanup has hit a snag: \n" + cleanupErr);
+            return msg.channel.send(ranger + " sir, playlist cleanup issued by " + msg.author.username + " has been snagged, check the file system please.");
+        }
+    }
+
+    async function getResponse() {
+        var response;
+        response = await msg.channel.awaitMessages(msg2 => msg2.content.toLowerCase() == "yes", {
+            maxMatches: 1,
+            time: 10000,
+            errors: ['time']
+        });
+
+        return response;
     }
 
     //PERMISSIONS CHECK
@@ -305,7 +756,13 @@ exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
             msg.reply("Engineering Mode is enabled! You cannot use the player while it is on.").then(sent => sent.delete(20000));
         }
         else {
-            accept();
+            if (cmd[0] == "playlist") {
+                console.log("[MUSI-SYS] Playlist mode enabled.");
+                handlePlaylist();
+            }
+            else {
+                accept();
+            }
         }
     }
     else if (msg.member.roles.find("name", "Captain") || msg.member.roles.find("name", "Vice Admiral") || msg.member.roles.find("name", "Admiral")) {
@@ -313,7 +770,13 @@ exports.run = (lcars, msg, cmd) => { //BEGIN EXECUTION
             msg.reply("`[Engineering Mode]` Staff override acknowledged.").then(sent => sent.delete(20000));
         }
 
-        accept();
+        if (cmd[0] == "playlist") {
+            console.log("[MUSI-SYS] Playlist mode enabled.");
+            handlePlaylist();
+        }
+        else {
+            accept();
+        }
     }
     else {
         msg.reply("You do not have the proper permissions to run the music player.");
