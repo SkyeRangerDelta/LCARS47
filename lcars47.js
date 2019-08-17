@@ -38,6 +38,9 @@ lcars.systemStatus;
 lcars.activeSubroutine;
 lcars.passiveSubroutine;
 
+//RANGER
+lcars.ranger;
+
 //SESSION RECORDING & ENGINEERING MODE
 lcars.engmode;
 lcars.session;
@@ -122,6 +125,8 @@ lcars.on("ready", () => {
     lcars.user.setActivity("!help | V" + lcars.version);
 
     engdeckID.send({embed: startupseq}).then(sent => sent.delete(30000));
+
+    lcars.ranger = lcars.users.get('107203929447616512');
 });
 
 lcars.login(system.systemKEY);
