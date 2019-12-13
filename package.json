@@ -10,7 +10,7 @@
     "node-gyp": "^3.8.0",
     "node-opus": "^0.3.0",
     "nodemon": "^1.18.3",
-    "npm": "^5.10.0",
+    "npm": "^6.13.4",
     "simple-youtube-api": "^5.0.2",
     "ytdl-core": "^0.20.4"
   },
