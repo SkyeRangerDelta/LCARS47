@@ -1,132 +1,227 @@
-/*
-======================================
---LCARS47 OFFICIAL PLDYN DISCORD BOT--
-======================================
------Developed and maintained by:-----
------------SkyeRangerDelta------------
-*/
+/////////////////////////////////////////////
+//              LCARS47
+//   The Official PlDyn Discord Bot
+//
+//      Developed and Maintained
+//          By SkyeRangerDelta
+//-------------------------------------------
+//      See https://pldyn.net
+//  And blog: https://cf.pldyn.net/
+//
+//  This is a custom bot designed for the
+//      Planetary Dynamics Development
+//              Community
+/////////////////////////////////////////////
 
-//SYSTEM REQUIREMENTS AND DECLARATIONS
-const Discord = require('discord.js');
-const lcars = new Discord.Client();
-const fs = require('fs');
+// -- DEPENDENCIES --
+//Libraries
+const Discord = require(`discord.js`);
+const fs = require(`fs`);
 
-const system = require('./Subsystems/lcars_subsystem.json');
-const ch = require('./Subsystems/subs_channels.json');
+//Functions
+const {botLog} = require(`./Subsystems/subs_log`);
+const {
+    db_connect,
+    db_conduitStatus,
+    db_query
+} = require(`./Subsystems/subs_DB/subs_dbHandler`);
+const {
+    insertNewMember
+} = require(`./Subsystems/subs_DB/subs_memberOps`);
 
-const prefix = system.prefix;
-const lcarsColor = system.lcarscolor;
-const lcarsAlertColor = system.lcarsalertcolor;
+//Ops
+const ops_Login = require(`./Subsystems/subs_Ops/Core/login.json`);
+const ops_Channels = require(`./Subsystems/subs_Ops/subs_channels.json`);
+const ops_Settings = require(`./Subsystems/subs_Ops/subs_settings.json`);
 
-//LCARS SYSTEM WIDE VARIABLES
-lcars.queue = new Map();
-lcars.commandAttempts = 0;
-lcars.commandFailures = 0;
-lcars.commandSuccess = 0;
-lcars.acAttempts = 0;
-lcars.acFailures = 0;
-lcars.acSuccess = 0;
-lcars.pcAttempts = 0;
-lcars.pcFailures = 0;
-lcars.pcSuccess = 0;
-lcars.pldynGuildID = "107205223985999872";
-lcars.pldynGuild = lcars.guilds.get(lcars.pldynGuildID);
-lcars.musicPlaying = false;
-lcars.vc;
-lcars.version = system.version;
-lcars.systemStatus;
-lcars.activeSubroutine;
-lcars.passiveSubroutine;
+//Utility
+const {
+    statusReader,
+    rewriteDate,
+    rewriteTime,
+    rewriteDateTime,
+    convertMs,
+    convertMSFUll
+} = require(`./Subsystems/subs_Utility/subs_utility`);
 
-//RANGER
-lcars.ranger;
+//GLOBALS
+const LCARS47 = new Discord.Client();
 
-//SESSION RECORDING & ENGINEERING MODE
-lcars.engmode;
-lcars.session;
+//Bot Variables
+LCARS47.dbConnection = null;
+LCARS47.dbState = null;
+LCARS47.systemStart = new Date();
+LCARS47.systemStartNow = Date.now();
+LCARS47.session;
+LCARS47.lastSystemStart;
 
-var SUBS_Engm = JSON.parse(fs.readFileSync("./Subsystems/subs_engmode.json", "utf8"));
-lcars.engmode = SUBS_Engm.engmode;
+//Guild & Channels
+let gd_PlDyn;
+let guildName;
+let ch_EngineeringDeck;
 
-var SUBS_Sess = JSON.parse(fs.readFileSync("./Subsystems/subs_session.json", "utf8"));
-lcars.session = SUBS_Sess.sessionnum++;
-fs.writeFileSync("./Subsystems/subs_session.json", JSON.stringify(SUBS_Sess));
 
-let engmode = lcars.engmode;
+// -- EVENT HANDLERS --
+//Online and Functioning
+LCARS47.on('ready', async () => {
+    botLog(`proc`, `[CLIENT] CORE ONLINE.\n---------------------------------------`);
 
-//MESSAGE AND COMMAND SYSTEM HANDLER
-lcars.on("message", msg => {
-    if (msg.author.bot) return
-
-    const pcmd = msg.content.split(" ");
-    const cmd = msg.content.slice(prefix.length).trim().split(/ +/g);
-    const cmdID = cmd.shift().toLowerCase();
-
-    if (msg.content.charAt(0) == prefix) {
-        console.log("[ACT-COMM] Attempting Resolution for command: " + cmdID);
-        lcars.commandAttempts++;
-        lcars.acAttempts++;
-        try {
-            let cmdFile = require(`./Commands/Active/${cmdID}.js`);
-            cmdFile.run(lcars, msg, cmd);
-            console.log("[ACT-COMM] Success");
-            lcars.commandSuccess++;
-            lcars.acSuccess++;
-            lcars.activeSubroutine = "Online";
-        }
-        catch (err) {
-            console.log("[ACT-COMM] Failed:\n" + err);
-            msg.reply("Command input rejected. Please specify a more concise command; see `!help` for assistance.");
-            lcars.activeSubroutine = "Last Command Failed";
-            lcars.acFailures++;
-        }
+    // -- Perform Startup Routine --
+    //Query Database Connection
+    try {
+        LCARS47.dbConnection = await db_connect();
+        LCARS47.dbState = await db_conduitStatus(LCARS47.dbConnection);
+    } catch (error) {
+        botLog(`err`, `[LCARS-DB] Fault in startup sequence.\n${error}`);
     }
-    else {//PASSIVE COMMANDS
-        console.log("[PAS-COMM] Attempting Resolution for command: " + pcmd[0]);
-        lcars.commandAttempts++;
-        lcars.pcAttempts++;
-        try {
-            let pCmdFile = require(`./Commands/Passive/${pcmd[0].toLowerCase()}.js`);
-            pCmdFile.run(lcars, msg, cmd);
-            console.log("[PAS-COMM] Success");
-            lcars.commandSuccess++;
-            lcars.pcSuccess++;
-            lcars.passiveSubroutine = "Online";
-        } catch (err) {
-            console.log("[PAS-COMM] Failed: " + err);
-            lcars.passiveSubroutine = "Reading Chat";
-            lcars.pcFailures++;
-        }
-    }
-});
 
-//SYSTEM STARTUP
-//Responder
-lcars.on("ready", () => {
-    var startupseq = new Discord.RichEmbed();
-        startupseq.setTitle("o0o - LCARS SYSTEM STARTUP - o0o");
-        startupseq.setColor(lcarsColor);
-        startupseq.setDescription(
-            "LCARS Shipboard Operating System\n"+
-            "Version " + lcars.version + " on session #: " + lcars.session + ".\n"+
-            "===================================\n"+
-            "Booting from isolinear storage...\n"+
-            "LCARS47 is now online."
-        );
-        
-    console.log("LCARS V" + lcars.version + " | System Startup");
-    console.log("====================================");
-    console.log("[SESSION#] " + lcars.session);
-    console.log("[ENG-MODE] Currently: " + engmode);
-
-    const engdeckID = lcars.channels.get(ch.engdeck);
+    //Initialize Channels & Guilds
+    gd_PlDyn = LCARS47.guilds.cache.get(ops_Channels.pldyn);
+    guildName = gd_PlDyn.name;
+    ch_EngineeringDeck = LCARS47.channels.cache.get(ops_Channels.engdeck);
     
-    lcars.systemStatus = "Online";
-    lcars.user.setActivity("!help | V" + lcars.version);
+    //Update Ops Table
+    let opsPreUpdate = await db_query(LCARS47.dbConnection, `Ops`, `select`, 1);
 
-    engdeckID.send({embed: startupseq}).then(sent => sent.delete(30000));
+    LCARS47.session = ++opsPreUpdate.Session;
 
-    lcars.ranger = lcars.users.get('107203929447616512');
+    LCARS47.lastSystemStart = convertMSFUll(opsPreUpdate.UTCStartup - LCARS47.systemStartNow);
+
+    let opsTableUpdate = {
+        id: 1,
+        Online: true,
+        Session: LCARS47.session,
+        Startup: `${rewriteDateTime(LCARS47.systemStart)}`,
+        UTCStartup: `${LCARS47.systemStartNow}`
+    };
+
+    let opsPostUpdate = await db_query(LCARS47.dbConnection, `Ops`, `update`, opsTableUpdate);
+
+    if (opsPostUpdate.replaced != 1){
+        botLog(`warn`, `[LCARS-DB] Ops table update failed. Replaced records not equal to 1.`);
+    } else {
+        botLog(`info`, `[LCARS-DB] Ops table update done.`);
+    }
+
+    //Dispatch Startup Message
+    let startupPanel = new Discord.MessageEmbed();
+        startupPanel.setTitle(`-[]- LCARS47 SYSTEM BOOT -[]-`);
+        startupPanel.setDescription(
+            `Performing system startup sequence.\n`+
+            `Isolinear storage drives mounted.\n`+
+            `Core systems initialized.`
+        );
+        startupPanel.addField(`Vessel Name`, guildName, false);
+        startupPanel.addField(`Vessel Launch Date`, rewriteDate(gd_PlDyn.createdAt), true);
+        startupPanel.addField(`Vessel Captain`, gd_PlDyn.owner.nickname, true);
+        startupPanel.addField(`Vessel Crew Compliment`, gd_PlDyn.memberCount, false);
+        startupPanel.addField(`Vessel Structural Compliment`, `${gd_PlDyn.channels.cache.size} Channels`, false);
+        startupPanel.addField(`Galactic Sector (Shard)`, `ID: ${gd_PlDyn.shardID}\nStatus: ${statusReader(gd_PlDyn.shard.status)}`, true);
+        startupPanel.addField(`Origin Region`, gd_PlDyn.region, true);
+        startupPanel.addField(`System Session`, LCARS47.session, true);
+        startupPanel.addField(`Time Since Last Start`, LCARS47.lastSystemStart, true);
+        startupPanel.setColor(ops_Settings.color);
+        startupPanel.setFooter(`Sequence Initialized at ${rewriteDateTime(LCARS47.systemStart)}`);
+        startupPanel.setThumbnail(`https://pldyn.net/wp-content/uploads/2019/12/PlDynLogoPrimary.png`);
+
+    ch_EngineeringDeck.send({embed: startupPanel});
+
 });
 
-lcars.login(system.systemKEY);
+//Error
+LCARS47.on('error', async (err) => {
+    botLog(`err`, `[CLIENT] ${err}`);
+});
+
+//Warnings
+LCARS47.on('warn', async (warnInfo) => {
+    botLog(`warn`, `[CLIENT] ${warnInfo}`);
+});
+
+//Message
+LCARS47.on('message', async (msg) => {
+    if (msg.author == LCARS47.user) return;
+    if (msg.author.bot) return;
+
+    //Member Statistics
+    let memberCheck = await db_query(LCARS47.dbConnection, `Member_Ops`, `select`, `${msg.author.id}`);
+
+    if (memberCheck.size == 1) {
+        botLog(`info`, `[MEMBER-STATS] Member ops record found.`);
+
+    } else if (memberCheck.size > 1) {
+        botLog(`warn`, `[MEMBER-STATS] Multiple member ops records found.`);
+        return msg.reply(`Multiple record entries found. Notify system administrator before continuing.`);
+
+    } else {
+        botLog(`info`, `[MEMBER-STATS] No member ops record found; attempting to create one...`);
+
+        let memberObj = {
+            id: msg.author.id,
+            nickname: msg.member.nickname,
+            acAttempts: 0,
+            acSuccess: 0,
+            pcSuccess: 0,
+            suggestionsOpened: 0
+        }
+
+        let newRecordResponse = await insertNewMember(LCARS47, memberObj)
+
+        if (newRecordResponse) {
+            botLog(`proc`, `[MEMBER-STATS] New member ops record added.`);
+        } else {
+            botLog(`warn` `[MEMBER-STATS] Something wrong occured whilst attempting to create new record...\n${newRecordResponse}`)
+        }
+    }
+
+    //Collect member ops record
+    let cmdOpsUpdateOld = await db_query(LCARS47.dbConnection, `Member_Ops`, `select`, `${msg.author.id}`);
+
+    //Command Handler
+    let cmd = msg.content.toLowerCase().substring(1, msg.content.length).split(`-`);
+    let cmdID = cmd.shift().trim();
+
+    if (msg.content.startsWith(`${ops_Settings.prefix}`)) { //Active Cmd
+
+        botLog(`info`, `[ACTIVE-CMD] Attempting to process active command...`);
+
+        try {
+            const cmdFile = require(`./Commands/Active/${cmdID}`);
+            cmdFile.run(LCARS47, msg, cmd);
+
+            //Log success
+            botLog(`info`, `[ACTIVE-CMD] Success.`);
+            let cmdOpsUpdateNew = await db_query(LCARS47.dbConnection, `Member_Ops`, `update`, ++cmdOpsUpdateOld.acSuccess)
+        } catch (activeCmdErr) {
+            botLog(`warn`, `[ACTIVE-CMD] Command execution failed.\n${activeCmdErr}\n---------------------------------------------------------------------`);
+
+            //Execution failed, retry without potential spaces - first word as ID
+            let cmdID2 = cmdID.split(` `).shift();
+            botLog(`warn`, `[ACTIVE-CMD] [2nd Iteration] Attempting again with ID: ${cmdID2}`);
+
+            try {
+                const cmdFile2 = require(`./Commands/Active/${cmdID2}`);
+                cmdFile2.run(LCARS47, msg, cmd);
+
+                //Log Success
+                botLog(`info`, `[ACTIVE-CMD] [2nd Iteration] Success.`);
+                let cmdOpsUpdateNew = await db_query(LCARS47.dbConnection, `Member_Ops`, `update`, ++cmdOpsUpdateOld.acSuccess)
+            } catch (activeCmdErr2) {
+                botLog(`err`, `[ACTIVE-CMD] [2nd Iteration] Command execution failed.\n${activeCmdErr2}`);
+            }
+        }
+    } else { //Potential passive command
+        try {
+            const passFile = require(`./Commands/Passive/${msg.content}`);
+            passFile.run(msg);
+
+            //Log success
+            let pcOpsUpdateNew = await db_query(LCARS47.dbConnection, `Member_Ops`, `update`, ++cmdOpsUpdateOld.pcSuccess);
+        } catch (passiveCmdErr) {
+            botLog(`info`, `[PASSIVE-CMD] No passive found or failed.`);
+        }
+    }
+})
+
+//Execute Login
+LCARS47.login(ops_Login.login);

@@ -1,25 +1,49 @@
 //HELP
 
-const Discord = require('discord.js');
-const system = require('../../Subsystems/lcars_subsystem.json');
+const Discord = require(`discord.js`);
+const fs = require(`fs`);
+const system = require(`../../Subsystems/subs_Ops/subs_Settings.json`);
 
-exports.run = (lcars, msg, cmd) => {
+module.exports = {
+    run,
+    help
+}
 
-    msg.delete();
+function run(lcars, msg, cmd) {
 
-    var help = new Discord.RichEmbed();
-        help.setTitle("o0o - LCARS COMMAND LISTING - o0o");
+    msg.delete({timeout: 0});
+
+    //Temporary Notice
+    msg.reply(`In the future, LCARS47 commands will be listed on the LCARS Database. This menu will remain here for quick reference however.`).then(sent => sent.delete({timeout: 10000}));
+
+    msg.channel.send(`Building help menu...`).then(sent => sent.delete({timeout: 5000}));
+
+    const commandListing = fs.readdirSync(`./Commands/Active`).filter(cmdFile => cmdFile.endsWith(`.js`));
+
+    let helpMenu = ``;
+
+    for (file in commandListing) {
+        try {
+            let {help} = require(`./${commandListing[file]}`);
+            let cmdID = commandListing[file].substring(0, commandListing[file].length - 3);
+            helpMenu = helpMenu.concat(`**${cmdID}**: ${help()}\n`);
+        } catch (helpError) {
+            throw `${cmd[0]} has no help entry!\n${helpError}`;
+        }
+    }
+
+    var help = new Discord.MessageEmbed();
+        help.setTitle(`-[]- LCARS47 COMMAND LISTING -[]-]`);
         help.setColor(system.lcarscolor);
         help.setDescription(
-            "LCARS " + lcars.version + " | Complete Command Listing\n"+
-            "===============================================\n"+
-            "`!help`: Displays this menu\n"+
-            "`!passives`: Displays the passive command list.\n"+
-            "`!play [link/searchTerm]`: Adds a YouTube video/playlist to the queue to be played.\n"+
-            "`!role [gameRole]`: Will assign or remove a PlDyn game role to you. (Yes, it is a toggle).\n"+
-            "`!status`: Reports a comprehensive list of LCARS47's session statistics information.\n\n"+
-            "`This message will delete itself in 1 minute.`"
+            `LCARS47 Active Command Listing\n`+
+            `------------------------------------------------\n`+
+            helpMenu
         );
 
-    msg.channel.send({embed: help}).then(sent => sent.delete(60000));
+    msg.channel.send({embed: help}).then(sent => sent.delete({timeout: 60000}));
+}
+
+function help() {
+    return `Displays this help menu.`;
 }
