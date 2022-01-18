@@ -1,4 +1,4 @@
-# LCARS47
+# Lcars47
 The official Planetary Dynamics Discord Bot
 
 --

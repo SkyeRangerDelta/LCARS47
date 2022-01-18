@@ -52,8 +52,8 @@ LCARS47.dbConnection = null;
 LCARS47.dbState = null;
 LCARS47.systemStart = new Date();
 LCARS47.systemStartNow = Date.now();
-LCARS47.session;
-LCARS47.lastSystemStart;
+LCARS47.session = null;
+LCARS47.lastSystemStart = null;
 
 //Guild & Channels
 let gd_PlDyn;
@@ -79,7 +79,7 @@ LCARS47.on('ready', async () => {
     gd_PlDyn = LCARS47.guilds.cache.get(ops_Channels.pldyn);
     guildName = gd_PlDyn.name;
     ch_EngineeringDeck = LCARS47.channels.cache.get(ops_Channels.engdeck);
-    
+
     //Update Ops Table
     let opsPreUpdate = await db_query(LCARS47.dbConnection, `Ops`, `select`, 1);
 
