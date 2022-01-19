@@ -4,6 +4,4 @@
 node_modules
 
 #Subsystems
-Subsystems/subs_Ops/Core
-Subsystems/subs_Ops/subs_channels.json
-Subsystems/subs_DB/assets.json
+Subsystems/subs_Ops/OPs_Core.json

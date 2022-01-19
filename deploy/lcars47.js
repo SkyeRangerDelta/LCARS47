@@ -13,21 +13,16 @@
 //      Planetary Dynamics Development
 //              Community
 /////////////////////////////////////////////
-
 // -- DEPENDENCIES --
 //Libraries
 const Discord = require('discord.js');
 const fs = require('fs');
-
 //Subsystem Configs
 const { TOKEN, INTENTS } = require('./Subsystems/subs_Ops/OPs_Core.json');
-
 // -- GLOBALS --
 const LCARS47 = new Discord.client({ intents: INTENTS });
-
 // -- EVENTS INDEXER --
 const eventsIndex = fs.readdirSync('./Events').filter(f => f.endsWith('.js'));
-
 for (const eventFile in eventsIndex) {
     const event = require(`./Events/${eventsIndex[eventFile]}`);
     if (event.once) {
@@ -37,8 +32,7 @@ for (const eventFile in eventsIndex) {
         LCARS47.on(event.name, (...args) => event.execute(LCARS47, ...args));
     }
 }
-
 // -- UTILS --
-
 // -- CORE --
 LCARS47.login(TOKEN);
+//# sourceMappingURL=lcars47.js.map

@@ -1,37 +1,27 @@
 {
-  "name": "lcars47bot",
-  "version": "47.3.1",
-  "description": "LCARS47 Version 47.3.1 NPM",
-  "main": "lcars47.ts",
-  "dependencies": {
-    "colors": "^1.4.0",
-    "discord.js": "^13.6.0",
-    "ffmpeg": "0.0.4",
-    "gamedig": "^1.0.41",
-    "got": "^9.6.0",
-    "html-entities": "^1.2.1",
-    "latest-version": "^3.1.0",
-    "m3u8stream": "^0.6.2",
-    "miniget": "^1.5.1",
-    "node-gyp": "^8.4.1",
-    "node-opus": "^0.3.2",
-    "nodemon": "^1.18.3",
-    "npm": "^6.14.6",
-    "npm-install-all": "^1.1.21",
-    "rethinkdb": "^2.4.2",
-    "sax": "^1.2.4",
-    "simple-youtube-api": "^5.2.0",
-    "typescript": "^4.5.4",
-    "youtube-audio-stream": "^0.3.1",
-    "youtube-dl": "^2.0.0",
-    "ytdl-core": "^0.20.4"
-  },
+  "name": "lcars47",
+  "version": "47.4.0",
+  "description": "Official PlDyn Development Discord Bot",
+  "main": "lcars47.js",
   "scripts": {
-    "test": "!help"
+    "test": "hello"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SkyeRangerDelta/LCARS47.git"
   },
   "author": "SkyeRangerDelta",
   "license": "ISC",
-  "optionalDependencies": {
-    "bufferutil": "^3.0.5"
+  "bugs": {
+    "url": "https://github.com/SkyeRangerDelta/LCARS47/issues"
+  },
+  "homepage": "https://github.com/SkyeRangerDelta/LCARS47#readme",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "discord.js": "^13.6.0",
+    "eslint": "^8.7.0",
+    "luxon": "^2.3.0",
+    "mongodb": "^4.3.1",
+    "npm": "^8.3.1"
   }
 }
