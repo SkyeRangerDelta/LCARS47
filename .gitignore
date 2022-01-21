@@ -2,6 +2,10 @@
 
 #General
 node_modules
+.env
 
 #Subsystems
-Subsystems/subs_Ops/OPs_Core.json
+Src/Subsystems/Operations/OPs_Core.json
+Src/Subsystems/Operations/OPs_IDs.json
+Deploy/Subsystems/Operations/OPs_IDs.json
+Deploy/Subsystems/Operations/OPs_Core.json
