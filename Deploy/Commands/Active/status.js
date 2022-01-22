@@ -7,7 +7,6 @@ const data = new builders_1.SlashCommandBuilder()
     .setName('status')
     .setDescription('Displays a report of all LCARS47s system states and session variables.');
 async function execute(LCARS47, int) {
-    console.log('Status interaction in process.');
     await int.reply({ content: 'Neat things here.' });
 }
 function help() {

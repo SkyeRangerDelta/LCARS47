@@ -16,7 +16,7 @@
 
 // -- DEPENDENCIES --
 //Libraries
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 
 //Subsystems
 import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient';
