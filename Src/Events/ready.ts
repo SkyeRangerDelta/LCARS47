@@ -4,7 +4,7 @@
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
 import { PLDYNID, LCARSID } from '../Subsystems/Operations/OPs_IDs.json';
-import { version } from '../../package.json';
+import { version } from '../package.json';
 
 //Exports
 module.exports = {

@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //Imports
 const SysUtils_1 = __importDefault(require("../Subsystems/Utilities/SysUtils"));
 const OPs_IDs_json_1 = require("../Subsystems/Operations/OPs_IDs.json");
-const package_json_1 = require("../../package.json");
+const package_json_1 = require("../package.json");
 //Exports
 module.exports = {
     name: 'ready',
