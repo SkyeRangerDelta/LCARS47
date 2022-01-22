@@ -11,7 +11,6 @@ const data = new SlashCommandBuilder()
     .setDescription('Displays a report of all LCARS47s system states and session variables.');
 
 async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
-    console.log('Status interaction in process.');
     await int.reply({content: 'Neat things here.'});
 }
 
