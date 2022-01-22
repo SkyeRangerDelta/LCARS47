@@ -6,7 +6,7 @@ import Utility from "../Utilities/SysUtils";
 import path from "path";
 import {LCARSClient} from "../Auxiliary/LCARSClient";
 import {REST} from "@discordjs/rest";
-import { PLDYNID, LCARSID } from './OPs_IDs.json';
+import { PLDYNID, LCARSID } from './OPs_Vars.json';
 import {Routes} from "discord-api-types/v9";
 
 //Exports
@@ -21,7 +21,7 @@ async function indexCommands(LCARS47: LCARSClient): Promise<void> {
     const cmdJSON: object[] = [];
 
     const cmdPath = path.join(__dirname, '../..', 'Commands/Active');
-    const commandIndex = fs.readdirSync(cmdPath).filter(f => f.endsWith('.ts'));
+    const commandIndex = fs.readdirSync(cmdPath).filter(f => f.endsWith('.js'));
     for (const command of commandIndex) {
         const cPath = `../../Commands/Active/${command}`;
         await import (cPath).then(c => {

@@ -6,7 +6,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const builders_1 = require("@discordjs/builders");
-const OPs_IDs_json_1 = require("../../Subsystems/Operations/OPs_IDs.json");
+const OPs_Vars_json_1 = require("../../Subsystems/Operations/OPs_Vars.json");
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const ytsr_1 = __importDefault(require("ytsr"));
 const voice_1 = require("@discordjs/voice");
@@ -20,7 +20,7 @@ let defaultReportChannel;
 async function execute(LCARS47, int) {
     let member;
     let vChannel;
-    defaultReportChannel = await LCARS47.PLDYN.channels.fetch(OPs_IDs_json_1.MEDIALOG);
+    defaultReportChannel = await LCARS47.PLDYN.channels.fetch(OPs_Vars_json_1.MEDIALOG);
     try {
         member = await LCARS47.PLDYN.members.fetch(int.user.id);
     }
@@ -100,7 +100,7 @@ async function getBasicInfo(url) {
 }
 function addToMediaQueue(LCARS47, song, vChannel) {
     console.log('Attempting to add a song to queue.');
-    let currentQueue = LCARS47.MEDIA_QUEUE.get(OPs_IDs_json_1.PLDYNID);
+    let currentQueue = LCARS47.MEDIA_QUEUE.get(OPs_Vars_json_1.PLDYNID);
     if (!currentQueue) {
         currentQueue = {
             voiceChannel: vChannel,
@@ -109,7 +109,7 @@ function addToMediaQueue(LCARS47, song, vChannel) {
             playingMsg: null,
             isPlaying: false
         };
-        LCARS47.MEDIA_QUEUE.set(OPs_IDs_json_1.PLDYNID, currentQueue);
+        LCARS47.MEDIA_QUEUE.set(OPs_Vars_json_1.PLDYNID, currentQueue);
     }
     console.log('Pushed a song to queue.');
     currentQueue.songs.push(song);
@@ -132,7 +132,7 @@ async function joinChannel(vChannel) {
     console.log('Joining channel.');
     const playerConnection = (0, voice_1.joinVoiceChannel)({
         channelId: vChannel.id,
-        guildId: OPs_IDs_json_1.PLDYNID,
+        guildId: OPs_Vars_json_1.PLDYNID,
         adapterCreator: vChannel.guild.voiceAdapterCreator //TODO: What is this
     });
     try {
@@ -168,7 +168,7 @@ async function joinChannel(vChannel) {
 }
 async function playSong(queue) {
     console.log('Executing play song.');
-    const currentQueue = queue.get(OPs_IDs_json_1.PLDYNID);
+    const currentQueue = queue.get(OPs_Vars_json_1.PLDYNID);
     if (!currentQueue) {
         return;
     }
@@ -196,17 +196,17 @@ function handleSongEnd(currentQueue, playerQueue) {
 }
 function handleEmptyQueue(currentQueue, playerQueue) {
     console.log('Handling empty queue.');
-    const connection = (0, voice_1.getVoiceConnection)(OPs_IDs_json_1.PLDYNID);
+    const connection = (0, voice_1.getVoiceConnection)(OPs_Vars_json_1.PLDYNID);
     if (playerQueue.voiceChannel.members.size === 0) {
         connection?.destroy();
-        currentQueue.delete(OPs_IDs_json_1.PLDYNID);
+        currentQueue.delete(OPs_Vars_json_1.PLDYNID);
         defaultReportChannel.send('*Grumbles to self about streaming music to an empty channel.*');
         return;
     }
     setTimeout(() => {
         if (playerQueue.songs.length === 0) {
             connection?.destroy();
-            currentQueue.delete(OPs_IDs_json_1.PLDYNID);
+            currentQueue.delete(OPs_Vars_json_1.PLDYNID);
         }
     }, 300000);
 }

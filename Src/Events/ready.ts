@@ -3,8 +3,7 @@
 //Imports
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
-import { PLDYNID, LCARSID } from '../Subsystems/Operations/OPs_IDs.json';
-import { version } from '../package.json';
+import { PLDYNID, LCARSID } from '../Subsystems/Operations/OPs_Vars.json';
 
 //Exports
 module.exports = {
@@ -19,7 +18,7 @@ module.exports = {
 
         // @ts-ignore
         LCARS47.user.setPresence({
-            activities: [{ name: 'for stuff | V' + version, type: 'WATCHING' }],
+            activities: [{ name: 'for stuff | V' + process.env.VERSION, type: 'WATCHING' }],
             status: 'online'
         });
     }
