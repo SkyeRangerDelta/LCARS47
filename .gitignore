@@ -2,7 +2,7 @@
 
 #General
 node_modules
-Src/.env
+.env
 
 #Subsystems
 Src/Subsystems/Operations/OPs_IDs.json
