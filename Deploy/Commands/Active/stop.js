@@ -29,9 +29,9 @@ async function execute(LCARS47, int) {
         else if (member.voice.channel !== serverQueue.voiceChannel) {
             return int.reply('You need to call this from the player channel!');
         }
-        serverQueue.songs = [];
         const connection = (0, voice_1.getVoiceConnection)(OPs_Vars_json_1.PLDYNID);
         connection?.destroy();
+        LCARS47.MEDIA_QUEUE.delete(OPs_Vars_json_1.PLDYNID);
         return int.reply('Disconnected!');
     }
     catch (endErr) {

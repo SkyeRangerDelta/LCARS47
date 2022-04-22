@@ -36,9 +36,9 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
             return int.reply('You need to call this from the player channel!');
         }
 
-        serverQueue.songs = [];
         const connection = getVoiceConnection(PLDYNID);
         connection?.destroy();
+        LCARS47.MEDIA_QUEUE.delete(PLDYNID);
         return int.reply('Disconnected!');
     }
     catch (endErr) {
