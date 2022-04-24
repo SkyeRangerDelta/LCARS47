@@ -56,6 +56,8 @@ async function indexCommands(LCARS47) {
         SysUtils_1.default.log('warn', '[CMD-INDEXER] Finished command registration update.');
     }
     catch (cmdIndexErr) {
-        SysUtils_1.default.log('err', '[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!');
+        SysUtils_1.default.log('err', '[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!\n' + cmdIndexErr);
+        LCARS47.destroy();
+        process.exit();
     }
 }

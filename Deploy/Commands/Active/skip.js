@@ -35,8 +35,10 @@ async function execute(LCARS47, int) {
         else if (member.voice.channel !== serverQueue.voiceChannel) {
             return int.reply('You need to call this from the player channel!');
         }
-        serverQueue.player?.stop();
         await play_1.default.handleSongEnd(LCARS47.MEDIA_QUEUE, serverQueue);
+        return int.reply({
+            content: 'Queue skipped forward.'
+        });
     }
     catch (endErr) {
         throw `Failed to terminate player.\n${endErr}`;

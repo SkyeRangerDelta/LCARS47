@@ -6,6 +6,7 @@ import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 
 import RDS_Utilities from "../../Subsystems/RemoteDS/RDS_Utilities";
+import Utility from "../../Subsystems/Utilities/SysUtils";
 
 //Functions
 const data = new SlashCommandBuilder()
@@ -13,6 +14,8 @@ const data = new SlashCommandBuilder()
     .setDescription('Displays a report of all LCARS47s system states and session variables.');
 
 async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+    Utility.log('info', '[AUXILIARY] Received status display request.');
+
     const trData = {
         coll: 'rds_status',
         key: 'selectAll'

@@ -7,6 +7,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const builders_1 = require("@discordjs/builders");
 const OPs_Vars_json_1 = require("../../Subsystems/Operations/OPs_Vars.json");
+const SysUtils_1 = __importDefault(require("../../Subsystems/Utilities/SysUtils"));
 const ytdl_core_1 = __importDefault(require("ytdl-core"));
 const ytsr_1 = __importDefault(require("ytsr"));
 const voice_1 = require("@discordjs/voice");
@@ -18,6 +19,7 @@ const data = new builders_1.SlashCommandBuilder()
 data.addStringOption(o => o.setName('yt-link').setDescription('The link to play from.').setRequired(true));
 let defaultReportChannel;
 async function execute(LCARS47, int) {
+    await int.deferReply();
     let member;
     let vChannel;
     defaultReportChannel = await LCARS47.PLDYN.channels.fetch(OPs_Vars_json_1.MEDIALOG);
@@ -26,26 +28,25 @@ async function execute(LCARS47, int) {
     }
     catch (noUserErr) {
         console.log(noUserErr);
-        return int.reply('No user could be found!');
+        return int.editReply('No user could be found!');
     }
     try {
         if (!member.voice || !member.voice.channel) {
-            return int.reply('You need to be in a voice channel first!');
+            return int.editReply('You need to be in a voice channel first!');
         }
         else {
             vChannel = member.voice.channel;
-            console.log('Setting vChannel to ' + vChannel.name);
+            SysUtils_1.default.log('info', '[MEDIA-PLAYER] Received new play request for channel: ' + vChannel.name);
         }
     }
     catch (noVChannel) {
-        return int.reply('You need to be in a voice channel first!');
+        return int.editReply('You need to be in a voice channel first!');
     }
     const ytLink = int.options.getString('yt-link');
     const songData = await getBasicInfo(ytLink);
     if (!songData) {
-        return int.reply('Failed to get any song data!');
+        return int.editReply('Failed to get any song data!');
     }
-    console.log('Building song object.');
     const songDuration = parseInt(songData.videoDetails.lengthSeconds);
     const songObj = {
         info: songData,
@@ -59,14 +60,13 @@ async function execute(LCARS47, int) {
     if (!mediaQueue.isPlaying) {
         playSong(LCARS47.MEDIA_QUEUE);
     }
-    return int.reply(`Queued **${songObj.title}** (${songObj.durationFriendly})`);
+    return int.editReply(`Queued **${songObj.title}** (${songObj.durationFriendly})`);
 }
 async function getBasicInfo(url) {
-    console.log('Retrieving song data.');
+    SysUtils_1.default.log('info', '[MEDIA-PLAYER] Building and parsing song data...');
     let videoUrl = url;
     let songData;
     if (!ytdl_core_1.default.validateURL(url)) {
-        console.log('No URL specified.');
         //No URL, parse for search
         let searchQuery = null;
         try {
@@ -99,9 +99,9 @@ async function getBasicInfo(url) {
     return songData;
 }
 function addToMediaQueue(LCARS47, song, vChannel) {
-    console.log('Attempting to add a song to queue.');
     let currentQueue = LCARS47.MEDIA_QUEUE.get(OPs_Vars_json_1.PLDYNID);
     if (!currentQueue) {
+        SysUtils_1.default.log('info', '[MEDIA-PLAYER] No queue found, building a new one...');
         currentQueue = {
             voiceChannel: vChannel,
             songs: [],
@@ -111,12 +111,11 @@ function addToMediaQueue(LCARS47, song, vChannel) {
         };
         LCARS47.MEDIA_QUEUE.set(OPs_Vars_json_1.PLDYNID, currentQueue);
     }
-    console.log('Pushed a song to queue.');
+    SysUtils_1.default.log('info', '[MEDIA-PLAYER] Adding new song to queue...');
     currentQueue.songs.push(song);
     return currentQueue;
 }
 async function getPlayer(song) {
-    console.log('Retrieving player');
     const player = (0, voice_1.createAudioPlayer)();
     const stream = (0, ytdl_core_1.default)(song.url, {
         filter: 'audioonly',
@@ -129,7 +128,7 @@ async function getPlayer(song) {
     return (0, voice_1.entersState)(player, voice_1.AudioPlayerStatus.Playing, 5_000);
 }
 async function joinChannel(vChannel) {
-    console.log('Joining channel.');
+    SysUtils_1.default.log('info', '[MEDIA-PLAYER] Re/setting channel connection...');
     const playerConnection = (0, voice_1.joinVoiceChannel)({
         channelId: vChannel.id,
         guildId: OPs_Vars_json_1.PLDYNID,
@@ -143,12 +142,12 @@ async function joinChannel(vChannel) {
                 Weird situation check here, if this socket close code is 4014, wait 5s to determine if the bot
                 was kicked or if it changed channels; otherwise, nuke it for simplicity.
                  */
-                console.log('Handling a disconnect...');
+                SysUtils_1.default.log('info', '[MEDIA-PLAYER] Handling a disconnect!');
                 if (newState.reason ===
                     voice_1.VoiceConnectionDisconnectReason.WebSocketClose && newState.closeCode === 4014) {
                     try {
                         await (0, voice_1.entersState)(playerConnection, voice_1.VoiceConnectionStatus.Connecting, 5_000);
-                        console.log('Reconnected.');
+                        SysUtils_1.default.log('info', '[MEDIA-PLAYER] Reconnected.');
                     }
                     catch (disconnected) {
                         playerConnection.destroy();
@@ -167,7 +166,6 @@ async function joinChannel(vChannel) {
     }
 }
 async function playSong(queue) {
-    console.log('Executing play song.');
     const currentQueue = queue.get(OPs_Vars_json_1.PLDYNID);
     if (!currentQueue) {
         return;
@@ -175,6 +173,7 @@ async function playSong(queue) {
     if (currentQueue.songs.length === 0) {
         return handleEmptyQueue(queue, currentQueue);
     }
+    SysUtils_1.default.log('info', '[MEDIA-PLAYER] Starting new/next stream...');
     const song = currentQueue.songs[0];
     const connection = await joinChannel(currentQueue.voiceChannel);
     currentQueue.player = await getPlayer(song);
@@ -186,16 +185,14 @@ async function playSong(queue) {
     });
     sendNowPlaying(currentQueue);
 }
-function handleSongEnd(currentQueue, playerQueue) {
-    console.log('Handling song end.');
+async function handleSongEnd(currentQueue, playerQueue) {
     if (playerQueue !== null) {
-        const song = playerQueue.songs[0];
         playerQueue.songs.shift();
         playSong(currentQueue);
     }
 }
 function handleEmptyQueue(currentQueue, playerQueue) {
-    console.log('Handling empty queue.');
+    SysUtils_1.default.log('info', '[MEDIA-PLAYER] Empty queue list, destroying player.');
     const connection = (0, voice_1.getVoiceConnection)(OPs_Vars_json_1.PLDYNID);
     if (playerQueue.voiceChannel.members.size === 0) {
         connection?.destroy();
@@ -222,5 +219,6 @@ exports.default = {
     name: 'Play',
     data,
     execute,
-    help
+    help,
+    handleSongEnd
 };

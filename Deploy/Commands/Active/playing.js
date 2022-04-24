@@ -58,9 +58,9 @@ function displayPlaying(LCARS47, int) {
     }
     const songDetail = queueList[0];
     return int.reply({
-        content: `__[${songDetail.title}](${songDetail.url})__\n` +
+        content: `__[${songDetail.title}](<${songDetail.url}>)__\n` +
             `YT Channel: *${songDetail.info.videoDetails.author.name}*\n` +
-            `Length: ${songDetail.durationFriendly}` +
+            `Length: ${songDetail.durationFriendly}\n` +
             `Queued by: ${songDetail.member.displayName}`
     });
 }

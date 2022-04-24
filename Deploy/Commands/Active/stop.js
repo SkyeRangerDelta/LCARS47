@@ -1,9 +1,13 @@
 "use strict";
 // -- STOP --
 //Halts and disconnects the media player
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 //Imports
 const builders_1 = require("@discordjs/builders");
+const SysUtils_1 = __importDefault(require("../../Subsystems/Utilities/SysUtils"));
 const OPs_Vars_json_1 = require("../../Subsystems/Operations/OPs_Vars.json");
 const voice_1 = require("@discordjs/voice");
 //Functions
@@ -11,6 +15,7 @@ const data = new builders_1.SlashCommandBuilder()
     .setName('stop')
     .setDescription('Halts and disconnects the media player.');
 async function execute(LCARS47, int) {
+    SysUtils_1.default.log('info', '[MEDIA-PLAYER] Received a stop command.');
     const serverQueue = LCARS47.MEDIA_QUEUE.get(OPs_Vars_json_1.PLDYNID);
     if (!serverQueue) {
         return int.reply('Nothing is playing at the moment.');

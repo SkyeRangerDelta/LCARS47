@@ -2,10 +2,12 @@
 // Initiates a YouTube audio player stream
 
 //Imports
-import {CommandInteraction, GuildMember, TextChannel, VoiceChannel} from 'discord.js';
+import {CacheType, CommandInteraction, GuildCacheMessage, GuildMember, TextChannel, VoiceChannel} from 'discord.js';
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {PLDYNID, MEDIALOG} from '../../Subsystems/Operations/OPs_Vars.json';
+import Utility from "../../Subsystems/Utilities/SysUtils";
+
 import ytdl from 'ytdl-core';
 import ytsr from 'ytsr';
 
@@ -35,7 +37,9 @@ data.addStringOption(o => o.setName('yt-link').setDescription('The link to play 
 
 let defaultReportChannel: TextChannel;
 
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<GuildCacheMessage<CacheType>> {
+    await int.deferReply();
+
     let member: GuildMember;
     let vChannel: VoiceChannel;
 
@@ -46,30 +50,29 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
     }
     catch (noUserErr) {
         console.log(noUserErr);
-        return int.reply('No user could be found!');
+        return int.editReply('No user could be found!');
     }
 
     try {
         if (!member.voice || !member.voice.channel) {
-            return int.reply('You need to be in a voice channel first!');
+            return int.editReply('You need to be in a voice channel first!');
         }
         else {
             vChannel = member.voice.channel as VoiceChannel;
-            console.log('Setting vChannel to ' + vChannel.name);
+            Utility.log('info', '[MEDIA-PLAYER] Received new play request for channel: ' + vChannel.name);
         }
     }
     catch (noVChannel) {
-        return int.reply('You need to be in a voice channel first!');
+        return int.editReply('You need to be in a voice channel first!');
     }
 
     const ytLink = int.options.getString('yt-link') as string;
     const songData = await getBasicInfo(ytLink);
 
     if (!songData) {
-        return int.reply('Failed to get any song data!');
+        return int.editReply('Failed to get any song data!');
     }
 
-    console.log('Building song object.');
     const songDuration = parseInt(songData.videoDetails.lengthSeconds);
     const songObj: LCARSMediaSong = {
         info: songData,
@@ -85,17 +88,16 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
         playSong(LCARS47.MEDIA_QUEUE);
     }
 
-    return int.reply(`Queued **${songObj.title}** (${songObj.durationFriendly})`);
+    return int.editReply(`Queued **${songObj.title}** (${songObj.durationFriendly})`);
 }
 
 async function getBasicInfo(url: string): Promise<ytdl.videoInfo> {
-    console.log('Retrieving song data.');
+    Utility.log('info', '[MEDIA-PLAYER] Building and parsing song data...');
 
     let videoUrl = url;
     let songData;
 
     if (!ytdl.validateURL(url)) {
-        console.log('No URL specified.');
         //No URL, parse for search
         let searchQuery = null;
 
@@ -138,11 +140,11 @@ function addToMediaQueue(
     song: LCARSMediaSong,
     vChannel: VoiceChannel
 ): LCARSMediaPlayer {
-    console.log('Attempting to add a song to queue.');
 
     let currentQueue = LCARS47.MEDIA_QUEUE.get(PLDYNID);
 
     if (!currentQueue) {
+        Utility.log('info', '[MEDIA-PLAYER] No queue found, building a new one...');
         currentQueue = {
             voiceChannel: vChannel,
             songs: [],
@@ -153,13 +155,12 @@ function addToMediaQueue(
         LCARS47.MEDIA_QUEUE.set(PLDYNID, currentQueue);
     }
 
-    console.log('Pushed a song to queue.');
+    Utility.log('info', '[MEDIA-PLAYER] Adding new song to queue...');
     currentQueue.songs.push(song);
     return currentQueue;
 }
 
 async function getPlayer(song: LCARSMediaSong): Promise<AudioPlayer> {
-    console.log('Retrieving player');
     const player = createAudioPlayer();
     const stream = ytdl(song.url, {
         filter: 'audioonly',
@@ -175,7 +176,7 @@ async function getPlayer(song: LCARSMediaSong): Promise<AudioPlayer> {
 }
 
 async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection> {
-    console.log('Joining channel.');
+    Utility.log('info', '[MEDIA-PLAYER] Re/setting channel connection...');
     const playerConnection = joinVoiceChannel({
         channelId: vChannel.id,
         guildId: PLDYNID,
@@ -190,12 +191,12 @@ async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection> {
                 Weird situation check here, if this socket close code is 4014, wait 5s to determine if the bot
                 was kicked or if it changed channels; otherwise, nuke it for simplicity.
                  */
-                console.log('Handling a disconnect...');
+                Utility.log('info', '[MEDIA-PLAYER] Handling a disconnect!');
                 if (newState.reason ===
                 VoiceConnectionDisconnectReason.WebSocketClose && newState.closeCode === 4014) {
                     try {
                         await entersState(playerConnection, VoiceConnectionStatus.Connecting, 5_000);
-                        console.log('Reconnected.');
+                        Utility.log('info', '[MEDIA-PLAYER] Reconnected.');
                     }
                     catch (disconnected) {
                         playerConnection.destroy();
@@ -216,7 +217,6 @@ async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection> {
 }
 
 async function playSong(queue: Map<string, LCARSMediaPlayer>): Promise<void> {
-    console.log('Executing play song.');
     const currentQueue = queue.get(PLDYNID);
     if (!currentQueue) {
         return;
@@ -229,6 +229,7 @@ async function playSong(queue: Map<string, LCARSMediaPlayer>): Promise<void> {
         );
     }
 
+    Utility.log('info', '[MEDIA-PLAYER] Starting new/next stream...');
     const song = currentQueue.songs[0];
     const connection = await joinChannel(currentQueue.voiceChannel);
     currentQueue.player = await getPlayer(song);
@@ -243,17 +244,15 @@ async function playSong(queue: Map<string, LCARSMediaPlayer>): Promise<void> {
     sendNowPlaying(currentQueue);
 }
 
-function handleSongEnd(currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer): void {
-    console.log('Handling song end.');
+async function handleSongEnd(currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer): Promise<void> {
     if (playerQueue !== null) {
-        const song = playerQueue.songs[0];
         playerQueue.songs.shift();
         playSong(currentQueue);
     }
 }
 
 function handleEmptyQueue(currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer): void {
-    console.log('Handling empty queue.');
+    Utility.log('info', '[MEDIA-PLAYER] Empty queue list, destroying player.');
     const connection = getVoiceConnection(PLDYNID);
     if (playerQueue.voiceChannel.members.size === 0) {
         connection?.destroy();
@@ -284,5 +283,6 @@ export default {
     name: 'Play',
     data,
     execute,
-    help
+    help,
+    handleSongEnd
 }
