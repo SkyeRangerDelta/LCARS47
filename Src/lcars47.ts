@@ -35,4 +35,6 @@ EventsIndexer.indexEvents(LCARS47).then(() => {
 });
 
 // -- CORE --
-LCARS47.login(process.env.TOKEN);
+LCARS47.login(process.env.TOKEN).then(() => {
+    console.log('Logged in!');
+});

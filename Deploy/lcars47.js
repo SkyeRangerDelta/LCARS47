@@ -35,4 +35,6 @@ OPs_EventIndexer_1.default.indexEvents(OPs_CoreClient_1.LCARS47).then(() => {
     OPs_CmdHandler_1.default.indexCommands(OPs_CoreClient_1.LCARS47);
 });
 // -- CORE --
-OPs_CoreClient_1.LCARS47.login(process.env.TOKEN);
+OPs_CoreClient_1.LCARS47.login(process.env.TOKEN).then(() => {
+    console.log('Logged in!');
+});
