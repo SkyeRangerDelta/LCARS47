@@ -9,13 +9,13 @@ const SysUtils_1 = __importDefault(require("../Subsystems/Utilities/SysUtils"));
 exports.default = {
     name: 'interactionCreate',
     async execute(LCARS47, int) {
-        console.log('Interaction/Command Received');
         if (!int.isCommand())
             return;
         const cmd = LCARS47.CMD_INDEX.get(int.commandName);
         if (!cmd)
             return int.reply('No command!');
         try {
+            SysUtils_1.default.log('info', `[CMD-HANDLER] New command received. (${int.commandName})`);
             await cmd.execute(LCARS47, int);
         }
         catch (cmdErr) {

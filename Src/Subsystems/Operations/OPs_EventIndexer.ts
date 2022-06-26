@@ -16,7 +16,7 @@ export default EventsIndexer;
 //Functions
 async function indexEvents(LCARS47: Client): Promise<void> {
     const evPath = path.join(__dirname, '../..', 'Events');
-    const eventsIndex = fs.readdirSync(evPath).filter(f => f.endsWith('.ts'));
+    const eventsIndex = fs.readdirSync(evPath).filter(f => f.endsWith('.js'));
     for (const event of eventsIndex) {
         await import(`../../Events/${event}`).then(e => {
             const ev = e.default;

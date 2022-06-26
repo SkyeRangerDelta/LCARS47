@@ -29,11 +29,12 @@ dotenv.config();
 
 // -- INIT --
 // Index Events
-EventsIndexer.indexEvents(LCARS47);
-
-//Index/Register Commands
-LCARS47.CMD_INDEX = new Collection();
-CommandIndexer.indexCommands(LCARS47);
+EventsIndexer.indexEvents(LCARS47).then(() => {
+    LCARS47.CMD_INDEX = new Collection();
+    CommandIndexer.indexCommands(LCARS47);
+});
 
 // -- CORE --
-LCARS47.login(process.env.TOKEN);
+LCARS47.login(process.env.TOKEN).then(() => {
+    console.log('Logged in!');
+});

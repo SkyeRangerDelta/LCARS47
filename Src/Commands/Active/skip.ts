@@ -1,21 +1,23 @@
-// -- STOP --
-//Halts and disconnects the media player
+// -- SKIP --
+// Moves media player to next song in queue.
 
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {CommandInteraction, GuildMember} from "discord.js";
 import Utility from "../../Subsystems/Utilities/SysUtils";
-import {CommandInteraction, GuildMember, VoiceChannel} from "discord.js";
 import {PLDYNID} from "../../Subsystems/Operations/OPs_Vars.json";
-import {getVoiceConnection} from "@discordjs/voice";
+
+import PlayerUtils from "./play";
+
+//Globals
+const data = new SlashCommandBuilder()
+    .setName('skip')
+    .setDescription('Moves the music player on to the next song in queue (if any).');
 
 //Functions
-const data = new SlashCommandBuilder()
-    .setName('stop')
-    .setDescription('Halts and disconnects the media player.');
-
 async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
-    Utility.log('info', '[MEDIA-PLAYER] Received a stop command.');
+    Utility.log('info', '[MEDIA-PLAYER] Received a skip command.');
 
     const serverQueue = LCARS47.MEDIA_QUEUE.get(PLDYNID);
     if (!serverQueue) {
@@ -28,7 +30,7 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
         member = await LCARS47.PLDYN.members.fetch(int.user.id);
     }
     catch (noMember) {
-        throw 'Couldnt the calling member!';
+        throw 'Couldnt locate the calling member!';
     }
 
     try {
@@ -39,10 +41,11 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
             return int.reply('You need to call this from the player channel!');
         }
 
-        const connection = getVoiceConnection(PLDYNID);
-        connection?.destroy();
-        LCARS47.MEDIA_QUEUE.delete(PLDYNID);
-        return int.reply('Disconnected!');
+        await PlayerUtils.handleSongEnd(LCARS47.MEDIA_QUEUE, serverQueue);
+
+        return int.reply({
+            content: 'Queue skipped forward.'
+        });
     }
     catch (endErr) {
         throw `Failed to terminate player.\n${endErr}`;
@@ -50,12 +53,12 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
 }
 
 function help(): string {
-    return 'Halts and disconnects the media player.';
+    return 'Moves media player on to the next song in the queue (if any).';
 }
 
 //Exports
 export default {
-    name: 'Stop',
+    name: 'Skip',
     data,
     execute,
     help

@@ -3,8 +3,9 @@
 //Imports
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
-import { PLDYNID, LCARSID } from '../Subsystems/Operations/OPs_IDs.json';
-import { version } from '../package.json';
+import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_Vars.json';
+import RDS from "../Subsystems/RemoteDS/RDS_Utilities";
+import {TextChannel} from "discord.js";
 
 //Exports
 module.exports = {
@@ -15,12 +16,17 @@ module.exports = {
         LCARS47.MEMBER = await LCARS47.PLDYN.members.fetch(LCARSID);
         LCARS47.MEDIA_QUEUE = new Map();
 
+        LCARS47.RDS_CONNECTION = await RDS.rds_connect();
+
         Utility.log('proc', '[CLIENT] IM ALIVE!');
 
         // @ts-ignore
         LCARS47.user.setPresence({
-            activities: [{ name: 'for stuff | V' + version, type: 'WATCHING' }],
+            activities: [{ name: 'for stuff | V' + process.env.VERSION, type: 'WATCHING' }],
             status: 'online'
         });
+
+        const engineeringLog = await LCARS47.PLDYN.channels.fetch(ENGINEERING) as TextChannel;
+        engineeringLog.send(`LCARS47 V${process.env.VERSION} is ONLINE.`);
     }
 };

@@ -28,7 +28,7 @@ const fs = __importStar(require("fs"));
 const SysUtils_1 = __importDefault(require("../Utilities/SysUtils"));
 const path_1 = __importDefault(require("path"));
 const rest_1 = require("@discordjs/rest");
-const OPs_IDs_json_1 = require("./OPs_IDs.json");
+const OPs_Vars_json_1 = require("./OPs_Vars.json");
 const v9_1 = require("discord-api-types/v9");
 //Exports
 const CommandIndexer = {
@@ -39,7 +39,7 @@ exports.default = CommandIndexer;
 async function indexCommands(LCARS47) {
     const cmdJSON = [];
     const cmdPath = path_1.default.join(__dirname, '../..', 'Commands/Active');
-    const commandIndex = fs.readdirSync(cmdPath).filter(f => f.endsWith('.ts'));
+    const commandIndex = fs.readdirSync(cmdPath).filter(f => f.endsWith('.js'));
     for (const command of commandIndex) {
         const cPath = `../../Commands/Active/${command}`;
         await Promise.resolve().then(() => __importStar(require(cPath))).then(c => {
@@ -52,10 +52,12 @@ async function indexCommands(LCARS47) {
     SysUtils_1.default.log('warn', '[CMD-INDEXER] Starting command registration update.');
     const rest = new rest_1.REST({ version: '9' }).setToken(process.env.TOKEN);
     try {
-        await rest.put(v9_1.Routes.applicationGuildCommands(OPs_IDs_json_1.LCARSID, OPs_IDs_json_1.PLDYNID), { body: cmdJSON });
+        await rest.put(v9_1.Routes.applicationGuildCommands(OPs_Vars_json_1.LCARSID, OPs_Vars_json_1.PLDYNID), { body: cmdJSON });
         SysUtils_1.default.log('warn', '[CMD-INDEXER] Finished command registration update.');
     }
     catch (cmdIndexErr) {
-        SysUtils_1.default.log('err', '[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!');
+        SysUtils_1.default.log('err', '[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!\n' + cmdIndexErr);
+        LCARS47.destroy();
+        process.exit();
     }
 }
