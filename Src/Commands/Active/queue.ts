@@ -5,7 +5,7 @@
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import {CommandInteraction} from "discord.js";
-import {PLDYNID} from "../../Subsystems/Operations/OPs_Vars.json";
+import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 import Utility from "../../Subsystems/Utilities/SysUtils";
 import {convertDuration} from "../../Subsystems/Utilities/MediaUtils";
 

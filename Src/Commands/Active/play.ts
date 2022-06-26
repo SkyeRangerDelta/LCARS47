@@ -5,7 +5,7 @@
 import {CacheType, CommandInteraction, GuildCacheMessage, GuildMember, TextChannel, VoiceChannel} from 'discord.js';
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {PLDYNID, MEDIALOG} from '../../Subsystems/Operations/OPs_Vars.json';
+import {PLDYNID, MEDIALOG} from '../../Subsystems/Operations/OPs_IDs.json';
 import Utility from "../../Subsystems/Utilities/SysUtils";
 
 import ytdl from 'ytdl-core';

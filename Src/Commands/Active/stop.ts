@@ -6,7 +6,7 @@ import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import Utility from "../../Subsystems/Utilities/SysUtils";
 import {CommandInteraction, GuildMember, VoiceChannel} from "discord.js";
-import {PLDYNID} from "../../Subsystems/Operations/OPs_Vars.json";
+import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 import {getVoiceConnection} from "@discordjs/voice";
 
 //Functions

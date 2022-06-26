@@ -4,6 +4,7 @@
 node_modules
 .env
 
+Deploy
+
 #Subsystems
-Src/Subsystems/Operations/OPs_Vars.json
-Deploy/Subsystems/Operations/OPs_Vars.json
+Src/Subsystems/Operations/OPs_IDs.json

@@ -6,7 +6,7 @@ import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import {CommandInteraction, GuildMember} from "discord.js";
 import Utility from "../../Subsystems/Utilities/SysUtils";
-import {PLDYNID} from "../../Subsystems/Operations/OPs_Vars.json";
+import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 
 import PlayerUtils from "./play";
 

@@ -3,7 +3,7 @@
 //Imports
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
-import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_Vars.json';
+import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_IDs.json';
 import RDS from "../Subsystems/RemoteDS/RDS_Utilities";
 import {TextChannel} from "discord.js";
 

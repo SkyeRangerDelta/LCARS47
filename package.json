@@ -1,6 +1,6 @@
 {
   "name": "lcars47",
-  "version": "47.4.1.1",
+  "version": "47.4.2.0",
   "description": "Official PlDyn Development Discord Bot",
   "main": "lcars47.js",
   "scripts": {
@@ -23,12 +23,12 @@
     "@discordjs/builders": "^0.11.0",
     "@discordjs/opus": "^0.7.0",
     "@discordjs/rest": "^0.2.0-canary.0",
-    "@discordjs/voice": "^0.7.5",
+    "@discordjs/voice": "^0.10.0",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
     "colors": "^1.4.0",
     "discord-api-types": "^0.26.1",
-    "discord.js": "^13.6.0",
+    "discord.js": "^13.8.1",
     "dotenv": "^14.3.2",
     "eslint": "^8.7.0",
     "ffmpeg-static": "^4.4.1",
