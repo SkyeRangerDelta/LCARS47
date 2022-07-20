@@ -26,7 +26,7 @@ data.addSubcommand(s => s
     .addIntegerOption(o => o
         .setName('program-id')
         .setDescription('The ID of the JWST program to pull from.')
-        .addChoices([['NGC 3324 (Carina)', 2731], ["Stephan's Quintet", 2732], ['NGC 3132 (Southern Ring Nebula)', 2733], ['WASP-96b & HAT-P-18b Exoplanets', 2734], ['SMACS 0723 GLC (JWST Deep Field)', 2736]])
+        .addChoices([['NGC 3324 (Carina)', 2731], ["Stephan's Quintet", 2732], ['NGC 3132 (Southern Ring Nebula)', 2733], ['WASP-96b & HAT-P-18b Exoplanets', 2734]])
         .setRequired(true)
     )
 );
@@ -104,7 +104,7 @@ async function doJWSTRequest(reqPath: string, int: CommandInteraction): Promise<
         // @ts-ignore
         const chunks = [];
 
-        const req = https.request(options, (res) => {
+        const req = await https.request(options, (res) => {
             Utility.log('info', `[JWST] Sending REQ (${options.hostname + options.path}).`);
 
             res.on('data', (chunk) => {
@@ -112,7 +112,7 @@ async function doJWSTRequest(reqPath: string, int: CommandInteraction): Promise<
                 chunks.push(chunk);
             });
 
-            res.on('end', () => {
+            res.on('end', async () => {
                 Utility.log('info', '[JWST] Request Ended.');
                 // @ts-ignore
                 const resData = Buffer.concat(chunks);
@@ -128,7 +128,7 @@ async function doJWSTRequest(reqPath: string, int: CommandInteraction): Promise<
                 const rEntryIndex = Math.floor(Math.random() * records.length);
                 const rEntry = records[rEntryIndex];
 
-                int.editReply({
+                await int.editReply({
                     content: `[${rEntry.program}] ${rEntry.id}\nDesc: ${rEntry.details.description}`,
                     files: [`${rEntry.location}`]
                 });
