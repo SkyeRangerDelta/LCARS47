@@ -29,6 +29,6 @@ module.exports = {
         });
 
         const engineeringLog = await LCARS47.PLDYN.channels.fetch(ENGINEERING) as TextChannel;
-        engineeringLog.send(`LCARS47 V${process.env.VERSION} is ONLINE.`);
+        engineeringLog.send(`LCARS47 V${VERSION} is ONLINE.`);
     }
 };
