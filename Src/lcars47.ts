@@ -17,15 +17,13 @@
 // -- DEPENDENCIES --
 //Libraries
 import dotenv from 'dotenv';
+dotenv.config();
 
 //Subsystems
 import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient';
 import EventsIndexer from "./Subsystems/Operations/OPs_EventIndexer";
 import CommandIndexer from "./Subsystems/Operations/OPs_CmdHandler";
 import {Collection} from "discord.js";
-
-// -- GLOBALS --
-dotenv.config();
 
 // -- INIT --
 // Index Events

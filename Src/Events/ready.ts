@@ -4,7 +4,9 @@
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
 import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_IDs.json';
+import {VERSION} from '../Subsystems/Auxiliary/Aux_Version.json';
 import RDS from "../Subsystems/RemoteDS/RDS_Utilities";
+
 import {TextChannel} from "discord.js";
 
 //Exports
@@ -22,7 +24,7 @@ module.exports = {
 
         // @ts-ignore
         LCARS47.user.setPresence({
-            activities: [{ name: 'for stuff | V' + process.env.VERSION, type: 'WATCHING' }],
+            activities: [{ name: 'for stuff | V' + VERSION, type: 'WATCHING' }],
             status: 'online'
         });
 
