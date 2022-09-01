@@ -33,11 +33,17 @@ const data = new SlashCommandBuilder()
     .setName('play')
     .setDescription('Fires up an audio stream in your current VC.');
 
-data.addStringOption(o => o.setName('yt-link').setDescription('The link to play from.').setRequired(true));
+data.addStringOption(o => o.setName('video-query').setDescription('The link or search to play from.').setRequired(true));
 
 let defaultReportChannel: TextChannel;
 
 async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<GuildCacheMessage<CacheType>> {
+    // @ts-ignore
+    return int.reply({
+        content: 'Upstream Google Devs have screwed over a returned regex and the library handling this command is awaitng the fix; this will be back online...sometime.',
+        ephemeral: true
+    });
+
     await int.deferReply();
 
     let member: GuildMember;
@@ -66,7 +72,7 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<G
         return int.editReply('You need to be in a voice channel first!');
     }
 
-    const ytLink = int.options.getString('yt-link') as string;
+    const ytLink = int.options.getString('video-query') as string;
     const songData = await getBasicInfo(ytLink);
 
     if (!songData) {
@@ -92,13 +98,41 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<G
 }
 
 async function getBasicInfo(url: string): Promise<ytdl.videoInfo> {
-    Utility.log('info', '[MEDIA-PLAYER] Building and parsing song data...');
+    Utility.log('info', `[MEDIA-PLAYER] Building and parsing song data`);
 
     let videoUrl = url;
     let songData;
 
+    //No URL, parse for search
+    Utility.log('info', `[MEDIA-PLAYER] Doing a search for: ${url}`);
+    let searchQuery = null;
+
+    try {
+        searchQuery = await ytsr.getFilters(url);
+    }
+    catch (err) {
+        throw 'Song search parsing failure!';
+    }
+
+    const videoRes = searchQuery.get("Type")?.get("Video");
+    try {
+        // @ts-ignore
+        const searchRes: any = await ytsr(videoRes.url, {
+            limit: 1
+        });
+        videoUrl = searchRes.items[0].url;
+    }
+    catch (err) {
+        throw 'Couldnt actually find a song.';
+    }
+    finally {
+        Utility.log('info', `[MEDIA-PLAYER] Grabbed a song from results with URL: ${videoUrl}`);
+    }
+
+    /*
     if (!ytdl.validateURL(url)) {
         //No URL, parse for search
+        Utility.log('info', `[MEDIA-PLAYER] Doing a search for: ${url}`);
         let searchQuery = null;
 
         try {
@@ -119,17 +153,18 @@ async function getBasicInfo(url: string): Promise<ytdl.videoInfo> {
         catch (err) {
             throw 'Couldnt actually find a song.';
         }
-
-        if (!ytdl.validateURL(videoUrl)) {
-            throw 'Search URL is invalid.';
+        finally {
+            Utility.log('info', `[MEDIA-PLAYER] Grabbed a song from results with URL: ${videoUrl}`);
         }
     }
+     */
 
     try {
         songData = await ytdl.getInfo(videoUrl);
     }
     catch (err) {
-        throw 'Error fetching video data.';
+        // @ts-ignore
+        throw `Error fetching video data.\n${err}\n${err.stack}`;
     }
 
     return songData;

@@ -7,7 +7,7 @@ import path from "path";
 import {LCARSClient} from "../Auxiliary/LCARSClient";
 import {REST} from "@discordjs/rest";
 import {PLDYNID, LCARSID, MEDIALOG} from './OPs_IDs.json';
-import {Routes} from "discord-api-types/v9";
+import {Routes} from "discord-api-types/v10";
 
 //Exports
 const CommandIndexer = {
