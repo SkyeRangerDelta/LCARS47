@@ -38,12 +38,6 @@ data.addStringOption(o => o.setName('video-query').setDescription('The link or s
 let defaultReportChannel: TextChannel;
 
 async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<GuildCacheMessage<CacheType>> {
-    // @ts-ignore
-    return int.reply({
-        content: 'Upstream Google Devs have screwed over a returned regex and the library handling this command is awaitng the fix; this will be back online...sometime.',
-        ephemeral: true
-    });
-
     await int.deferReply();
 
     let member: GuildMember;
@@ -123,7 +117,7 @@ async function getBasicInfo(url: string): Promise<ytdl.videoInfo> {
         videoUrl = searchRes.items[0].url;
     }
     catch (err) {
-        throw 'Couldnt actually find a song.';
+        throw `Couldnt actually find a song.\n${err}`;
     }
     finally {
         Utility.log('info', `[MEDIA-PLAYER] Grabbed a song from results with URL: ${videoUrl}`);
