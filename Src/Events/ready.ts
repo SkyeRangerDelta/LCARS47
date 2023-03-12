@@ -4,7 +4,7 @@
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
 import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_IDs.json';
-import {VERSION} from '../Subsystems/Auxiliary/Aux_Version.json';
+import {version} from '../../package.json';
 import RDS from "../Subsystems/RemoteDS/RDS_Utilities";
 
 import {TextChannel} from "discord.js";
@@ -24,11 +24,11 @@ module.exports = {
 
         // @ts-ignore
         LCARS47.user.setPresence({
-            activities: [{ name: 'for stuff | V' + VERSION, type: 'WATCHING' }],
+            activities: [{ name: 'for stuff | V' + version, type: 'WATCHING' }],
             status: 'online'
         });
 
         const engineeringLog = await LCARS47.PLDYN.channels.fetch(ENGINEERING) as TextChannel;
-        engineeringLog.send(`LCARS47 V${VERSION} is ONLINE.`);
+        engineeringLog.send(`LCARS47 V${version} is ONLINE.`);
     }
 };

@@ -1,5 +1,5 @@
 // -- Media Player Interfaces --
-import {GuildMember, Message, StageChannel, VoiceChannel} from "discord.js";
+import {GuildMember, Message, VoiceChannel} from "discord.js";
 import ytdl from "ytdl-core";
 import {AudioPlayer} from "@discordjs/voice";
 
