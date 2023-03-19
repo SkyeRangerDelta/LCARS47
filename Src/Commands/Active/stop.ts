@@ -5,7 +5,13 @@
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import Utility from "../../Subsystems/Utilities/SysUtils";
-import {CommandInteraction, GuildMember, VoiceChannel} from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    CommandInteraction,
+    GuildMember,
+    InteractionResponse,
+    VoiceChannel
+} from "discord.js";
 import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 import {getVoiceConnection} from "@discordjs/voice";
 
@@ -14,7 +20,7 @@ const data = new SlashCommandBuilder()
     .setName('stop')
     .setDescription('Halts and disconnects the media player.');
 
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     Utility.log('info', '[MEDIA-PLAYER] Received a stop command.');
 
     const serverQueue = LCARS47.MEDIA_QUEUE.get(PLDYNID);

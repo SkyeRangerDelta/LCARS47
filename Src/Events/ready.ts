@@ -4,10 +4,9 @@
 import Utility from '../Subsystems/Utilities/SysUtils';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
 import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_IDs.json';
-import {version} from '../../package.json';
 import RDS from "../Subsystems/RemoteDS/RDS_Utilities";
 
-import {TextChannel} from "discord.js";
+import {ActivityType, TextChannel} from "discord.js";
 
 //Exports
 module.exports = {
@@ -20,11 +19,13 @@ module.exports = {
 
         LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
+        const version = process.env.VERSION;
+
         Utility.log('proc', '[CLIENT] IM ALIVE!');
 
         // @ts-ignore
         LCARS47.user.setPresence({
-            activities: [{ name: 'for stuff | V' + version, type: 'WATCHING' }],
+            activities: [{ name: 'for stuff | V' + version, type: ActivityType.Listening }],
             status: 'online'
         });
 

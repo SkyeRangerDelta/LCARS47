@@ -3,7 +3,13 @@
 
 //Imports
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
-import {CommandInteraction, DiscordAPIError, GuildMemberRoleManager, Role} from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    CommandInteraction,
+    DiscordAPIError,
+    GuildMemberRoleManager, InteractionResponse,
+    Role
+} from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
 
 import Utility from "../../Subsystems/Utilities/SysUtils";
@@ -34,7 +40,7 @@ data.addSubcommand(s => s
 );
 
 //Functions
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     const subCmd = int.options.getSubcommand();
 
     Utility.log('info', `[ROLE-SYS] Received a new ${subCmd} role command.`);
@@ -54,7 +60,7 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
     }
 }
 
-async function joinRole(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function joinRole(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     if (int.member) {
         const roleManager = await int.member.roles as GuildMemberRoleManager;
 
@@ -94,7 +100,7 @@ async function joinRole(LCARS47: LCARSClient, int: CommandInteraction): Promise<
 
 }
 
-async function leaveRole(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function leaveRole(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     if (int.member) {
         const roleManager = await int.member.roles as GuildMemberRoleManager;
 

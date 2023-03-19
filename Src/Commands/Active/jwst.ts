@@ -1,7 +1,7 @@
 // -- STATUS --
 
 //Imports
-import {CommandInteraction} from "discord.js";
+import {ChatInputCommandInteraction, CommandInteraction} from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 
@@ -31,7 +31,7 @@ data.addSubcommand(s => s
     )
 );
 
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<void> {
     Utility.log('info', '[JWST] Received a JWST inquiry command.');
     await int.deferReply();
 
@@ -50,7 +50,7 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
     }
 }
 
-async function doJWSTRequest(reqPath: string, int: CommandInteraction): Promise<void> {
+async function doJWSTRequest(reqPath: string, int: ChatInputCommandInteraction): Promise<void> {
 
     if (int.options.getSubcommand() === 'status') {
         const options = {

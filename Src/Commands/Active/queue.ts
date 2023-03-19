@@ -4,7 +4,7 @@
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
-import {CommandInteraction} from "discord.js";
+import {ChatInputCommandInteraction, CommandInteraction, InteractionResponse} from "discord.js";
 import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 import Utility from "../../Subsystems/Utilities/SysUtils";
 import {convertDuration} from "../../Subsystems/Utilities/MediaUtils";
@@ -15,7 +15,7 @@ const data = new SlashCommandBuilder()
     .setDescription('Displays a list of the songs in the playlist.');
 
 //Functions
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     Utility.log('info', '[MEDIA-PLAYER] Received a queue request.');
 
     let member;

@@ -4,7 +4,13 @@
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
-import {CommandInteraction} from "discord.js";
+import {
+    CacheType,
+    ChatInputCommandInteraction,
+    CommandInteraction,
+    GuildCacheMessage,
+    InteractionResponse
+} from "discord.js";
 import Utility from "../../Subsystems/Utilities/SysUtils";
 import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 
@@ -14,12 +20,12 @@ const data = new SlashCommandBuilder()
     .setDescription('Displays details about the currently playing song.');
 
 //Functions
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     Utility.log('info', '[MEDIA-PLAYER] Received a song detail request.');
 
     let member;
     try {
-        member = await LCARS47.PLDYN.members.fetch(int.user.id)
+        member = await LCARS47.PLDYN.members.fetch(int.user.id);
     }
     catch (noUserErr) {
         return int.reply({
@@ -47,7 +53,7 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<v
     }
 }
 
-function displayPlaying(LCARS47: LCARSClient, int: CommandInteraction) {
+function displayPlaying(LCARS47: LCARSClient, int: ChatInputCommandInteraction) {
     let queueList;
 
     if (LCARS47.MEDIA_QUEUE.has(PLDYNID)) {

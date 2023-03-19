@@ -15,7 +15,7 @@ export interface LCARSMediaSong {
 export interface LCARSMediaPlayer {
     voiceChannel: VoiceChannel;
     songs: LCARSMediaSong[];
-    player: AudioPlayer | null;
+    songStream: AudioPlayer | null;
     playingMsg: Message | null;
     isPlaying: boolean;
 }

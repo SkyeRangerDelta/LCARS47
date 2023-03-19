@@ -2,10 +2,17 @@
 // Initiates a YouTube audio player stream
 
 //Imports
-import {CacheType, CommandInteraction, GuildCacheMessage, GuildMember, TextChannel, VoiceChannel} from 'discord.js';
+import {
+    CacheType,
+    ChatInputCommandInteraction,
+    GuildCacheMessage,
+    GuildMember,
+    TextChannel,
+    VoiceChannel
+} from 'discord.js';
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {PLDYNID, MEDIALOG} from '../../Subsystems/Operations/OPs_IDs.json';
+import {MEDIALOG, PLDYNID} from '../../Subsystems/Operations/OPs_IDs.json';
 import Utility from "../../Subsystems/Utilities/SysUtils";
 
 import ytdl from 'ytdl-core';
@@ -17,7 +24,8 @@ import {
     createAudioPlayer,
     createAudioResource,
     DiscordGatewayAdapterCreator,
-    entersState, getVoiceConnection,
+    entersState,
+    getVoiceConnection,
     joinVoiceChannel,
     StreamType,
     VoiceConnection,
@@ -28,6 +36,9 @@ import {
 import {LCARSMediaPlayer, LCARSMediaSong} from "../../Subsystems/Auxiliary/MediaInterfaces";
 import {convertDuration} from "../../Subsystems/Utilities/MediaUtils";
 
+import { promisify } from "util";
+const wait = promisify(setTimeout);
+
 //Functions
 const data = new SlashCommandBuilder()
     .setName('play')
@@ -37,7 +48,7 @@ data.addStringOption(o => o.setName('video-query').setDescription('The link or s
 
 let defaultReportChannel: TextChannel;
 
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<GuildCacheMessage<CacheType>> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<GuildCacheMessage<CacheType>> {
     await int.deferReply();
 
     let member: GuildMember;
@@ -66,11 +77,15 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<G
         return int.editReply('You need to be in a voice channel first!');
     }
 
-    const ytLink = int.options.getString('video-query') as string;
-    const songData = await getBasicInfo(ytLink);
+    const ytLink = int.options.getString('video-query') ?? '';
 
-    if (!songData) {
+    const validSong = determineSong(ytLink);
+    let songData: ytdl.videoInfo;
+    if (!validSong) {
         return int.editReply('Failed to get any song data!');
+    }
+    else {
+        songData = await getBasicInfo(ytLink);
     }
 
     const songDuration = parseInt(songData.videoDetails.lengthSeconds);
@@ -83,82 +98,67 @@ async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<G
         member: member
     };
 
-    const mediaQueue = addToMediaQueue(LCARS47, songObj, vChannel);
+    const mediaQueue = await addToMediaQueue(LCARS47, songObj, vChannel);
     if (!mediaQueue.isPlaying) {
         playSong(LCARS47.MEDIA_QUEUE);
     }
 
+    Utility.log('info', `[MEDIA-PLAYER] Queued - ${songObj.title} (${songObj.durationFriendly})`);
     return int.editReply(`Queued **${songObj.title}** (${songObj.durationFriendly})`);
+}
+
+async function determineSong(url: string): Promise<boolean> {
+    Utility.log('info', '[MEDIA-PLAYER] Determine validity...');
+    if (ytdl.validateURL(url)) {
+        Utility.log('info', '[MEDIA-PLAYER] Identified a song from url.');
+        return true;
+    }
+    else {
+        //Do search
+        try {
+            const filter1 = await ytsr.getFilters(url);
+            // @ts-ignore
+            const filter1r = filter1.get('Type').get('Video');
+            // @ts-ignore
+            const songDataRes = await ytsr(filter1r.url, {pages: 1});
+            if (songDataRes.results != 0) {
+                Utility.log('info', `[MEDIA-PLAYER] ${songDataRes.results} were found from a general search, sending song data.`);
+                return true;
+            }
+        }
+        catch (searchErr) {
+            Utility.log('err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n${searchErr}`);
+            return false;
+        }
+    }
+
+    return false;
 }
 
 async function getBasicInfo(url: string): Promise<ytdl.videoInfo> {
     Utility.log('info', `[MEDIA-PLAYER] Building and parsing song data`);
 
-    let videoUrl = url;
+    const videoUrl = url;
     let songData;
 
-    //No URL, parse for search
-    Utility.log('info', `[MEDIA-PLAYER] Doing a search for: ${url}`);
-    let searchQuery = null;
-
-    try {
-        searchQuery = await ytsr.getFilters(url);
-    }
-    catch (err) {
-        throw 'Song search parsing failure!';
-    }
-
-    const videoRes = searchQuery.get("Type")?.get("Video");
-    try {
-        // @ts-ignore
-        const searchRes: any = await ytsr(videoRes.url, {
-            limit: 1
-        });
-        videoUrl = searchRes.items[0].url;
-    }
-    catch (err) {
-        throw `Couldnt actually find a song.\n${err}`;
-    }
-    finally {
-        Utility.log('info', `[MEDIA-PLAYER] Grabbed a song from results with URL: ${videoUrl}`);
-    }
-
-    /*
-    if (!ytdl.validateURL(url)) {
-        //No URL, parse for search
-        Utility.log('info', `[MEDIA-PLAYER] Doing a search for: ${url}`);
-        let searchQuery = null;
-
+    //Validate
+    if (ytdl.validateURL(videoUrl)) {
         try {
-            searchQuery = await ytsr.getFilters(url);
+            songData = await ytdl.getInfo(videoUrl);
         }
-        catch (err) {
-            throw 'Song search parsing failure!';
-        }
-
-        const videoRes = searchQuery.get("Type")?.get("Video");
-        try {
-            // @ts-ignore
-            const searchRes: any = await ytsr(videoRes.url, {
-                limit: 1
-            });
-            videoUrl = searchRes.items[0].url;
-        }
-        catch (err) {
-            throw 'Couldnt actually find a song.';
-        }
-        finally {
-            Utility.log('info', `[MEDIA-PLAYER] Grabbed a song from results with URL: ${videoUrl}`);
+        catch (noDataErr) {
+            throw 'Invalid URL?';
         }
     }
-     */
-
-    try {
-        songData = await ytdl.getInfo(videoUrl);
-    }
-    catch (err) {
+    else {
+        //Search
+        const filter1 = await ytsr.getFilters(videoUrl);
         // @ts-ignore
-        throw `Error fetching video data.\n${err}\n${err.stack}`;
+        const filter1r = filter1.get('Type').get('Video');
+        // @ts-ignore
+        const songDataRes = await ytsr(filter1r.url, {limit: 1});
+        // @ts-ignore
+        songData = await ytdl.getInfo(songDataRes.items[0].url);
     }
 
     return songData;
@@ -177,7 +177,7 @@ function addToMediaQueue(
         currentQueue = {
             voiceChannel: vChannel,
             songs: [],
-            player: null,
+            songStream: null,
             playingMsg: null,
             isPlaying: false
         };
@@ -189,10 +189,11 @@ function addToMediaQueue(
     return currentQueue;
 }
 
-async function getPlayer(song: LCARSMediaSong): Promise<AudioPlayer> {
+async function getSongStream(song: LCARSMediaSong): Promise<AudioPlayer> {
     const player = createAudioPlayer();
     const stream = ytdl(song.url, {
         filter: 'audioonly',
+        quality: 'highestaudio',
         highWaterMark: 1 << 25
     });
 
@@ -201,10 +202,11 @@ async function getPlayer(song: LCARSMediaSong): Promise<AudioPlayer> {
     });
 
     player.play(res);
-    return entersState(player, AudioPlayerStatus.Playing, 5_000);
+    Utility.log('info', '[MEDIA-PLAYER] Starting stream.');
+    return entersState(player, AudioPlayerStatus.Playing, 7_000);
 }
 
-async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection> {
+async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection | undefined> {
     Utility.log('info', '[MEDIA-PLAYER] Re/setting channel connection...');
     const playerConnection = joinVoiceChannel({
         channelId: vChannel.id,
@@ -213,8 +215,9 @@ async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection> {
     });
 
     try {
-        await entersState(playerConnection, VoiceConnectionStatus.Ready, 30_000);
+        await entersState(playerConnection, VoiceConnectionStatus.Ready, 20_000);
         playerConnection.on('stateChange', async (_, newState) => {
+            Utility.log('info', '[MEDIA-PLAYER] Logging a state change.(Old: ' + _.status + ' - New: ' + newState.status + ')');
             if (newState.status === VoiceConnectionStatus.Disconnected) {
                 /*
                 Weird situation check here, if this socket close code is 4014, wait 5s to determine if the bot
@@ -231,17 +234,26 @@ async function joinChannel(vChannel: VoiceChannel): Promise<VoiceConnection> {
                         playerConnection.destroy();
                     }
                 }
+                else if (playerConnection.rejoinAttempts < 5) {
+                    await wait((playerConnection.rejoinAttempts +1) * 5_000);
+                    playerConnection.rejoin();
+                }
                 else {
                     playerConnection.destroy();
                 }
             }
         });
 
+        playerConnection.on('error', (e) => {
+            console.log(e);
+        });
+
         return playerConnection;
     }
     catch (playerCreateErr) {
+        console.log('AudioPlayer Error');
+        console.log(playerCreateErr);
         playerConnection.destroy();
-        throw playerCreateErr;
     }
 }
 
@@ -261,11 +273,29 @@ async function playSong(queue: Map<string, LCARSMediaPlayer>): Promise<void> {
     Utility.log('info', '[MEDIA-PLAYER] Starting new/next stream...');
     const song = currentQueue.songs[0];
     const connection = await joinChannel(currentQueue.voiceChannel);
-    currentQueue.player = await getPlayer(song);
-    connection.subscribe(currentQueue.player);
+
+    if (!connection) {
+        console.log('No connection!');
+        return;
+    }
+
+    Utility.log('info', '[MEDIA-PLAYER] Getting stream...');
+    currentQueue.songStream = await getSongStream(song);
+    await connection.subscribe(currentQueue.songStream);
     currentQueue.isPlaying = true;
 
-    currentQueue.player.on(AudioPlayerStatus.Idle, () => {
+    currentQueue.songStream.on(AudioPlayerStatus.Buffering, () => {
+        defaultReportChannel.send(`Song Buffering!?`);
+    });
+
+    currentQueue.songStream.on(AudioPlayerStatus.AutoPaused, () => {
+        if (getVoiceConnection(PLDYNID)) {
+            defaultReportChannel.send(`Song seems to have halted.`);
+        }
+    });
+
+    currentQueue.songStream.on(AudioPlayerStatus.Idle, () => {
+        console.log('Stream ended?')
         currentQueue.isPlaying = false;
         handleSongEnd(queue, currentQueue);
     });
@@ -274,14 +304,21 @@ async function playSong(queue: Map<string, LCARSMediaPlayer>): Promise<void> {
 }
 
 async function handleSongEnd(currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer): Promise<void> {
-    if (playerQueue !== null) {
-        playerQueue.songs.shift();
+    if (playerQueue.songs.length === 0) {
+        return;
+    }
+
+    playerQueue.songs.shift();
+    try {
         playSong(currentQueue);
+    }
+    catch (err) {
+        Utility.log('err', '[MEDIA-PLAYER] Unexpected:\n' + err);
     }
 }
 
 function handleEmptyQueue(currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer): void {
-    Utility.log('info', '[MEDIA-PLAYER] Empty queue list, destroying player.');
+    Utility.log('info', '[MEDIA-PLAYER] Empty queue list, ending stream.');
     const connection = getVoiceConnection(PLDYNID);
     if (playerQueue.voiceChannel.members.size === 0) {
         connection?.destroy();

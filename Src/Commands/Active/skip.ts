@@ -4,7 +4,7 @@
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
-import {CommandInteraction, GuildMember} from "discord.js";
+import {ChatInputCommandInteraction, CommandInteraction, GuildMember, InteractionResponse} from "discord.js";
 import Utility from "../../Subsystems/Utilities/SysUtils";
 import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
 
@@ -16,7 +16,7 @@ const data = new SlashCommandBuilder()
     .setDescription('Moves the music player on to the next song in queue (if any).');
 
 //Functions
-async function execute(LCARS47: LCARSClient, int: CommandInteraction): Promise<void> {
+async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     Utility.log('info', '[MEDIA-PLAYER] Received a skip command.');
 
     const serverQueue = LCARS47.MEDIA_QUEUE.get(PLDYNID);
