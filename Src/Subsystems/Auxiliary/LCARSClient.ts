@@ -5,6 +5,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import {Client, Collection, CommandInteraction, Guild, GuildMember} from "discord.js";
 import {LCARSMediaPlayer} from "./MediaInterfaces";
 import {MongoClient} from "mongodb";
+import { StatusInterface } from "./StatusInterface";
 
 //Exports
 export interface LCARSClient extends Client {
@@ -22,4 +23,5 @@ export interface LCARSClient extends Client {
     MEMBER: GuildMember;
     MEDIA_QUEUE: Map<string, LCARSMediaPlayer>;
     RDS_CONNECTION: MongoClient;
+    CLIENT_STATS: StatusInterface;
 }

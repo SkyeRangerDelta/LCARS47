@@ -4,6 +4,7 @@
 import {Interaction} from 'discord.js';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
 import Utility from "../Subsystems/Utilities/SysUtils";
+import RDS_Utilities from "../Subsystems/RemoteDS/RDS_Utilities";
 
 //Exports
 export default {
@@ -17,6 +18,9 @@ export default {
         try {
             Utility.log('info', `[CMD-HANDLER] New command received. (${int.commandName})`);
             await cmd.execute(LCARS47, int);
+
+            //Command done, update stats
+            await RDS_Utilities.rds_update(LCARS47.RDS_CONNECTION, 'rds_status', {id: 1}, {$inc: {CMD_QUERIES: 1}});
         }
         catch (cmdErr) {
             if (!int) {
@@ -25,9 +29,15 @@ export default {
             else if (int.deferred || int.replied) {
                 await int.followUp(`IM ON BLOODY FIRE!\n${cmdErr}`);
                 Utility.log('err', `[INT-HANDLER] Cmd execution failed!\n${cmdErr}`);
+
+                //Command failed, update stats
+                await RDS_Utilities.rds_update(LCARS47.RDS_CONNECTION, 'rds_status', {id: 1}, {$inc: {CMD_QUERIES_FAILED: 1}});
             }
             else {
                 await int.reply('Looks like something is busted on the subnet.\n' + cmdErr as string);
+
+                //Command failed, update stats
+                await RDS_Utilities.rds_update(LCARS47.RDS_CONNECTION, 'rds_status', {id: 1}, {$inc: {CMD_QUERIES_FAILED: 1}});
             }
         }
     }
