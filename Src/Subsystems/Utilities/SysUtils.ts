@@ -24,12 +24,34 @@ export default {
     flexTime(date?: Date): string {
         let newFlex: string;
         if (!date) {
-            newFlex = DateTime.now().setZone('UTC-5').toLocaleString(DateTime.DATE_MED);
+            newFlex = DateTime.now().setZone('UTC-5').toLocaleString(DateTime.DATETIME_MED);
         }
         else {
-            newFlex = DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_MED);
+            newFlex = DateTime.fromJSDate(date).toLocaleString(DateTime.DATETIME_MED);
         }
 
         return newFlex;
+    },
+    formatMSDiff(ms: number, obj?: boolean): string | object {
+        const date = new Date(ms);
+        let impDate = DateTime.fromISO(date.toISOString());
+        impDate = impDate.setZone('UTC-5');
+        const now = DateTime.now().setZone('UTC-5');
+
+        const diff = now.diff(impDate, ['years', 'months', 'days', 'hours', 'minutes', 'seconds']);
+
+        if (obj) {
+            return {
+                human: diff.toHuman({unitDisplay: "long"}),
+                diff: diff.toObject()
+            } as object;
+        }
+        else {
+            return diff.toHuman({ unitDisplay: "long" });
+        }
+
+    },
+    formatProcess_mem(processData: number): number {
+        return Math.round(processData / 1024 / 1024 * 100) / 100;
     }
 }

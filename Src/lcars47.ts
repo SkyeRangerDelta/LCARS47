@@ -24,6 +24,8 @@ import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient';
 import EventsIndexer from "./Subsystems/Operations/OPs_EventIndexer";
 import CommandIndexer from "./Subsystems/Operations/OPs_CmdHandler";
 import {Collection} from "discord.js";
+import APICore from "./Subsystems/Operations/OPs_APICore";
+import Utility from "./Subsystems/Utilities/SysUtils";
 
 // -- INIT --
 // Index Events
@@ -34,5 +36,10 @@ EventsIndexer.indexEvents(LCARS47).then(() => {
 
 // -- CORE --
 LCARS47.login(process.env[`TOKEN`]).then(() => {
-    console.log('Logged in!');
+    Utility.log('info', '[CLIENT] Core Online.')
+});
+
+// -- API --
+APICore.loadAPI(LCARS47).then(() => {
+    Utility.log('info', '[CLIENT] API Online.')
 });

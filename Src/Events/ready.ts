@@ -34,16 +34,28 @@ module.exports = {
         const oldBotData = await RDS.rds_getStatusFull(LCARS47.RDS_CONNECTION);
 
         Utility.log('info', '[CLIENT] Sending updated stats page.');
-        const updateData:StatusInterface = {
-            STATE: true,
-            VERSION: version,
-            SESSION: oldBotData.SESSION++,
-            STARTUP_TIME: Utility.flexTime(),
-            STARTUP_UTC: Date.now(),
-            QUERIES: oldBotData.QUERIES++,
-            CMD_QUERIES: oldBotData.CMD_QUERIES,
-            CMD_QUERIES_FAILED: oldBotData.CMD_QUERIES_FAILED
+        const startTime = Utility.flexTime();
+        const startUTC = Date.now();
+        const updateData = {
+            $set: {
+                STATE: true,
+                VERSION: version,
+                STARTUP_TIME: startTime,
+                STARTUP_UTC: startUTC
+            },
+            $inc: {
+                SESSION: 1,
+                QUERIES: 1
+            }
         };
+
+        const lastStartTime = Utility.formatMSDiff(oldBotData.STARTUP_UTC);
+        Utility.log('info', '[CLIENT] Time since last boot sequence:\n' + lastStartTime);
+
+        const res = await RDS.rds_update(LCARS47.RDS_CONNECTION, 'rds_status', {id: 1}, updateData);
+        if (!res) {
+            throw 'RDS status update failed!';
+        }
 
         const engineeringLog = await LCARS47.PLDYN.channels.fetch(ENGINEERING) as TextChannel;
         engineeringLog.send(`LCARS47 V${version} is ONLINE.`);

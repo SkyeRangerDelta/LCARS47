@@ -10,14 +10,6 @@ const client = new MongoClient(process.env.RDS as string);
 
 let database;
 
-interface transObj {
-    coll: string,
-    key: string,
-    value: Filter<any>,
-    filter: Filter<any>,
-    aFilter: string
-}
-
 //Exports
 export default {
     rds_connect: async () => {
@@ -37,7 +29,7 @@ export default {
         }
 
         //Do query update
-        await database.collection('rds_status').updateOne({id: 1}, {$inc: {queries: 1}});
+        await database.collection('rds_status').updateOne({id: 1}, {$inc: {QUERIES: 1}});
 
         return await database.collection(coll).find({}).toArray();
     },
@@ -53,7 +45,7 @@ export default {
         }
 
         //Do query update
-        await database.collection('rds_status').updateOne({id: 1}, {$inc: {queries: 1}});
+        await database.collection('rds_status').updateOne({id: 1}, {$inc: {QUERIES: 1}});
 
         return await database.collection(coll).findOne({id: documentId});
     },
@@ -70,11 +62,9 @@ export default {
             throw 'Invalid RDS state.';
         }
 
-        await database.collection('rds_status').updateOne({id: 1}, {$inc: {queries: 1}});
+        await database.collection('rds_status').updateOne({id: 1}, {$inc: {QUERIES: 1}});
         const res = await database.collection(collection).updateOne(filter, value);
         return res.modifiedCount == 1;
-
-
     },
     rds_status: async (connection: MongoClient): Promise<string> => {
         Utility.log('info', 'Pending RDS status request...');
@@ -111,7 +101,7 @@ export default {
         let database;
 
         try {
-            database = connection.db('LCARS47_DB');
+            database = connection.db('LCARS47_DS');
         }
         catch (RDSErr) {
             Utility.log('warn', '[RDS] Failed to get RDS Connection!');
@@ -122,14 +112,14 @@ export default {
         if (!BotStateRes) throw 'Failed to get bot status!'
 
         const BotState = {
-            STATE: BotStateRes.status,
-            VERSION: BotStateRes.version,
-            SESSION: BotStateRes.session,
-            STARTUP_TIME: BotStateRes.startup_time,
-            STARTUP_UTC: BotStateRes.startup_utc,
-            QUERIES: BotStateRes.queries,
-            CMD_QUERIES: BotStateRes.cmd_queries,
-            CMD_QUERIES_FAILED: BotStateRes.cmd_queries_failed
+            STATE: BotStateRes.STATE,
+            VERSION: BotStateRes.VERSION,
+            SESSION: BotStateRes.SESSION,
+            STARTUP_TIME: BotStateRes.STARTUP_TIME,
+            STARTUP_UTC: BotStateRes.STARTUP_UTC,
+            QUERIES: BotStateRes.QUERIES,
+            CMD_QUERIES: BotStateRes.CMD_QUERIES,
+            CMD_QUERIES_FAILED: BotStateRes.CMD_QUERIES_FAILED
         };
 
         return BotState as StatusInterface;
