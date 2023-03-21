@@ -17,7 +17,8 @@ const APICore = {
 export default APICore;
 
 //Variables
-const API_PORT = process.env.API_PORT;
+const API_PORT = process.env.API_PORT as unknown as number;
+const API_HOST = process.env.API_HOST as string;
 
 //Functions
 async function loadAPI(LCARS47: LCARSClient): Promise<void> {
@@ -32,8 +33,8 @@ async function loadAPI(LCARS47: LCARSClient): Promise<void> {
         res.send(await buildStats(LCARS47));
     });
 
-    rtr.listen(API_PORT, () => {
-        Utility.log('info', `[API] Service online at ${API_PORT}`);
+    rtr.listen(API_PORT, API_HOST, () => {
+        Utility.log('info', `[API] Service online at ${API_HOST}:${API_PORT}`);
     })
 }
 
