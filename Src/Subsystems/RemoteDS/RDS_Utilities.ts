@@ -2,8 +2,8 @@
 
 //Imports
 import {Filter, MongoClient} from "mongodb";
-import Utility from "../Utilities/SysUtils";
-import { StatusInterface } from "../Auxiliary/StatusInterface";
+import Utility from "../Utilities/SysUtils.js";
+import { StatusInterface } from "../Auxiliary/StatusInterface.js";
 
 //Globals
 const client = new MongoClient(process.env.RDS as string);
@@ -86,7 +86,7 @@ export default {
             return 'OFFLINE';
         }
 
-        if (currentStatus.status) {
+        if (currentStatus.STATE) {
             Utility.log('info', 'RDS is Online.');
             return 'ONLINE';
         }
