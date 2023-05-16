@@ -3,10 +3,10 @@
 //Imports
 import {ChatInputCommandInteraction, CommandInteraction, InteractionResponse} from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 
-import RDS_Utilities from "../../Subsystems/RemoteDS/RDS_Utilities";
-import Utility from "../../Subsystems/Utilities/SysUtils";
+import RDS_Utilities from "../../Subsystems/RemoteDS/RDS_Utilities.js";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
 
 //Functions
 const data = new SlashCommandBuilder()
@@ -16,15 +16,11 @@ const data = new SlashCommandBuilder()
 async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     Utility.log('info', '[AUXILIARY] Received status display request.');
 
-    const trData = {
-        coll: 'rds_status',
-        key: 'selectAll'
-    }
-
     const statusRP = await RDS_Utilities.rds_selectOne(LCARS47.RDS_CONNECTION, 'rds_status', 1);
+    console.log(statusRP);
 
     // @ts-ignore
-    await int.reply({content: `LCARS RDS Status Report:\nState: ${statusRP.status}\nQueries: ${statusRP.queries}`});
+    await int.reply({content: `LCARS RDS Status Report:\nState: ${statusRP.STATE}\nQueries: ${statusRP.QUERIES}`});
 }
 
 function help(): string {
