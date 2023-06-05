@@ -1,7 +1,8 @@
 // -- System Utilities --
+// LCARS Date/Time and low-priority system functions
 
 //Imports
-import colors from 'colors/safe';
+import colors from 'colors';
 import { DateTime } from "luxon";
 
 //Exports
@@ -31,6 +32,17 @@ export default {
         }
 
         return newFlex;
+    },
+    stardate(date?: Date): string {
+        let newStardate: string;
+        if (!date) {
+            newStardate = DateTime.now().setZone('UTC-5').toFormat("LdyyHm.s");
+        }
+        else {
+            newStardate = DateTime.fromJSDate(date).toFormat("LdyyHm.s");
+        }
+
+        return newStardate;
     },
     formatMSDiff(ms: number, obj?: boolean): string | object {
         const date = new Date(ms);

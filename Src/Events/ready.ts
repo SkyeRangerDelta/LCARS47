@@ -1,13 +1,17 @@
 // -- READY EVENT --
 
 //Imports
-import Utility from '../Subsystems/Utilities/SysUtils';
-import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
-import {PLDYNID, LCARSID, ENGINEERING} from '../Subsystems/Operations/OPs_IDs.json';
-import RDS from "../Subsystems/RemoteDS/RDS_Utilities";
+import Utility from '../Subsystems/Utilities/SysUtils.js';
+import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient.js";
+import RDS from "../Subsystems/RemoteDS/RDS_Utilities.js";
 
 import {ActivityType, TextChannel} from "discord.js";
-import { StatusInterface } from "../Subsystems/Auxiliary/StatusInterface";
+import { StatusInterface } from "../Subsystems/Auxiliary/StatusInterface.js";
+import { JellyfinClient } from "../Subsystems/Auxiliary/JellyfinClient.js";
+
+const PLDYNID = process.env.PLDYNID as string;
+const LCARSID = process.env.LCARSID as string;
+const ENGINEERING = process.env.ENGINEERING as string;
 
 //Exports
 module.exports = {
@@ -17,12 +21,30 @@ module.exports = {
         LCARS47.PLDYN = await LCARS47.guilds.fetch(PLDYNID);
         LCARS47.MEMBER = await LCARS47.PLDYN.members.fetch(LCARSID);
         LCARS47.MEDIA_QUEUE = new Map();
+        LCARS47.CLIENT_STATS = {
+            CLIENT_MEM_USAGE: 0,
+            CMD_QUERIES: 0,
+            CMD_QUERIES_FAILED: 0,
+            DS_API_LATENCY: 0,
+            MEDIA_PLAYER_DATA: {},
+            MEDIA_PLAYER_STATE: false,
+            QUERIES: 0,
+            SESSION: 0,
+            SESSION_UPTIME: 0,
+            STARTUP_TIME: "",
+            STARTUP_UTC: 0,
+            VERSION: "",
+            STATE: false
+        };
+
+        LCARS47.JELLYFIN_CLIENT = new JellyfinClient();
 
         LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
         const version = process.env.VERSION as string;
 
         Utility.log('proc', '[CLIENT] IM ALIVE!');
+        Utility.log('proc', `[CLIENT] Current Stardate: ${Utility.stardate()}`);
 
         // @ts-ignore
         LCARS47.user.setPresence({

@@ -1,3 +1,6 @@
+//Imports
+
+//Format nice duration times
 export function convertDuration(time: number): string {
     if (time === 0) {
         return 'Livestream'

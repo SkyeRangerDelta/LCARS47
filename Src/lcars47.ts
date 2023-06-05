@@ -20,12 +20,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 //Subsystems
-import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient';
-import EventsIndexer from "./Subsystems/Operations/OPs_EventIndexer";
-import CommandIndexer from "./Subsystems/Operations/OPs_CmdHandler";
+import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient.js';
+import EventsIndexer from "./Subsystems/Operations/OPs_EventIndexer.js";
+import CommandIndexer from "./Subsystems/Operations/OPs_CmdHandler.js";
 import {Collection} from "discord.js";
-import APICore from "./Subsystems/Operations/OPs_APICore";
-import Utility from "./Subsystems/Utilities/SysUtils";
+import APICore from "./Subsystems/Operations/OPs_APICore.js";
+import Utility from "./Subsystems/Utilities/SysUtils.js";
 
 // -- INIT --
 // Index Events

@@ -3,8 +3,8 @@
 
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
-import Utility from "../../Subsystems/Utilities/SysUtils";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
 import {
     ChatInputCommandInteraction,
     CommandInteraction,
@@ -12,7 +12,8 @@ import {
     InteractionResponse,
     VoiceChannel
 } from "discord.js";
-import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
+const PLDYNID = process.env.PLDYNID as string;
+
 import {getVoiceConnection} from "@discordjs/voice";
 
 //Functions

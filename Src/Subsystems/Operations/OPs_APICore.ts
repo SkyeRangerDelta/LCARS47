@@ -1,13 +1,15 @@
 // -- API Core --
 
 //Imports
-import Utility from "../Utilities/SysUtils";
+import Utility from "../Utilities/SysUtils.js";
 import { Application, Request, Response } from "express";
-import { StatusInterface } from "../Auxiliary/StatusInterface";
-import RDS_Utilities from "../RemoteDS/RDS_Utilities";
-import { LCARSClient } from "../Auxiliary/LCARSClient";
-import { PLDYNID } from "./OPs_IDs.json";
-import exp = require("express");
+import { StatusInterface } from "../Auxiliary/StatusInterface.js";
+import RDS_Utilities from "../RemoteDS/RDS_Utilities.js";
+import { LCARSClient } from "../Auxiliary/LCARSClient.js";
+
+const PLDYNID = process.env.PLDYNID as string;
+
+import exp from "express";
 
 //Exports
 const APICore = {
@@ -17,8 +19,7 @@ const APICore = {
 export default APICore;
 
 //Variables
-const API_PORT = process.env.API_PORT as unknown as number;
-const API_HOST = process.env.API_HOST as string;
+const API_PORT = process.env.API_PORT as string;
 
 //Functions
 async function loadAPI(LCARS47: LCARSClient): Promise<void> {
@@ -33,8 +34,8 @@ async function loadAPI(LCARS47: LCARSClient): Promise<void> {
         res.send(await buildStats(LCARS47));
     });
 
-    rtr.listen(API_PORT, API_HOST, () => {
-        Utility.log('info', `[API] Service online at ${API_HOST}:${API_PORT}`);
+    rtr.listen(API_PORT, () => {
+        Utility.log('info', `[API] Service online at ${API_PORT}`);
     })
 }
 
