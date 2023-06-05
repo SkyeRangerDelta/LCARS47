@@ -3,7 +3,7 @@
 
 //Imports
 import {Client, GatewayIntentBits} from 'discord.js';
-import {LCARSClient} from "../Auxiliary/LCARSClient";
+import {LCARSClient} from "../Auxiliary/LCARSClient.js";
 
 //Exports
 export const LCARS47 = new Client({
@@ -12,6 +12,7 @@ export const LCARS47 = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildMessageTyping
+        GatewayIntentBits.GuildMessageTyping,
+        GatewayIntentBits.MessageContent
     ]
 }) as LCARSClient;

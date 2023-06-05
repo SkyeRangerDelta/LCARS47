@@ -2,9 +2,9 @@
 
 //Imports
 import {Interaction} from 'discord.js';
-import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient";
-import Utility from "../Subsystems/Utilities/SysUtils";
-import RDS_Utilities from "../Subsystems/RemoteDS/RDS_Utilities";
+import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient.js";
+import Utility from "../Subsystems/Utilities/SysUtils.js";
+import RDS_Utilities from "../Subsystems/RemoteDS/RDS_Utilities.js";
 
 //Exports
 export default {

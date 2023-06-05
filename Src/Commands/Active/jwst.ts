@@ -3,11 +3,11 @@
 //Imports
 import {ChatInputCommandInteraction, CommandInteraction} from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 
 import https from "https";
 
-import Utility from "../../Subsystems/Utilities/SysUtils";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
 import dotenv from "dotenv";
 
 //Functions

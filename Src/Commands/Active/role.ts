@@ -2,7 +2,7 @@
 // Functions for self-assigning roles
 
 //Imports
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 import {
     ChatInputCommandInteraction,
     CommandInteraction,
@@ -12,7 +12,7 @@ import {
 } from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
 
-import Utility from "../../Subsystems/Utilities/SysUtils";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
 
 //Cmd Data
 const data = new SlashCommandBuilder()

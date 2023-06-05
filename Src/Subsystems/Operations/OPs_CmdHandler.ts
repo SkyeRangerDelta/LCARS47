@@ -2,12 +2,15 @@
 
 //Imports
 import * as fs from "fs";
-import Utility from "../Utilities/SysUtils";
+import Utility from "../Utilities/SysUtils.js";
 import path from "path";
-import {LCARSClient} from "../Auxiliary/LCARSClient";
+import {LCARSClient} from "../Auxiliary/LCARSClient.js";
 import {REST} from "@discordjs/rest";
-import {PLDYNID, LCARSID, MEDIALOG} from './OPs_IDs.json';
 import {Routes} from "discord-api-types/v10";
+
+const PLDYNID = process.env.PLDYNID as string;
+const LCARSID = process.env.LCARSID as string;
+const MEDIALOG = process.env.MEDIALOG as string;
 
 //Exports
 const CommandIndexer = {

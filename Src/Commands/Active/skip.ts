@@ -3,12 +3,13 @@
 
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 import {ChatInputCommandInteraction, CommandInteraction, GuildMember, InteractionResponse} from "discord.js";
-import Utility from "../../Subsystems/Utilities/SysUtils";
-import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
 
-import PlayerUtils from "./play";
+const PLDYNID = process.env.PLDYNID as string;
+
+import PlayerUtils from "./play.js";
 
 //Globals
 const data = new SlashCommandBuilder()

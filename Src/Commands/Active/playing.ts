@@ -3,7 +3,7 @@
 
 //Imports
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 import {
     CacheType,
     ChatInputCommandInteraction,
@@ -11,8 +11,9 @@ import {
     GuildCacheMessage,
     InteractionResponse
 } from "discord.js";
-import Utility from "../../Subsystems/Utilities/SysUtils";
-import {PLDYNID} from "../../Subsystems/Operations/OPs_IDs.json";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
+
+const PLDYNID = process.env.PLDYNID as string;
 
 //Globals
 const data = new SlashCommandBuilder()

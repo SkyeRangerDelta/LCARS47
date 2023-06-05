@@ -1,17 +1,16 @@
 {
   "name": "lcars47",
-  "version": "47.4.4.2",
+  "version": "47.4.6",
   "description": "Official PlDyn Development Discord Bot",
-  "main": "lcars47.js",
+  "exports": "./lcars47.js",
   "scripts": {
     "test": "hello",
-    "start": "ts-node Src/lcars47.ts",
-    "start:prod": "node Deploy/lcars47.js",
+    "start": "node Deploy/lcars47.js",
     "build": "tsc"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SkyeRangerDelta/LCARS47.git"
+    "url": "https://github.com/SkyeRangerDelta/LCARS47"
   },
   "author": "SkyeRangerDelta",
   "license": "ISC",
@@ -24,6 +23,7 @@
     "@discordjs/opus": "^0.9.0",
     "@discordjs/rest": "^0.2.0-canary.0",
     "@discordjs/voice": "^0.15.0",
+    "@jellyfin/sdk": "^0.7.0",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
     "colors": "^1.4.0",
@@ -34,8 +34,9 @@
     "express": "^4.18.2",
     "ffmpeg-static": "^5.1.0",
     "libsodium-wrappers": "^0.7.9",
-    "mongodb": "^4.5.0",
+    "mongodb": "^5.3.0",
     "npm": "^8.19.4",
+    "openai": "^3.2.1",
     "opusscript": "^0.0.8",
     "ts-node": "^10.4.0",
     "tweetnacl": "^1.0.3",
@@ -46,6 +47,10 @@
   "devDependencies": {
     "@types/express": "^4.17.17",
     "@types/luxon": "^2.0.9",
+    "jsdoc": "^4.0.2",
     "luxon": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=14.16"
   }
 }

@@ -10,10 +10,12 @@ import {
     TextChannel,
     VoiceChannel
 } from 'discord.js';
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient";
+import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {MEDIALOG, PLDYNID} from '../../Subsystems/Operations/OPs_IDs.json';
-import Utility from "../../Subsystems/Utilities/SysUtils";
+import Utility from "../../Subsystems/Utilities/SysUtils.js";
+
+const PLDYNID = process.env.PLDYNID as string;
+const MEDIALOG = process.env.MEDIALOG as string;
 
 import ytdl from 'ytdl-core';
 import ytsr from 'ytsr';
@@ -33,8 +35,8 @@ import {
     VoiceConnectionStatus
 } from "@discordjs/voice";
 
-import {LCARSMediaPlayer, LCARSMediaSong} from "../../Subsystems/Auxiliary/MediaInterfaces";
-import {convertDuration} from "../../Subsystems/Utilities/MediaUtils";
+import {LCARSMediaPlayer, LCARSMediaSong} from "../../Subsystems/Auxiliary/MediaInterfaces.js";
+import { convertDuration } from "../../Subsystems/Utilities/MediaUtils.js";
 
 import { promisify } from "util";
 const wait = promisify(setTimeout);
@@ -51,10 +53,10 @@ let defaultReportChannel: TextChannel;
 async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<GuildCacheMessage<CacheType>> {
     await int.deferReply();
 
+    defaultReportChannel = await LCARS47.PLDYN.channels.fetch(MEDIALOG) as TextChannel;
+
     let member: GuildMember;
     let vChannel: VoiceChannel;
-
-    defaultReportChannel = await LCARS47.PLDYN.channels.fetch(MEDIALOG) as TextChannel;
 
     try {
         member = await LCARS47.PLDYN.members.fetch(int.user.id);

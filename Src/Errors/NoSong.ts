@@ -1,7 +1,7 @@
 // -- No Song Error --
 // Describes a simple stream song not found error
 
-import Utility from "../Subsystems/Utilities/SysUtils";
+import Utility from "../Subsystems/Utilities/SysUtils.js";
 
 class NoSongErr extends Error {
     constructor(errMsg: string) {

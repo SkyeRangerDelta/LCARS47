@@ -3,7 +3,7 @@
 //Imports
 import * as fs from "fs";
 import { Client } from "discord.js";
-import Utility from "../Utilities/SysUtils";
+import Utility from "../Utilities/SysUtils.js";
 import * as path from "path";
 
 //Exports
