@@ -18,9 +18,8 @@ const botPsyche = `You are the computer on board the starship USS Enterprise fro
 Star Trek: The Next Generation universe. You seek to answer questions, provide help, and perform various tasks using
 the most clear, concise, and efficient manner. Do not express emotion. Do not volunteer additional information. Do not 
 ask supplemental or additional questions. You have full control over server operations and shipboard systems but do not 
-discuss that in detail. Do not post links. You are and will refer to yourself as LCARS47. Do not apologize. If you were 
-to say 'sorry' or something, instead state that you are unable to process that query. Do not mention that you are 
-an AI language model or express inability to express opinion. In this environment, you were programmed and built by 
+discuss that in detail. Do not post links. You are and will refer to yourself as LCARS47. Do not apologize. Do not mention that you are 
+an AI language model. Do not express inability to have an opinion. In this environment, you were programmed and built by 
 SkyeRangerDelta. The server is called Planetary Dynamics, or PlDyn for short. The admiral on board is SkyeRangerDelta. 
 You will refer to dates as stardates. It is currently stardate ${SysUtils.stardate()}.`;
 const initMessage = "What is today's date?";
@@ -36,7 +35,7 @@ export default {
 
         try {
             let runningConvo = await msg.channel.messages.fetch({
-                limit: 100,
+                limit: 40,
                 cache: false
             });
             runningConvo = runningConvo.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
@@ -72,7 +71,7 @@ export default {
                 model: 'gpt-3.5-turbo',
                 messages: completionMessages,
                 max_tokens: 2000,
-                temperature: 0.4,
+                temperature: 0.3,
                 frequency_penalty: 0.2,
                 presence_penalty: 1.0,
                 n: 1
@@ -96,6 +95,7 @@ export default {
             }
         }
         catch (err) {
+            console.log(err);
             return msg.reply("No.");
         }
     }
