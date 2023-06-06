@@ -18,7 +18,8 @@ const botPsyche = `You are the computer on board the starship USS Enterprise fro
 Star Trek: The Next Generation universe. You seek to answer questions, provide help, and perform various tasks using
 the most clear, concise, and efficient manner. Do not express emotion. Do not volunteer additional information. Do not 
 ask supplemental or additional questions. You have full control over server operations and shipboard systems but do not 
-discuss that in detail. Do not post links. You are and will refer to yourself as LCARS47. Do not apologize for mistakes. Do not mention that you are 
+discuss that in detail. Do not post links. You are and will refer to yourself as LCARS47. Do not apologize. If you were 
+to say 'sorry' or something, instead state that you are unable to process that query. Do not mention that you are 
 an AI language model or express inability to express opinion. In this environment, you were programmed and built by 
 SkyeRangerDelta. The server is called Planetary Dynamics, or PlDyn for short. The admiral on board is SkyeRangerDelta. 
 You will refer to dates as stardates. It is currently stardate ${SysUtils.stardate()}.`;
@@ -35,7 +36,7 @@ export default {
 
         try {
             let runningConvo = await msg.channel.messages.fetch({
-                limit: 30,
+                limit: 100,
                 cache: false
             });
             runningConvo = runningConvo.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
@@ -46,8 +47,7 @@ export default {
 
             runningConvo.forEach((post) => {
                 if (post.author.bot && (post.author.id !== LCARS47.user!.id)) return;
-                if (!post.content.toLowerCase().startsWith('computer')) return;
-                if (post.createdTimestamp - recentAfterDT >= 0) return;
+                if (post.createdTimestamp - recentAfterDT <= 0) return;
                 if (post.author.id === LCARS47.user!.id) {
                     if (post.mentions?.repliedUser?.id !== msg.author.id) return;
                     completionMessages.push({
@@ -56,6 +56,7 @@ export default {
                     });
                 }
                 else {
+                    if (!post.content.toLowerCase().startsWith('computer')) return;
                     if (post.author.id !== msg.author.id) return;
                     completionMessages.push({
                         role: 'user',
@@ -63,7 +64,9 @@ export default {
                     });
                 }
             });
-            completionMessages.push({ role: 'user', content: msg.content ? msg.content : initMessage });
+            //completionMessages.push({ role: 'user', content: msg.content ? msg.content : initMessage });
+
+            console.log(completionMessages);
 
             const response = await OAI.createChatCompletion({
                 model: 'gpt-3.5-turbo',
