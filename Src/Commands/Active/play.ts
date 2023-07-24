@@ -153,14 +153,18 @@ async function getBasicInfo(url: string): Promise<ytdl.videoInfo> {
         }
     }
     else {
-        //Search
-        const filter1 = await ytsr.getFilters(videoUrl);
-        // @ts-ignore
-        const filter1r = filter1.get('Type').get('Video');
-        // @ts-ignore
-        const songDataRes = await ytsr(filter1r.url, {limit: 1});
-        // @ts-ignore
-        songData = await ytdl.getInfo(songDataRes.items[0].url);
+        try {
+            //Search
+            const filter1 = await ytsr.getFilters(videoUrl);
+            const filter1r = filter1.get('Type')!.get('Video')!;
+            // @ts-ignore
+            const songDataRes = await ytsr(filter1r.url, {limit: 1});
+            // @ts-ignore
+            songData = await ytdl.getInfo(songDataRes.items[0].url);
+        }
+        catch (e) {
+            throw 'Not able to parse the song search - probably YTSR being a retard again.';
+        }
     }
 
     return songData;
