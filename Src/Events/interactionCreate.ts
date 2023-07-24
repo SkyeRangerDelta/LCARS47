@@ -27,7 +27,7 @@ export default {
                 return;
             }
             else if (int.deferred || int.replied) {
-                await int.followUp(`IM ON BLOODY FIRE!\n${cmdErr}`);
+                await int.followUp(`*Bzzt* Sector Failure!\n${cmdErr}`);
                 Utility.log('err', `[INT-HANDLER] Cmd execution failed!\n${cmdErr}`);
 
                 //Command failed, update stats
