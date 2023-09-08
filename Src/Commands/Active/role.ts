@@ -5,7 +5,7 @@
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 import {
     ChatInputCommandInteraction,
-    CommandInteraction,
+    CommandInteraction, CommandInteractionOptionResolver,
     DiscordAPIError,
     GuildMemberRoleManager, InteractionResponse,
     Role
@@ -62,10 +62,12 @@ async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): 
 
 async function joinRole(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
     if (int.member) {
-        const roleManager = await int.member.roles as GuildMemberRoleManager;
+        const roleManager = int.member.roles as GuildMemberRoleManager;
+        const cmdOptions = int.options;
 
         try {
-            await roleManager.add(await int.options.getRole('role-name') as Role);
+            // @ts-ignore
+            await roleManager.add(await cmdOptions.getRole('role-name') as Role);
         }
         catch (e) {
             const err = e as DiscordAPIError;
