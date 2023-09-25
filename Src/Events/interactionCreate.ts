@@ -1,7 +1,7 @@
 // -- INTERACTION EVENT --
 
 //Imports
-import {Interaction} from 'discord.js';
+import { BaseInteraction, ChatInputCommandInteraction, Interaction } from 'discord.js';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient.js";
 import Utility from "../Subsystems/Utilities/SysUtils.js";
 import RDS_Utilities from "../Subsystems/RemoteDS/RDS_Utilities.js";
@@ -9,8 +9,8 @@ import RDS_Utilities from "../Subsystems/RemoteDS/RDS_Utilities.js";
 //Exports
 export default {
     name: 'interactionCreate',
-    async execute(LCARS47: LCARSClient, int: Interaction) {
-        if (!int.isCommand()) return;
+    async execute(LCARS47: LCARSClient, int: BaseInteraction) {
+        if (!int.isChatInputCommand()) return;
 
         const cmd = LCARS47.CMD_INDEX.get(int.commandName);
         if (!cmd) return int.reply('No command!');
