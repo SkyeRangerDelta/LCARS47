@@ -19,8 +19,11 @@ async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): 
     const statusRP = await RDS_Utilities.rds_selectOne(LCARS47.RDS_CONNECTION, 'rds_status', 1);
     console.log(statusRP);
 
-    // @ts-ignore
-    await int.reply({content: `LCARS RDS Status Report:\nState: ${statusRP.STATE}\nQueries: ${statusRP.QUERIES}`});
+    if (statusRP) {
+        return await int.reply({content: `LCARS RDS Status Report:\nState: ${statusRP.STATE}\nQueries: ${statusRP.QUERIES}`});
+    }
+
+    await int.reply({content: `Unable to generate LCARS status report.`});
 }
 
 function help(): string {
