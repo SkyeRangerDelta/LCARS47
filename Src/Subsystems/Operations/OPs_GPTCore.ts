@@ -68,7 +68,7 @@ export default {
             console.log(completionMessages);
 
             const response = await OAI.createChatCompletion({
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-3.5-turbo-1106',
                 messages: completionMessages,
                 max_tokens: 2000,
                 temperature: 0.3,
