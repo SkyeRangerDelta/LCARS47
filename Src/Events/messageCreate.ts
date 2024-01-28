@@ -1,7 +1,7 @@
 // -- MESSAGE EVENT --
 
 //Imports
-import { Client, Message } from 'discord.js';
+import { Message } from 'discord.js';
 import Utility from "../Subsystems/Utilities/SysUtils.js";
 import GuildUtils from "../Subsystems/Utilities/GuildUtilities.js";
 import { LCARSClient } from "../Subsystems/Auxiliary/LCARSClient";

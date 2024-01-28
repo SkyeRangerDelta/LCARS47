@@ -26,7 +26,7 @@ const initMessage = "What is today's date?";
 
 //Exports
 export default {
-    async handleGPTReq(msg: Message, content: string) {
+    async handleGPTReq(msg: Message, content: string, isAdv: boolean) {
         Utility.log('proc', `[EVENT] [GPT-CORE] Beginning new GPT request.`);
 
         await msg.channel.sendTyping();
@@ -45,9 +45,9 @@ export default {
             ];
 
             runningConvo.forEach((post) => {
-                if (post.author.bot && (post.author.id !== LCARS47.user!.id)) return;
+                if (post.author.bot && (post.author.id !== LCARS47.user?.id)) return;
                 if (post.createdTimestamp - recentAfterDT <= 0) return;
-                if (post.author.id === LCARS47.user!.id) {
+                if (post.author.id === LCARS47.user?.id) {
                     if (post.mentions?.repliedUser?.id !== msg.author.id) return;
                     completionMessages.push({
                         role: 'assistant',
@@ -65,10 +65,14 @@ export default {
             });
             //completionMessages.push({ role: 'user', content: msg.content ? msg.content : initMessage });
 
-            console.log(completionMessages);
+            let gptModel = 'gpt-3.5-turbo';
+            if (isAdv) {
+                console.log('Using GPT-4');
+                gptModel = 'gpt-4-0613';
+            }
 
             const response = await OAI.createChatCompletion({
-                model: 'gpt-3.5-turbo-1106',
+                model: gptModel,
                 messages: completionMessages,
                 max_tokens: 2000,
                 temperature: 0.3,
@@ -77,10 +81,12 @@ export default {
                 n: 1
             });
 
+            console.log('Response from GPT Core...', response);
+
             const reply = response.data.choices[0].message?.content;
             if (!reply) return msg.reply('GPT Core snagged an error somewhere.');
 
-            if (reply!.length > 2000) {
+            if (reply?.length > 2000) {
                 const buffer = Buffer.from(reply!, 'utf8');
                 const txtFile = new AttachmentBuilder(buffer, {name: `${msg.author.tag}_response.txt`});
 
