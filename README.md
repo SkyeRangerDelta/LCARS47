@@ -3,6 +3,8 @@ The official Planetary Dynamics Discord Bot
 
 --
 
+[![Node.js CI](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml/badge.svg)](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml)
+
 Developed and Maintained by: SkyeRangerDelta
 
 For use only in the Planetary Dynamics(PlDyn) Discord server by PlDyn members for their use.
