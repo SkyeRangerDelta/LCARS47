@@ -1,6 +1,6 @@
 {
   "name": "lcars47",
-  "version": "47.4.6.3",
+  "version": "47.4.7",
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
@@ -37,7 +37,7 @@
     "libsodium-wrappers": "^0.7.9",
     "mongodb": "^5.3.0",
     "npm": "^9.8.1",
-    "openai": "^3.3.0",
+    "openai": "^4.26.0",
     "opusscript": "^0.0.8",
     "ts-node": "^10.4.0",
     "tweetnacl": "^1.0.3",

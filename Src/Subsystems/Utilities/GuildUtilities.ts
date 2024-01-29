@@ -51,7 +51,12 @@ export default {
 
 //Functions
 function runSimData(LCARS47: LCARSClient, msg: Message, isAdv: boolean) {
-    Utility.log('proc', `[EVENT] [MSG-CREATE] Processing a new sim lab message.`);
+    if (isAdv) {
+        Utility.log('proc', `[EVENT] [MSG-CREATE] Processing a new dev lab message.`);
+    }
+    else {
+        Utility.log('proc', `[EVENT] [MSG-CREATE] Processing a new sim lab message.`);
+    }
     if (!msg.content.toLowerCase().startsWith('computer')) return;
 
     Utility.log('proc', `[EVENT] [SIM-DATA] Handling a GPT request.`);
