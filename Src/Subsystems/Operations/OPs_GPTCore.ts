@@ -2,18 +2,18 @@
 // Handles interactions with OpenAI
 
 //Imports
-import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
+import { OpenAI } from "openai";
 import { AttachmentBuilder, Message } from "discord.js";
 import SysUtils from "../Utilities/SysUtils";
 import { DateTime } from "luxon";
 import { LCARS47 } from "./OPs_CoreClient";
 import Utility from "../Utilities/SysUtils";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 //Variables
-const gptConf = new Configuration({
+const OAI = new OpenAI({
     apiKey: process.env.OPENAIKEY
 });
-const OAI = new OpenAIApi(gptConf);
 const botPsyche = `You are the computer on board the starship USS Enterprise from the 
 Star Trek: The Next Generation universe. You seek to answer questions, provide help, and perform various tasks using
 the most clear, concise, and efficient manner. Do not express emotion. Do not volunteer additional information. Do not 
@@ -22,11 +22,10 @@ discuss that in detail. Do not post links. You are and will refer to yourself as
 an AI language model. Do not express inability to have an opinion. In this environment, you were programmed and built by 
 SkyeRangerDelta. The server is called Planetary Dynamics, or PlDyn for short. The admiral on board is SkyeRangerDelta. 
 You will refer to dates as stardates. It is currently stardate ${SysUtils.stardate()}.`;
-const initMessage = "What is today's date?";
 
 //Exports
 export default {
-    async handleGPTReq(msg: Message, content: string) {
+    async handleGPTReq(msg: Message, content: string, isAdv: boolean) {
         Utility.log('proc', `[EVENT] [GPT-CORE] Beginning new GPT request.`);
 
         await msg.channel.sendTyping();
@@ -40,14 +39,14 @@ export default {
             });
             runningConvo = runningConvo.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
-            const completionMessages: ChatCompletionRequestMessage[] = [
+            const completionMessages: ChatCompletionMessageParam[] = [
                 { role: 'system', content: botPsyche },
             ];
 
             runningConvo.forEach((post) => {
-                if (post.author.bot && (post.author.id !== LCARS47.user!.id)) return;
+                if (post.author.bot && (post.author.id !== LCARS47.user?.id)) return;
                 if (post.createdTimestamp - recentAfterDT <= 0) return;
-                if (post.author.id === LCARS47.user!.id) {
+                if (post.author.id === LCARS47.user?.id) {
                     if (post.mentions?.repliedUser?.id !== msg.author.id) return;
                     completionMessages.push({
                         role: 'assistant',
@@ -65,10 +64,14 @@ export default {
             });
             //completionMessages.push({ role: 'user', content: msg.content ? msg.content : initMessage });
 
-            console.log(completionMessages);
+            let gptModel = 'gpt-3.5-turbo';
+            if (isAdv) {
+                console.log('Using GPT-4');
+                gptModel = 'gpt-4';
+            }
 
-            const response = await OAI.createChatCompletion({
-                model: 'gpt-3.5-turbo',
+            const response = await OAI.chat.completions.create({
+                model: gptModel,
                 messages: completionMessages,
                 max_tokens: 2000,
                 temperature: 0.3,
@@ -77,25 +80,29 @@ export default {
                 n: 1
             });
 
-            const reply = response.data.choices[0].message?.content;
+            console.log('Response from GPT Core...', response);
+
+            const reply = response.choices[0];
             if (!reply) return msg.reply('GPT Core snagged an error somewhere.');
 
-            if (reply!.length > 2000) {
-                const buffer = Buffer.from(reply!, 'utf8');
-                const txtFile = new AttachmentBuilder(buffer, {name: `${msg.author.tag}_response.txt`});
+            if (!reply.message.content) return msg.reply('GPT Core snagged an error somewhere.');
+            const resText = reply.message.content;
+
+            if (resText.length > 2000) {
+                const txtFile = new AttachmentBuilder(resText, {name: `${msg.author.tag}_response.txt`});
 
                 msg.reply({ files: [txtFile] }).catch(() => {
                     msg.channel.send({ content: `${msg.author}`, files: [txtFile] });
                 });
             }
             else {
-                msg.reply(reply!).catch(() => {
+                msg.reply(resText).catch(() => {
                     msg.channel.send(`${msg.author} ${reply}`);
                 })
             }
         }
         catch (err) {
-            console.log(err);
+            console.log(typeof err, err);
             return msg.reply("No.");
         }
     }
