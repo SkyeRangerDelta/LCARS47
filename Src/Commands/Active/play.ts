@@ -10,15 +10,16 @@ import {
     TextChannel,
     VoiceChannel
 } from 'discord.js';
+import ytdl from 'ytdl-core';
+import ytsr from 'diltz-ytsr-fixed';
+//TODO: Shift from YTSR to API or better supported library
+
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
 import Utility from "../../Subsystems/Utilities/SysUtils.js";
 
 const PLDYNID = process.env.PLDYNID as string;
 const MEDIALOG = process.env.MEDIALOG as string;
-
-import ytdl from 'ytdl-core';
-import ytsr from 'ytsr';
 
 import {
     AudioPlayer,
