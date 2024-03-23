@@ -4,11 +4,11 @@
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "test": "hello",
+    "test": "node Deploy/lcars47.js --test",
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
-    "dev": "tsc && node Deploy/lcars47.js",
+    "dev": "tsc && node Deploy/lcars47.js --heartbeat",
     "docker-build": "docker build -t lcars47 .",
     "docker-run": "docker run -d lcars47",
     "docker-stop": "docker stop $(docker ps -q --filter ancestor=lcars47)",
@@ -54,7 +54,9 @@
     "@types/express": "^4.17.17",
     "@types/luxon": "^2.0.9",
     "jsdoc": "^4.0.2",
-    "luxon": "^2.3.0"
+    "jsdoc-to-markdown": "^8.0.1",
+    "luxon": "^2.3.0",
+    "semantic-release": "^23.0.5"
   },
   "engines": {
     "node": ">=14.16"
