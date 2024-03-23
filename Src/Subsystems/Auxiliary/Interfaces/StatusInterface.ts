@@ -1,5 +1,5 @@
 // -- Status Interface --
-export interface StatusInterface extends Object {
+export interface StatusInterface extends NonNullable<object> {
     STATE: boolean;
     VERSION: string;
     SESSION: number;

@@ -17,6 +17,4 @@ export interface JClientStatus {
     LIBRARY_API: LibraryApi | undefined,
     LIBRARIES: BaseItemDtoQueryResult | undefined,
     UID: string | undefined;
-
-
 }
