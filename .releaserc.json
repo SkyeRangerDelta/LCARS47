@@ -1,0 +1,34 @@
+{
+  "branches": ["master"],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "eslint",
+        "types": [
+          { "type": "Test", "hidden": true },
+          { "type": "Perf", "section": "Performance Changes" },
+          { "type": "Refactor", "section": "Misc." }
+        ]
+      }
+    ],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogTitle": "|| V47.${version} Changelog ||"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "Src", "label": "Source code"
+          }
+        ]
+      }
+    ]
+  ],
+  "tagFormat": "V47.${version}"
+}
