@@ -35,5 +35,5 @@ jobs:
 
       - name: Deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.Semantic-Release-Mar24-Repo }}
+          GITHUB_TOKEN: ${{ secrets.SemRelease_Repo }}
         run: npx semantic-release
