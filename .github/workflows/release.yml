@@ -34,4 +34,6 @@ jobs:
         run: npm ci
 
       - name: Deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.Semantic-Release-Mar24-Repo }}
         run: npx semantic-release
