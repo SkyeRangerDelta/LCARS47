@@ -1,22 +1,50 @@
-name: Deploy LCARS47
+name: Build Release
 
 on:
-  workflow_run:
-    workflows: ["Build Release"]
-    types:
-        - completed
-
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
-
+  push:
+    branches: [ "master", "Experimental" ]
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Cache
+        uses: actions/cache@v4.0.0
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-devbuild-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-devbuild-${{ env.cache-name }}-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.SEMRELEASE_REPO }}
+          NPM_TOKEN: ${{ secrets.SEMRELEASE_NPM }}
+        run: npx semantic-release --dry-run
+
+
+  deploy:
+
+    runs-on: ubuntu-latest
+    needs:
+      - build
     permissions:
       contents: read
       packages: write

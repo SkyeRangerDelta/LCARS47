@@ -19,11 +19,23 @@
         ]
       }
     ],
-    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "eslint"
+      }
+
+    ],
     [
       "@semantic-release/changelog",
       {
         "changelogTitle": "|| V47.${version} Changelog ||"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+
       }
     ],
     ["@semantic-release/git", {
