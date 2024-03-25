@@ -12,7 +12,8 @@
     "docker-build": "docker build -t lcars47 .",
     "docker-run": "docker run -d lcars47",
     "docker-stop": "docker stop $(docker ps -q --filter ancestor=lcars47)",
-    "docker-build-run": "npm run docker-build && npm run docker-run"
+    "docker-build-run": "npm run docker-build && npm run docker-run",
+    "release-dry": "semantic-release --dry-run"
   },
   "repository": {
     "type": "git",
