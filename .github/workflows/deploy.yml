@@ -2,8 +2,7 @@ name: Deploy LCARS47
 
 on:
   workflow_run:
-    workflows:
-      - "Build Release"
+    workflows: ["Build Release"]
     types:
         - completed
 
@@ -51,7 +50,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.SemRelease_Repo }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
