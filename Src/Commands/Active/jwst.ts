@@ -1,14 +1,13 @@
 // -- STATUS --
 
 //Imports
-import {ChatInputCommandInteraction, CommandInteraction} from "discord.js";
+import {ChatInputCommandInteraction} from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
 import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
 
 import https from "https";
 
 import Utility from "../../Subsystems/Utilities/SysUtils.js";
-import dotenv from "dotenv";
 
 //Functions
 const data = new SlashCommandBuilder()
@@ -26,7 +25,12 @@ data.addSubcommand(s => s
     .addIntegerOption(o => o
         .setName('program-id')
         .setDescription('The ID of the JWST program to pull from.')
-        .addChoices([['NGC 3324 (Carina)', 2731], ["Stephan's Quintet", 2732], ['NGC 3132 (Southern Ring Nebula)', 2733], ['WASP-96b & HAT-P-18b Exoplanets', 2734]])
+        .addChoices(
+            { name: 'NGC 3324', value: 2731 },
+            { name: "Stephan's Quintet", value: 2732 },
+            { name: 'NGC 3132', value: 2733 },
+            { name: 'WASP-96b & HAT-P-18b', value: 2734 }
+        )
         .setRequired(true)
     )
 );
@@ -100,11 +104,10 @@ async function doJWSTRequest(reqPath: string, int: ChatInputCommandInteraction):
             },
             'maxRedirects': 20
         };
+        
+        const chunks: any[] = [];
 
-        // @ts-ignore
-        const chunks = [];
-
-        const req = await https.request(options, (res) => {
+        const req = https.request(options, (res) => {
             Utility.log('info', `[JWST] Sending REQ (${options.hostname + options.path}).`);
 
             res.on('data', (chunk) => {
@@ -114,7 +117,6 @@ async function doJWSTRequest(reqPath: string, int: ChatInputCommandInteraction):
 
             res.on('end', async () => {
                 Utility.log('info', '[JWST] Request Ended.');
-                // @ts-ignore
                 const resData = Buffer.concat(chunks);
                 const data = JSON.parse(resData.toString());
                 const records = [];
