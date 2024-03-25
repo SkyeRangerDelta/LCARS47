@@ -48,7 +48,7 @@ async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): 
     return int.editReply("Command doesn't work yet. Please ignore.");
 
     //Check for if YT Media Player is running
-    if (LCARS47.CLIENT_STATS.STATE) return int.editReply('Cannot stream while another media queue is in process.');
+    if (LCARS47.CLIENT_STATS.MEDIA_PLAYER_STATE) return int.editReply('Cannot stream while another media queue is in process.');
 
     //let defaultReportChannel = await LCARS47.PLDYN.channels.fetch(MEDIALOG) as TextChannel;
 
