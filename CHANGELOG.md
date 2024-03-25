@@ -1,5 +1,7 @@
 || V47.${version} Changelog ||
 
+# [4.7.0-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.1.0.0-Experimental.1...V47.4.7.0-Experimental.1) (2024-03-25)
+
 # 1.0.0-Experimental.1 (2024-03-25)
 
 
