@@ -1,11 +1,11 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Test and Deploy
+name: Test LCARS47
 
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: [ "Experimental" ]
 
 jobs:
   build:
@@ -37,9 +37,4 @@ jobs:
       run: npm ci
     
     - name: Run Tests
-      run: npm run dev
-
-    - name: Conduct Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.Semantic-Release-Mar24-Repo }}
-      run: npm run semantic-release
+      run: npm run test

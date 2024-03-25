@@ -35,16 +35,7 @@
       ],
       "message": "Chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
-    [
-      "@semantic-release/github",
-      {
-        "assets": [
-          {
-            "path": "Src", "label": "Source code"
-          }
-        ]
-      }
-    ]
+    "@semantic-release/github"
   ],
   "tagFormat": "V47.${version}",
   "GIT_AUTHOR_NAME": "SkyeRangerDelta",
