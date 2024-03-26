@@ -1,6 +1,6 @@
 {
   "name": "lcars47",
-  "version": "4.7.0",
+  "version": "V47.4.7.0",
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
@@ -21,7 +21,8 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/",
-    "tag": "V47.${version}"
+    "tag": "latest",
+    "tagVersionPrefix": "V47."
   },
   "author": "SkyeRangerDelta",
   "license": "ISC",

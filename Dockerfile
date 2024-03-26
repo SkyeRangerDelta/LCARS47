@@ -5,7 +5,9 @@ FROM node:20-alpine
 LABEL   authors="SkyeRangerDelta" \
         version="47.4.7.0" \
         description="LCARS47 Discord Bot" \
-        vendor="Planetary Dynamics"
+        vendor="Planetary Dynamics" \
+        org.opencontainers.image.source="https://github.com/SkyeRangerDelta/LCARS47" \
+        org.opencontainers.image.description="The Official PlDyn Discord Bot"
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD curl -f http://localhost:9121/status || exit 1
 
