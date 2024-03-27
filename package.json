@@ -67,6 +67,6 @@
     "semantic-release": "^23.0.5"
   },
   "engines": {
-    "node": ">=14.16"
+    "node": ">=18.20"
   }
 }
