@@ -1,6 +1,6 @@
 {
   "name": "lcars47",
-  "version": "V47.4.7.0",
+  "version": "4.7.0",
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
-    "test": "tsc && node Deploy/lcars47.js --heartbeat",
+    "test": "rm -r Deploy && tsc && node Deploy/lcars47.js --heartbeat",
     "docker-build": "docker build -t lcars47 .",
     "docker-run": "docker run -d lcars47",
     "docker-stop": "docker stop $(docker ps -q --filter ancestor=lcars47)",
@@ -21,8 +21,7 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/",
-    "tag": "latest",
-    "tagVersionPrefix": "V47."
+    "tag": "latest"
   },
   "author": "SkyeRangerDelta",
   "license": "ISC",
