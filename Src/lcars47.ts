@@ -6,7 +6,6 @@
 //          By SkyeRangerDelta
 //-------------------------------------------
 //      See https://pldyn.net
-//  And blog: https://cf.pldyn.net/
 //   Wiki: https://wiki.pldyn.net/
 //
 //  This is a custom bot designed for the
@@ -16,23 +15,22 @@
 
 // -- DEPENDENCIES --
 //Libraries
-import dotenv from 'dotenv';
-dotenv.config();
-
-//Subsystems
-import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient.js';
-import EventsIndexer from "./Subsystems/Operations/OPs_EventIndexer.js";
-import CommandIndexer from "./Subsystems/Operations/OPs_CmdHandler.js";
-import {Collection} from "discord.js";
+import { LCARS47Client } from "./Subsystems/Operations/OPs_CoreClient";
 import APICore from "./Subsystems/Operations/OPs_APICore.js";
 import Utility from "./Subsystems/Utilities/SysUtils.js";
 
+import dotenv from 'dotenv';
+
 // -- INIT --
-// Index Events
-EventsIndexer.indexEvents(LCARS47).then(() => {
-    LCARS47.CMD_INDEX = new Collection();
-    CommandIndexer.indexCommands(LCARS47);
-});
+//Boot, integrity, and ENV setup
+dotenv.config();
+const LCARS47 = new LCARS47Client();
+
+async function runLCARSInit() {
+    await LCARS47.doBoot();
+}
+
+runLCARSInit();
 
 // -- CORE --
 LCARS47.login(process.env[`TOKEN`]).then(() => {
