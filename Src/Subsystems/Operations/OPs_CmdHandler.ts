@@ -4,9 +4,9 @@
 import * as fs from "fs";
 import Utility from "../Utilities/SysUtils.js";
 import path from "path";
-import {LCARSClient} from "../Auxiliary/LCARSClient.js";
 import {REST} from "@discordjs/rest";
 import {Routes} from "discord-api-types/v10";
+import { LCARS47Client } from "./OPs_CoreClient";
 
 const PLDYNID = process.env.PLDYNID as string;
 const LCARSID = process.env.LCARSID as string;
@@ -20,12 +20,17 @@ const CommandIndexer = {
 export default CommandIndexer;
 
 //Functions
-async function indexCommands(LCARS47: LCARSClient): Promise<void> {
+async function indexCommands(LCARS47: LCARS47Client): Promise<void> {
     const cmdJSON: object[] = [];
 
     const cmdPath = path.join(__dirname, '../..', 'Commands/Active');
     const commandIndex = fs.readdirSync(cmdPath).filter(f => f.endsWith('.js'));
     for (const command of commandIndex) {
+        if (LCARS47.DISABLED_SYS.has(command)) {
+            Utility.log('warn', `[CMD-INDEXER] Skipping ${command} due to disabled ENV.`);
+            continue;
+        }
+
         const cPath = `../../Commands/Active/${command}`;
         await import (cPath).then(c => {
             const cmd = c.default;

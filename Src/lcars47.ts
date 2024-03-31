@@ -21,21 +21,28 @@ import Utility from "./Subsystems/Utilities/SysUtils.js";
 
 import dotenv from 'dotenv';
 
-// -- INIT --
-//Boot, integrity, and ENV setup
+/**
+ * Initialize
+ * - Load the environment variables
+ * - Create the LCARS47 client
+ */
 dotenv.config();
 const LCARS47 = new LCARS47Client();
 
+/**
+ * Runs the LCARS47 boot sequence.
+ */
 async function runLCARSInit() {
+    await LCARS47.login(process.env.TOKEN as string);
     await LCARS47.doBoot();
 }
 
 runLCARSInit();
 
 // -- CORE --
-LCARS47.login(process.env[`TOKEN`]).then(() => {
-    Utility.log('info', '[CLIENT] Core Online.')
-});
+// LCARS47.login(process.env[`TOKEN`]).then(() => {
+//     Utility.log('info', '[CLIENT] Core Online.')
+// });
 
 // -- API --
 APICore.loadAPI(LCARS47).then(() => {
