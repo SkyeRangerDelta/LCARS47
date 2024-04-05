@@ -5,8 +5,6 @@ import Utility from '../Subsystems/Utilities/SysUtils.js';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient.js";
 import RDS from "../Subsystems/RemoteDS/RDS_Utilities.js";
 
-import { version } from "../../package.json";
-
 import {ActivityType, TextChannel} from "discord.js";
 import { StatusInterface } from "../Subsystems/Auxiliary/StatusInterface.js";
 
@@ -38,8 +36,6 @@ module.exports = {
             STATE: false
         };
 
-        console.log(process.argv);
-
         if (process.argv.includes('--heartbeat')) {
             Utility.log('info', '[CLIENT] Heartbeat only.');
             await LCARS47.destroy();
@@ -50,6 +46,8 @@ module.exports = {
 
         Utility.log('proc', '[CLIENT] IM ALIVE!');
         Utility.log('proc', `[CLIENT] Current Stardate: ${Utility.stardate()}`);
+
+        const version = process.env.VERSION;
 
         // @ts-ignore
         LCARS47.user.setPresence({
