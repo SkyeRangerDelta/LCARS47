@@ -5,6 +5,8 @@ import Utility from '../Subsystems/Utilities/SysUtils.js';
 import {LCARSClient} from "../Subsystems/Auxiliary/LCARSClient.js";
 import RDS from "../Subsystems/RemoteDS/RDS_Utilities.js";
 
+import { version } from "../../package.json";
+
 import {ActivityType, TextChannel} from "discord.js";
 import { StatusInterface } from "../Subsystems/Auxiliary/StatusInterface.js";
 
@@ -36,9 +38,15 @@ module.exports = {
             STATE: false
         };
 
-        LCARS47.RDS_CONNECTION = await RDS.rds_connect();
+        console.log(process.argv);
 
-        const version = process.env.VERSION as string;
+        if (process.argv.includes('--heartbeat')) {
+            Utility.log('info', '[CLIENT] Heartbeat only.');
+            await LCARS47.destroy();
+            return process.exit(0)
+        }
+
+        LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
         Utility.log('proc', '[CLIENT] IM ALIVE!');
         Utility.log('proc', `[CLIENT] Current Stardate: ${Utility.stardate()}`);

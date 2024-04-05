@@ -4,6 +4,7 @@ The official Planetary Dynamics Discord Bot
 --
 
 [![Node.js CI](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml/badge.svg)](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml)
+[![Super-Linter](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/super-linter.yml/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 Developed and Maintained by: SkyeRangerDelta
 
