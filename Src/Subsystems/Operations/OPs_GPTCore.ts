@@ -67,7 +67,7 @@ export default {
             let gptModel = 'gpt-3.5-turbo';
             if (isAdv) {
                 console.log('Using GPT-4');
-                gptModel = 'gpt-4';
+                gptModel = 'gpt-4-0125-preview';
             }
 
             const response = await OAI.chat.completions.create({
