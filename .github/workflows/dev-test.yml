@@ -28,6 +28,11 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
+    - name: Generate ENV
+      run: |
+        touch .env
+        echo "${{ secrets.ENV }}" > .env
+
     - name: Cache
       uses: actions/cache@v4.0.0
       with:
