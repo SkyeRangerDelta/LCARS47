@@ -12,6 +12,8 @@ on:
   pull_request:
     branches: [ "master" ]
 
+permissions: read-all
+
 jobs:
   run-lint:
     name: Lint Codebase

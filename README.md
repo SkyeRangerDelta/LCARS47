@@ -12,10 +12,10 @@ For use only in the Planetary Dynamics(PlDyn) Discord server by PlDyn members fo
 
 ## Features
 - Music player capabilities
-    - Search/direct link
-    - Queue
-    - Skip
-    - Stop
+  - Search/direct link
+  - Queue
+  - Skip
+  - Stop
 - System status
 
 ## Mechanics
