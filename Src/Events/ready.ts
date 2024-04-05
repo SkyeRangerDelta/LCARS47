@@ -7,7 +7,6 @@ import RDS from "../Subsystems/RemoteDS/RDS_Utilities.js";
 
 import {ActivityType, TextChannel} from "discord.js";
 import { StatusInterface } from "../Subsystems/Auxiliary/StatusInterface.js";
-import { JellyfinClient } from "../Subsystems/Auxiliary/JellyfinClient.js";
 
 const PLDYNID = process.env.PLDYNID as string;
 const LCARSID = process.env.LCARSID as string;
@@ -36,8 +35,6 @@ module.exports = {
             VERSION: "",
             STATE: false
         };
-
-        LCARS47.JELLYFIN_CLIENT = new JellyfinClient();
 
         LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
