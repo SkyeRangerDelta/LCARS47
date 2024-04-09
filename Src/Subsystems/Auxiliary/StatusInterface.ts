@@ -1,5 +1,5 @@
 // -- Status Interface --
-export interface StatusInterface extends Object {
+export interface StatusInterface {
   STATE: boolean
   VERSION: string
   SESSION: number
@@ -9,7 +9,7 @@ export interface StatusInterface extends Object {
   QUERIES: number
   CMD_QUERIES: number
   CMD_QUERIES_FAILED: number
-  DS_API_LATENCY: number
+  API_LATENCY: number
   CLIENT_MEM_USAGE: number
   MEDIA_PLAYER_STATE: boolean
   MEDIA_PLAYER_DATA: object
