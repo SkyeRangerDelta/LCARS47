@@ -5,7 +5,7 @@ module.exports = {
   ],
   extends: [
     'eslint:recommended',
-    'standard-with-typescript'
+    'love'
   ],
   env: {
     node: true,
@@ -15,11 +15,13 @@ module.exports = {
     ecmaVersion: 2022
   },
   rules: {
-    semi: 'off',
-    '@typescript-eslint/semi': ['error', 'always']
+    'semi': [2, 'always'],
+    '@typescript-eslint/semi': [2, 'always']
   },
   ignorePatterns: [
     'node_modules/',
-    'Deploy/'
+    'Deploy/',
+    'tsconfig.json',
+    '.eslintrc.js'
   ]
 };
