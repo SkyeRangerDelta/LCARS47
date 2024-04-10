@@ -9,7 +9,7 @@ export interface StatusInterface {
   QUERIES: number
   CMD_QUERIES: number
   CMD_QUERIES_FAILED: number
-  API_LATENCY: number
+  SYSTEM_LATENCY: number
   CLIENT_MEM_USAGE: number
   MEDIA_PLAYER_STATE: boolean
   MEDIA_PLAYER_DATA: object
