@@ -24,6 +24,7 @@
     "@discordjs/opus": "^0.9.0",
     "@discordjs/rest": "^0.2.0-canary.0",
     "@discordjs/voice": "^0.15.0",
+    "@distube/ytsr": "^2.0.0",
     "@jellyfin/sdk": "^0.8.2",
     "colors": "^1.4.0",
     "discord-api-types": "^0.37.5",
@@ -38,8 +39,7 @@
     "opusscript": "^0.0.8",
     "ts-node": "^10.4.0",
     "tweetnacl": "^1.0.3",
-    "ytdl-core": "^4.11.5",
-    "ytsr": "^3.8.2"
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",

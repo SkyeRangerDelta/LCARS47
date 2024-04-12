@@ -15,7 +15,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 
 import ytdl from 'ytdl-core';
-import ytsr from 'ytsr';
+import ytsr from '@distube/ytsr';
 
 import {
   type AudioPlayer,
@@ -37,8 +37,17 @@ import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
 
 import { promisify } from 'util';
 
-const PLDYNID = process.env.PLDYNID;
-const MEDIALOG = process.env.MEDIALOG;
+let PLDYNID: string;
+let MEDIALOG: string;
+
+if ( process.env.PLDYNID == null || process.env.MEDIALOG == null ) {
+  throw new Error( 'Missing environment variables!' );
+}
+else {
+  PLDYNID = process.env.PLDYNID;
+  MEDIALOG = process.env.MEDIALOG;
+}
+
 const wait = promisify( setTimeout );
 
 // Functions
@@ -82,12 +91,15 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
   const ytLink = int.options.getString( 'video-query' ) ?? '';
 
   const validSong = await determineSong( ytLink );
-  let songData: ytdl.videoInfo;
+  let songData: ytdl.videoInfo | null;
   if ( !validSong ) {
     return await int.editReply( 'Failed to get any song data!' );
   }
   else {
     songData = await getBasicInfo( ytLink );
+    if ( songData == null ) {
+      return await int.editReply( 'Failed to get any song data!' );
+    }
   }
 
   const songDuration = parseInt( songData.videoDetails.lengthSeconds );
@@ -118,16 +130,15 @@ async function determineSong ( url: string ): Promise<boolean> {
   else {
     // Do search
     try {
-      const filter1 = await ytsr.getFilters( url );
-      const filter1r = filter1.get( 'Type' ).get( 'Video' );
-      const songDataRes = await ytsr( filter1r.url, { pages: 1 } );
-      if ( songDataRes.results != 0 ) {
-        Utility.log( 'info', `[MEDIA-PLAYER] ${songDataRes.results} were found from a general search, sending song data.` );
+      const searchResults = await ytsr( url, { limit: 1 } );
+
+      if ( searchResults.results !== 0 ) {
+        Utility.log( 'info', `[MEDIA-PLAYER] ${searchResults.results} were found from a general search, sending song data.` );
         return true;
       }
     }
-    catch ( searchErr ) {
-      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n${searchErr}` );
+    catch ( searchErr: any ) {
+      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${searchErr}` );
       return false;
     }
   }
@@ -135,11 +146,11 @@ async function determineSong ( url: string ): Promise<boolean> {
   return false;
 }
 
-async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo> {
+async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo | null> {
   Utility.log( 'info', '[MEDIA-PLAYER] Building and parsing song data' );
 
   const videoUrl = url;
-  let songData;
+  let songData: ytdl.videoInfo;
 
   // Validate
   if ( ytdl.validateURL( videoUrl ) ) {
@@ -147,21 +158,17 @@ async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo> {
       songData = await ytdl.getInfo( videoUrl );
     }
     catch ( noDataErr ) {
-      throw 'Invalid URL?';
+      throw new Error( 'Invalid URL?' );
     }
   }
   else {
     try {
-      // Search
-      const filter1 = await ytsr.getFilters( videoUrl );
-      const filter1r = filter1.get( 'Type' )!.get( 'Video' )!;
-      // @ts-expect-error
-      const songDataRes = await ytsr( filter1r.url, { limit: 1 } );
-      // @ts-expect-error
-      songData = await ytdl.getInfo( songDataRes.items[0].url );
+      const searchResults = await ytsr( url, { limit: 1 } );
+      songData = await ytdl.getInfo( searchResults.items[0].url );
     }
-    catch ( e ) {
-      throw 'Not able to parse the song search - probably YTSR being a retard again.';
+    catch ( searchErr: any ) {
+      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${searchErr}` );
+      return null;
     }
   }
 
@@ -214,37 +221,39 @@ async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection |
   const playerConnection = joinVoiceChannel( {
     channelId: vChannel.id,
     guildId: PLDYNID,
-    adapterCreator: vChannel.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator // TODO: What is this
+    adapterCreator: vChannel.guild.voiceAdapterCreator as DiscordGatewayAdapterCreator
   } );
 
   try {
     await entersState( playerConnection, VoiceConnectionStatus.Ready, 20_000 );
-    playerConnection.on( 'stateChange', async ( _, newState ) => {
-      Utility.log( 'info', '[MEDIA-PLAYER] Logging a state change.(Old: ' + _.status + ' - New: ' + newState.status + ')' );
-      if ( newState.status === VoiceConnectionStatus.Disconnected ) {
-        /*
-                Weird situation check here, if this socket close code is 4014, wait 5s to determine if the bot
-                was kicked or if it changed channels; otherwise, nuke it for simplicity.
-                 */
-        Utility.log( 'info', '[MEDIA-PLAYER] Handling a disconnect!' );
-        if ( newState.reason ===
-                VoiceConnectionDisconnectReason.WebSocketClose && newState.closeCode === 4014 ) {
-          try {
-            await entersState( playerConnection, VoiceConnectionStatus.Connecting, 5_000 );
-            Utility.log( 'info', '[MEDIA-PLAYER] Reconnected.' );
+    playerConnection.on( 'stateChange', ( _, newState ) => {
+      void ( async () => {
+        Utility.log( 'info', '[MEDIA-PLAYER] Logging a state change.(Old: ' + _.status + ' - New: ' + newState.status + ')' );
+        if ( newState.status === VoiceConnectionStatus.Disconnected ) {
+          /*
+                  Weird situation check here, if this socket close code is 4014, wait 5s to determine if the bot
+                  was kicked or if it changed channels; otherwise, nuke it for simplicity.
+                   */
+          Utility.log( 'info', '[MEDIA-PLAYER] Handling a disconnect!' );
+          if ( newState.reason ===
+            VoiceConnectionDisconnectReason.WebSocketClose && newState.closeCode === 4014 ) {
+            try {
+              await entersState( playerConnection, VoiceConnectionStatus.Connecting, 5_000 );
+              Utility.log( 'info', '[MEDIA-PLAYER] Reconnected.' );
+            }
+            catch ( disconnected ) {
+              playerConnection.destroy();
+            }
           }
-          catch ( disconnected ) {
+          else if ( playerConnection.rejoinAttempts < 5 ) {
+            await wait( ( playerConnection.rejoinAttempts + 1 ) * 5_000 );
+            playerConnection.rejoin();
+          }
+          else {
             playerConnection.destroy();
           }
         }
-        else if ( playerConnection.rejoinAttempts < 5 ) {
-          await wait( ( playerConnection.rejoinAttempts + 1 ) * 5_000 );
-          playerConnection.rejoin();
-        }
-        else {
-          playerConnection.destroy();
-        }
-      }
+      } )();
     } );
 
     playerConnection.on( 'error', ( e ) => {
@@ -284,23 +293,23 @@ async function playSong ( queue: Map<string, LCARSMediaPlayer> ): Promise<void> 
 
   Utility.log( 'info', '[MEDIA-PLAYER] Getting stream...' );
   currentQueue.songStream = await getSongStream( song );
-  await connection.subscribe( currentQueue.songStream );
+  connection.subscribe( currentQueue.songStream );
   currentQueue.isPlaying = true;
 
   currentQueue.songStream.on( AudioPlayerStatus.Buffering, () => {
-    defaultReportChannel.send( 'Song Buffering!?' );
+    void defaultReportChannel.send( 'Song Buffering!?' );
   } );
 
   currentQueue.songStream.on( AudioPlayerStatus.AutoPaused, () => {
     if ( getVoiceConnection( PLDYNID ) != null ) {
-      defaultReportChannel.send( 'Song seems to have halted.' );
+      void defaultReportChannel.send( 'Song seems to have halted.' );
     }
   } );
 
   currentQueue.songStream.on( AudioPlayerStatus.Idle, () => {
     console.log( 'Stream ended?' );
     currentQueue.isPlaying = false;
-    handleSongEnd( queue, currentQueue );
+    void handleSongEnd( queue, currentQueue );
   } );
 
   sendNowPlaying( currentQueue );
@@ -313,9 +322,9 @@ async function handleSongEnd ( currentQueue: Map<string, LCARSMediaPlayer>, play
 
   playerQueue.songs.shift();
   try {
-    playSong( currentQueue );
+    await playSong( currentQueue );
   }
-  catch ( err ) {
+  catch ( err: any ) {
     Utility.log( 'err', '[MEDIA-PLAYER] Unexpected:\n' + err );
   }
 }
@@ -326,7 +335,7 @@ function handleEmptyQueue ( currentQueue: Map<string, LCARSMediaPlayer>, playerQ
   if ( playerQueue.voiceChannel.members.size === 0 ) {
     connection?.destroy();
     currentQueue.delete( PLDYNID );
-    defaultReportChannel.send( '*Grumbles to self about streaming music to an empty channel.*' );
+    void defaultReportChannel.send( '*Grumbles to self about streaming music to an empty channel.*' );
     return;
   }
 
@@ -340,7 +349,7 @@ function handleEmptyQueue ( currentQueue: Map<string, LCARSMediaPlayer>, playerQ
 
 function sendNowPlaying ( playerQueue: LCARSMediaPlayer ): void {
   const song = playerQueue.songs[0];
-  defaultReportChannel.send( `__Now Playing__\n**${song.title}** (${song.durationFriendly})` );
+  void defaultReportChannel.send( `__Now Playing__\n**${song.title}** (${song.durationFriendly})` );
 }
 
 function help (): string {
