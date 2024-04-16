@@ -10,9 +10,7 @@ import {
   type TextChannel,
   type VoiceChannel
 } from 'discord.js';
-import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
-import Utility from '../../Subsystems/Utilities/SysUtils.js';
 
 import ytdl from 'ytdl-core';
 import ytsr from '@distube/ytsr';
@@ -32,10 +30,13 @@ import {
   VoiceConnectionStatus
 } from '@discordjs/voice';
 
+import { promisify } from 'util';
+
 import { type LCARSMediaPlayer, type LCARSMediaSong } from '../../Subsystems/Auxiliary/MediaInterfaces.js';
 import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
-
-import { promisify } from 'util';
+import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
+import Utility from '../../Subsystems/Utilities/SysUtils.js';
+import { NoSongErr } from '../../Errors/NoSong.js';
 
 let PLDYNID: string;
 let MEDIALOG: string;
@@ -158,7 +159,7 @@ async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo | null> {
       songData = await ytdl.getInfo( videoUrl );
     }
     catch ( noDataErr ) {
-      throw new Error( 'Invalid URL?' );
+      throw new NoSongErr( 'Invalid URL?' );
     }
   }
   else {

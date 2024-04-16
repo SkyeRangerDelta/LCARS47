@@ -1,7 +1,7 @@
 // -- STATUS --
 
 // Imports
-import { type ChatInputCommandInteraction, Message } from 'discord.js';
+import { type ChatInputCommandInteraction, type Message } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 
