@@ -2,11 +2,11 @@
 
 // Imports
 import {
-  BaseItemDtoQueryResult,
-  LibraryApi,
-  PublicSystemInfo,
-  SessionInfo
-} from '@jellyfin/sdk/lib/generated-client'
+  type BaseItemDtoQueryResult,
+  type LibraryApi,
+  type PublicSystemInfo,
+  type SessionInfo
+} from '@jellyfin/sdk/lib/generated-client';
 
 // Exports
 export interface JClientStatus {

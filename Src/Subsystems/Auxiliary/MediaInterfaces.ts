@@ -1,7 +1,7 @@
 // -- Media Player Interfaces --
-import { GuildMember, Message, VoiceChannel } from 'discord.js'
-import ytdl from 'ytdl-core'
-import { AudioPlayer } from '@discordjs/voice'
+import { type GuildMember, type Message, type VoiceChannel } from 'discord.js';
+import type ytdl from 'ytdl-core';
+import { type AudioPlayer } from '@discordjs/voice';
 
 export interface LCARSMediaSong {
   info: ytdl.videoInfo

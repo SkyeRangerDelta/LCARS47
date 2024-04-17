@@ -14,3 +14,15 @@ export interface StatusInterface {
   MEDIA_PLAYER_STATE: boolean
   MEDIA_PLAYER_DATA: object
 }
+
+export interface RDSStatus {
+  id: number
+  QUERIES: number
+  STATE: boolean
+  VERSION: string
+  CMD_QUERIES: number
+  CMD_QUERIES_FAILED: number
+  SESSION: number
+  STARTUP_TIME: string
+  STARTUP_UTC: number
+}

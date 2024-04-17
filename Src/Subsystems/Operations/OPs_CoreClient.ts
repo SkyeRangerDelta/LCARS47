@@ -2,11 +2,11 @@
 // Handles the start of a client
 
 // Imports
-import { Client, GatewayIntentBits } from 'discord.js'
-import { LCARSClient } from '../Auxiliary/LCARSClient.js'
+import { Client, GatewayIntentBits } from 'discord.js';
+import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
 
 // Exports
-export const LCARS47 = new Client({
+export const LCARS47 = new Client( {
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
@@ -15,4 +15,4 @@ export const LCARS47 = new Client({
     GatewayIntentBits.GuildMessageTyping,
     GatewayIntentBits.MessageContent
   ]
-}) as LCARSClient
+} ) as LCARSClient;

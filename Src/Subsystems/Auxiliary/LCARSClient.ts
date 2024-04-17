@@ -1,11 +1,17 @@
 // -- LCARS Client --
 
 // Imports
-import { SlashCommandBuilder } from '@discordjs/builders'
-import { Client, Collection, CommandInteraction, Guild, GuildMember } from 'discord.js'
-import { LCARSMediaPlayer } from './MediaInterfaces.js'
-import { MongoClient } from 'mongodb'
-import { StatusInterface } from './StatusInterface.js'
+import { type SlashCommandBuilder } from '@discordjs/builders';
+import {
+  type ChatInputCommandInteraction,
+  type Client,
+  type Collection,
+  type Guild,
+  type GuildMember
+} from 'discord.js';
+import { type LCARSMediaPlayer } from './MediaInterfaces.js';
+import { type MongoClient } from 'mongodb';
+import { type StatusInterface } from './StatusInterface.js';
 
 // Exports
 export interface LCARSClient extends Client {
@@ -15,7 +21,7 @@ export interface LCARSClient extends Client {
     name: string
     data: SlashCommandBuilder
     ownerOnly?: boolean
-    execute: (LCARS47: LCARSClient, int: CommandInteraction) => Promise<void>
+    execute: ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ) => Promise<void>
     help: () => void
   }
   >

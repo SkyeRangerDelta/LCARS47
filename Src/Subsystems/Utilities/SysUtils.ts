@@ -3,7 +3,7 @@
 
 // Imports
 import colors from 'colors';
-import { DateTime, Duration } from 'luxon';
+import { DateTime, type Duration } from 'luxon';
 
 // Exports
 export default {
