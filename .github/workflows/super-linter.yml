@@ -34,7 +34,6 @@ jobs:
       - name: Lint Code Base
         uses: super-linter/super-linter@v6.3.1
         env:
-          VALIDATE_ALL_CODEBASE: false
           VALIDATE_TYPESCRIPT_STANDARD: false
           DEFAULT_BRANCH: "master"
           TYPESCRIPT_ES_CONFIG_FILE: ".eslintrc.js"
