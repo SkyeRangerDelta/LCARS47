@@ -40,17 +40,22 @@ module.exports = {
       STATE: false
     } satisfies StatusInterface;
 
-    LCARS47.RDS_CONNECTION = await RDS.rds_connect();
-
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
     Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()}` );
 
     const version = process.env.VERSION;
 
     LCARS47.user?.setPresence( {
-      activities: [{ name: 'for stuff | V' + version, type: ActivityType.Listening }],
+      activities: [{ name: 'for stuff | ' + version, type: ActivityType.Listening }],
       status: 'online'
     } );
+
+    if ( process.argv.includes( '--heartbeat' ) ) {
+      Utility.log( 'proc', 'Heartbeat done.' );
+      return process.exit( 0 );
+    }
+
+    LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
     Utility.log( 'info', '[CLIENT] Getting old stats page.' );
     const oldBotData = await RDS.rds_getStatusFull( LCARS47.RDS_CONNECTION );

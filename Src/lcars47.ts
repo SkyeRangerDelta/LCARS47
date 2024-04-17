@@ -15,18 +15,15 @@
 
 // -- DEPENDENCIES --
 // Libraries
-import dotenv from 'dotenv';
+import { Collection } from 'discord.js';
 
 // Subsystems
+import './Subsystems/Utilities/EnvUtils';
 import { LCARS47 } from './Subsystems/Operations/OPs_CoreClient.js';
 import EventsIndexer from './Subsystems/Operations/OPs_EventIndexer.js';
 import CommandIndexer from './Subsystems/Operations/OPs_CmdHandler.js';
-import { Collection } from 'discord.js';
-import APICore from './Subsystems/Operations/OPs_APICore.js';
 import Utility from './Subsystems/Utilities/SysUtils.js';
-
-// -- INIT --
-dotenv.config();
+import APICore from './Subsystems/Operations/OPs_APICore';
 
 // Index Events
 void EventsIndexer.indexEvents( LCARS47 ).then( () => {
@@ -39,7 +36,9 @@ void LCARS47.login( process.env.TOKEN ).then( () => {
   Utility.log( 'info', '[CLIENT] Core Online.' );
 } );
 
-// -- API --
-void APICore.loadAPI( LCARS47 ).then( () => {
-  Utility.log( 'info', '[CLIENT] API Online.' );
-} );
+if ( !process.argv.includes( '--heartbeat' ) ) {
+  // -- API --
+  void APICore.loadAPI( LCARS47 ).then( () => {
+    Utility.log( 'info', '[CLIENT] API Online.' );
+  } );
+}

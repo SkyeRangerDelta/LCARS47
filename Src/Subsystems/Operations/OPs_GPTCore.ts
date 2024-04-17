@@ -65,7 +65,7 @@ export default {
 
       let gptModel = 'gpt-3.5-turbo';
       if ( isAdv ) {
-        console.log( 'Using GPT-4' );
+        console.log( 'Using GPT-4 Turbo' );
         gptModel = 'gpt-4-0125-preview';
       }
 
@@ -79,23 +79,27 @@ export default {
         n: 1
       } );
 
-      console.log( 'Response from GPT Core...', response );
-
       const reply = response.choices[0].message;
-      if ( reply == null ) return await msg.reply( 'GPT Core snagged an error somewhere.' );
+      if ( reply == null ) return await msg.reply( 'GPT Core didnt respond.' );
 
-      if ( reply.content == null ) return await msg.reply( 'GPT Core snagged an error somewhere.' );
       const resText = reply.content;
 
+      if ( resText == null ) return await msg.reply( 'GPT Core responded with nothing.' );
+
       if ( resText.length > 2000 ) {
+        Utility.log( 'info', '[GPT-CORE] Response too long for Discord. Sending as file.' );
+
         const txtFile = new AttachmentBuilder( resText, { name: `${msg.author.tag}_response.txt` } );
 
-        msg.reply( { files: [txtFile] } ).catch( () => {
-          void msg.channel.send( { content: `${msg.author.displayName}`, files: [txtFile] } );
+        await msg.reply( { files: [txtFile.attachment] } ).catch( ( e ) => {
+          console.log( e );
+          void msg.channel.send( { content: `${msg.author.displayName}`, files: [txtFile.attachment] } );
         } );
       }
       else {
-        msg.reply( resText ).catch( () => {
+        Utility.log( 'info', '[GPT-CORE] Got a response.' );
+        await msg.reply( resText.toString() ).catch( ( e ) => {
+          console.log( e );
           void msg.channel.send( `${msg.author.displayName} ${resText}` );
         } );
       }
