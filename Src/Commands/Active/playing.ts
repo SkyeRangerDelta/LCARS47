@@ -9,6 +9,7 @@ import {
   type InteractionResponse
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
+import { type Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
 const PLDYNID = process.env.PLDYNID ?? '';
 
@@ -84,4 +85,4 @@ export default {
   data,
   execute,
   help
-};
+} satisfies Command;

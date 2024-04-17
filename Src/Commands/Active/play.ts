@@ -37,6 +37,7 @@ import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { NoSongErr } from '../../Errors/NoSong.js';
+import { type Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
 let PLDYNID: string;
 let MEDIALOG: string;
@@ -316,7 +317,7 @@ async function playSong ( queue: Map<string, LCARSMediaPlayer> ): Promise<void> 
   sendNowPlaying( currentQueue );
 }
 
-async function handleSongEnd ( currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer ): Promise<void> {
+export async function handleSongEnd ( currentQueue: Map<string, LCARSMediaPlayer>, playerQueue: LCARSMediaPlayer ): Promise<void> {
   if ( playerQueue.songs.length === 0 ) {
     return;
   }
@@ -362,6 +363,5 @@ export default {
   name: 'Play',
   data,
   execute,
-  help,
-  handleSongEnd
-};
+  help
+} satisfies Command;

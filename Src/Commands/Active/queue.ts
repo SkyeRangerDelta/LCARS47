@@ -7,6 +7,7 @@ import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import { type ChatInputCommandInteraction, type CommandInteraction, type InteractionResponse } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
+import type { Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
 let PLDYNID: string;
 
@@ -93,4 +94,4 @@ export default {
   data,
   execute,
   help
-};
+} satisfies Command;

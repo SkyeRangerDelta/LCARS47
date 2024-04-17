@@ -15,6 +15,7 @@ import {
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
+import type { Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
 // Cmd Data
 const data = new SlashCommandBuilder()
@@ -150,4 +151,4 @@ export default {
   data,
   execute,
   help
-};
+} satisfies Command;

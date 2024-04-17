@@ -7,7 +7,8 @@ import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import { type ChatInputCommandInteraction, type GuildMember, type InteractionResponse } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 
-import PlayerUtils from './play.js';
+import { handleSongEnd } from './play.js';
+import type { Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
 const PLDYNID = process.env.PLDYNID ?? '';
 
@@ -42,7 +43,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
       return await int.reply( 'You need to call this from the player channel!' );
     }
 
-    await PlayerUtils.handleSongEnd( LCARS47.MEDIA_QUEUE, serverQueue );
+    await handleSongEnd( LCARS47.MEDIA_QUEUE, serverQueue );
 
     return await int.reply( {
       content: 'Queue skipped forward.'
@@ -63,4 +64,4 @@ export default {
   data,
   execute,
   help
-};
+} satisfies Command;

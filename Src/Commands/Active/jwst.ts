@@ -8,6 +8,7 @@ import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import https from 'https';
 
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
+import { type Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
 // Functions
 const data = new SlashCommandBuilder()
@@ -151,4 +152,4 @@ export default {
   data,
   execute,
   help
-};
+} satisfies Command;
