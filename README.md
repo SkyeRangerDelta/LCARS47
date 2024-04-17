@@ -4,6 +4,7 @@ The official Planetary Dynamics Discord Bot
 --
 
 [![Node.js CI](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml/badge.svg)](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml)
+[![Super-Linter](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/super-linter.yml/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 Developed and Maintained by: SkyeRangerDelta
 
@@ -11,10 +12,10 @@ For use only in the Planetary Dynamics(PlDyn) Discord server by PlDyn members fo
 
 ## Features
 - Music player capabilities
-    - Search/direct link
-    - Queue
-    - Skip
-    - Stop
+  - Search/direct link
+  - Queue
+  - Skip
+  - Stop
 - System status
 
 ## Mechanics

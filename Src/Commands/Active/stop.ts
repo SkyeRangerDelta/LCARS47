@@ -1,69 +1,67 @@
 // -- STOP --
-//Halts and disconnects the media player
+// Halts and disconnects the media player
 
-//Imports
-import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
-import Utility from "../../Subsystems/Utilities/SysUtils.js";
+// Imports
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
+import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import {
-    ChatInputCommandInteraction,
-    CommandInteraction,
-    GuildMember,
-    InteractionResponse,
-    VoiceChannel
-} from "discord.js";
-const PLDYNID = process.env.PLDYNID as string;
+  type ChatInputCommandInteraction,
+  type GuildMember,
+  type InteractionResponse
+} from 'discord.js';
 
-import {getVoiceConnection} from "@discordjs/voice";
+import { getVoiceConnection } from '@discordjs/voice';
+const PLDYNID = process.env.PLDYNID ?? '';
 
-//Functions
+// Functions
 const data = new SlashCommandBuilder()
-    .setName('stop')
-    .setDescription('Halts and disconnects the media player.');
+  .setName( 'stop' )
+  .setDescription( 'Halts and disconnects the media player.' );
 
-async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
-    Utility.log('info', '[MEDIA-PLAYER] Received a stop command.');
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+  Utility.log( 'info', '[MEDIA-PLAYER] Received a stop command.' );
 
-    const serverQueue = LCARS47.MEDIA_QUEUE.get(PLDYNID);
-    if (!serverQueue) {
-        return int.reply('Nothing is playing at the moment.');
+  const serverQueue = LCARS47.MEDIA_QUEUE.get( PLDYNID );
+  if ( serverQueue == null ) {
+    return await int.reply( 'Nothing is playing at the moment.' );
+  }
+
+  let member: GuildMember;
+
+  try {
+    member = await LCARS47.PLDYN.members.fetch( int.user.id );
+  }
+  catch ( noMember ) {
+    throw new Error( 'Couldnt the calling member!' );
+  }
+
+  try {
+    if ( member.voice?.channel == null ) {
+      return await int.reply( 'Youre not connected to a voice channel!' );
+    }
+    else if ( member.voice.channel !== serverQueue.voiceChannel ) {
+      return await int.reply( 'You need to call this from the player channel!' );
     }
 
-    let member: GuildMember;
-
-    try {
-        member = await LCARS47.PLDYN.members.fetch(int.user.id);
-    }
-    catch (noMember) {
-        throw 'Couldnt the calling member!';
-    }
-
-    try {
-        if (!member.voice || !member.voice.channel) {
-            return int.reply('Youre not connected to a voice channel!');
-        }
-        else if (member.voice.channel !== serverQueue.voiceChannel) {
-            return int.reply('You need to call this from the player channel!');
-        }
-
-        const connection = getVoiceConnection(PLDYNID);
-        connection?.destroy();
-        LCARS47.MEDIA_QUEUE.delete(PLDYNID);
-        return int.reply('Disconnected!');
-    }
-    catch (endErr) {
-        throw `Failed to terminate player.\n${endErr}`;
-    }
+    const connection = getVoiceConnection( PLDYNID );
+    connection?.destroy();
+    LCARS47.MEDIA_QUEUE.delete( PLDYNID );
+    return await int.reply( 'Disconnected!' );
+  }
+  catch ( endErr: any ) {
+    throw new Error( `Failed to terminate player.\n${endErr}` );
+  }
 }
 
-function help(): string {
-    return 'Halts and disconnects the media player.';
+function help (): string {
+  return 'Halts and disconnects the media player.';
 }
 
-//Exports
+// Exports
 export default {
-    name: 'Stop',
-    data,
-    execute,
-    help
-}
+  name: 'Stop',
+  data,
+  execute,
+  help
+};

@@ -1,88 +1,97 @@
 // -- QUEUE --
 // Displays the list of songs currently playing
 
-//Imports
-import {SlashCommandBuilder} from "@discordjs/builders";
-import {LCARSClient} from "../../Subsystems/Auxiliary/LCARSClient.js";
-import {ChatInputCommandInteraction, CommandInteraction, InteractionResponse} from "discord.js";
-import Utility from "../../Subsystems/Utilities/SysUtils.js";
-import {convertDuration} from "../../Subsystems/Utilities/MediaUtils.js";
+// Imports
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
+import { type ChatInputCommandInteraction, type CommandInteraction, type InteractionResponse } from 'discord.js';
+import Utility from '../../Subsystems/Utilities/SysUtils.js';
+import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
+import type { Command } from '../../Subsystems/Auxiliary/CommandInterface';
 
-const PLDYNID = process.env.PLDYNID as string;
+let PLDYNID: string;
 
-//Globals
-const data = new SlashCommandBuilder()
-    .setName('queue')
-    .setDescription('Displays a list of the songs in the playlist.');
-
-//Functions
-async function execute(LCARS47: LCARSClient, int: ChatInputCommandInteraction): Promise<InteractionResponse | void> {
-    Utility.log('info', '[MEDIA-PLAYER] Received a queue request.');
-
-    let member;
-    try {
-        member = await LCARS47.PLDYN.members.fetch(int.user.id)
-    }
-    catch (noUserErr) {
-        return int.reply({
-            content: 'No data could be found on your user. Process terminated.',
-            ephemeral: true
-        });
-    }
-
-    try {
-        if (!member.voice || !member.voice.channel) {
-            return int.reply({
-                content: 'User must be attached to a valid voice channel.',
-                ephemeral: true
-            });
-        }
-        else {
-            await displayQueue(LCARS47, int);
-        }
-    }
-    catch (noVoiceErr) {
-        return int.reply({
-            content: 'Error retrieving valid voice channel. Process terminated.',
-            ephemeral: true
-        });
-    }
+if ( process.env.PLDYNID == null ) {
+  Utility.log( 'error', '[MEDIA-PLAYER] PLDYNID not set.' );
+  throw new Error( 'PLDYNID not set.' );
+}
+else {
+  PLDYNID = process.env.PLDYNID;
 }
 
-async function displayQueue(LCARS47: LCARSClient, int: CommandInteraction) {
-    let queueList;
-    let songList = '';
-    let totalDuration = 0;
+// Globals
+const data = new SlashCommandBuilder()
+  .setName( 'queue' )
+  .setDescription( 'Displays a list of the songs in the playlist.' );
 
-    if (LCARS47.MEDIA_QUEUE.has(PLDYNID)) {
-        queueList = LCARS47.MEDIA_QUEUE.get(PLDYNID)?.songs;
+// Functions
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+  Utility.log( 'info', '[MEDIA-PLAYER] Received a queue request.' );
 
-        if (!queueList) return int.reply({content: 'No media in queue.'});
+  let member;
+  try {
+    member = await LCARS47.PLDYN.members.fetch( int.user.id );
+  }
+  catch ( noUserErr ) {
+    return await int.reply( {
+      content: 'No data could be found on your user. Process terminated.',
+      ephemeral: true
+    } );
+  }
+
+  try {
+    if ( member.voice?.channel == null ) {
+      return await int.reply( {
+        content: 'User must be attached to a valid voice channel.',
+        ephemeral: true
+      } );
     }
     else {
-        return int.reply({
-            content: 'No media in queue.'
-        });
+      return await displayQueue( LCARS47, int );
     }
-
-    for (const song of queueList) {
-        songList += `**${song.title}** - *${song.info.videoDetails.author.name}* (${song.durationFriendly})\n`;
-        totalDuration += song.duration;
-    }
-
-    return int.reply({
-        content: `**__Player Queue__** (${convertDuration(totalDuration)})\n${songList}`
-    });
+  }
+  catch ( noVoiceErr ) {
+    return await int.reply( {
+      content: 'Error retrieving valid voice channel. Process terminated.',
+      ephemeral: true
+    } );
+  }
 }
 
-function help(): string {
-    return 'Displays the list of songs in the playlist.'
+async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): Promise<InteractionResponse> {
+  let queueList;
+  let songList = '';
+  let totalDuration = 0;
+
+  if ( LCARS47.MEDIA_QUEUE.has( PLDYNID ) ) {
+    queueList = LCARS47.MEDIA_QUEUE.get( PLDYNID )?.songs;
+
+    if ( queueList == null ) return await int.reply( { content: 'No media in queue.' } );
+  }
+  else {
+    return await int.reply( {
+      content: 'No media in queue.'
+    } );
+  }
+
+  for ( const song of queueList ) {
+    songList += `**${song.title}** - *${song.info.videoDetails.author.name}* (${song.durationFriendly})\n`;
+    totalDuration += song.duration;
+  }
+
+  return await int.reply( {
+    content: `**__Player Queue__** (${convertDuration( totalDuration )})\n${songList}`
+  } );
 }
 
-//Exports
+function help (): string {
+  return 'Displays the list of songs in the playlist.';
+}
+
+// Exports
 export default {
-    name: 'Status',
-    data,
-    execute,
-    help
-}
+  name: 'Status',
+  data,
+  execute,
+  help
+} satisfies Command;
