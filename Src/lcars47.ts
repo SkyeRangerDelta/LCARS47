@@ -6,7 +6,6 @@
 //          By SkyeRangerDelta
 // -------------------------------------------
 //      See https://pldyn.net
-//  And blog: https://cf.pldyn.net/
 //   Wiki: https://wiki.pldyn.net/
 //
 //  This is a custom bot designed for the
@@ -30,17 +29,17 @@ import Utility from './Subsystems/Utilities/SysUtils.js';
 dotenv.config();
 
 // Index Events
-void EventsIndexer.indexEvents(LCARS47).then(() => {
+void EventsIndexer.indexEvents( LCARS47 ).then( () => {
   LCARS47.CMD_INDEX = new Collection();
-  void CommandIndexer.indexCommands(LCARS47);
-});
+  void CommandIndexer.indexCommands( LCARS47 );
+} );
 
 // -- CORE --
-void LCARS47.login(process.env.TOKEN).then(() => {
-  Utility.log('info', '[CLIENT] Core Online.');
-});
+void LCARS47.login( process.env.TOKEN ).then( () => {
+  Utility.log( 'info', '[CLIENT] Core Online.' );
+} );
 
 // -- API --
-void APICore.loadAPI(LCARS47).then(() => {
-  Utility.log('info', '[CLIENT] API Online.');
-});
+void APICore.loadAPI( LCARS47 ).then( () => {
+  Utility.log( 'info', '[CLIENT] API Online.' );
+} );
