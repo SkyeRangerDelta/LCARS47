@@ -23,7 +23,6 @@ module.exports = {
   ignorePatterns: [
     'node_modules/',
     'Deploy/',
-    'tsconfig.json',
-    '.eslintrc.js'
+    'tsconfig.json'
   ]
 };
