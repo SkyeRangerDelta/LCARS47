@@ -40,12 +40,6 @@ module.exports = {
       STATE: false
     } satisfies StatusInterface;
 
-    if ( process.argv.includes( '--heartbeat' ) ) {
-      Utility.log( 'info', '[CLIENT] Heartbeat only.' );
-      await LCARS47.destroy();
-      return process.exit( 0 );
-    }
-
     LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
