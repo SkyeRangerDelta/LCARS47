@@ -37,7 +37,7 @@ jobs:
     - name: Generate ENV
       run: |
         touch .env
-        echo $ENV_FILE | base64 --decode > .env
+        echo $ENV_DATA | base64 --decode > .env
 
     - name: Cache
       uses: actions/cache@v4.0.0
