@@ -32,12 +32,12 @@ import {
 
 import { promisify } from 'util';
 
-import { type LCARSMediaPlayer, type LCARSMediaSong } from '../../Subsystems/Auxiliary/MediaInterfaces.js';
+import { type LCARSMediaPlayer, type LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces.js';
 import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { NoSongErr } from '../../Errors/NoSong.js';
-import { type Command } from '../../Subsystems/Auxiliary/CommandInterface';
+import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
 let PLDYNID: string;
 let MEDIALOG: string;

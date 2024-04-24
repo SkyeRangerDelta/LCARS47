@@ -1,4 +1,4 @@
-import { type LCARSClient } from './LCARSClient';
+import { type LCARSClient } from '../LCARSClient';
 import { type ChatInputCommandInteraction } from 'discord.js';
 import { type SlashCommandBuilder } from '@discordjs/builders';
 

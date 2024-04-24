@@ -7,7 +7,7 @@ import path from 'path';
 import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
-import { type Command } from '../Auxiliary/CommandInterface';
+import { type Command } from '../Auxiliary/Interfaces/CommandInterface';
 
 const PLDYNID = process.env.PLDYNID;
 const LCARSID = process.env.LCARSID;

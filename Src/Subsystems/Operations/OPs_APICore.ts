@@ -3,7 +3,7 @@
 // Imports
 import Utility from '../Utilities/SysUtils.js';
 import exp, { type Application, type Request, type Response } from 'express';
-import { type StatusInterface } from '../Auxiliary/StatusInterface.js';
+import { type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
 import RDS_Utilities from '../RemoteDS/RDS_Utilities.js';
 import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
 
