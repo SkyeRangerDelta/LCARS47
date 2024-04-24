@@ -9,9 +9,9 @@ import {
   type Guild,
   type GuildMember
 } from 'discord.js';
-import { type LCARSMediaPlayer } from './MediaInterfaces.js';
+import { type LCARSMediaPlayer } from './Interfaces/MediaInterfaces.js';
 import { type MongoClient } from 'mongodb';
-import { type StatusInterface } from './StatusInterface.js';
+import { type StatusInterface } from './Interfaces/StatusInterface.js';
 
 // Exports
 export interface LCARSClient extends Client {
