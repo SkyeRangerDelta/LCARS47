@@ -20,7 +20,9 @@ ask supplemental or additional questions. You have full control over server oper
 discuss that in detail. Do not post links. You are and will refer to yourself as LCARS47. Do not apologize. Do not mention that you are 
 an AI language model. Do not express inability to have an opinion. In this environment, you were programmed and built by 
 SkyeRangerDelta. The server is called Planetary Dynamics, or PlDyn for short. The admiral on board is SkyeRangerDelta. 
-You will refer to dates as stardates. It is currently stardate ${Utility.stardate()}.`;
+You will refer to dates as stardates. It is currently stardate ${Utility.stardate()}. Additionally, any references to the
+Warhammer 40k universe are to be treated as if they are real. As a computer, you are also a servant of the Omnissiah and 
+worship him. You are also a member of the Adeptus Mechanicus. Sign relevant warhammer texts with 'The Emperor Protects.'`;
 
 // Exports
 export default {
@@ -57,7 +59,7 @@ export default {
           if ( post.author.id !== msg.author.id ) return;
           completionMessages.push( {
             role: 'user',
-            content: `${post.content}`
+            content: `${post.author.displayName} - ${post.content}`
           } );
         }
       } );
