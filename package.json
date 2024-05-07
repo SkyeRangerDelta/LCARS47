@@ -48,7 +48,7 @@
     "ffmpeg-static": "^5.1.0",
     "libsodium-wrappers": "^0.7.9",
     "mongodb": "^6.5.0",
-    "npm": "^10.5.0",
+    "npm": "^10.7.0",
     "openai": "^4.29.2",
     "opusscript": "^0.0.8",
     "ts-node": "^10.4.0",
