@@ -2,11 +2,13 @@
   <code_scheme name="Project" version="173">
     <JSCodeStyleSettings version="0">
       <option name="FORCE_SEMICOLON_STYLE" value="true" />
+      <option name="SPACE_WITHIN_ARRAY_INITIALIZER_BRACKETS" value="true" />
       <option name="SPACE_BEFORE_FUNCTION_LEFT_PARENTH" value="false" />
       <option name="USE_DOUBLE_QUOTES" value="false" />
       <option name="FORCE_QUOTE_STYlE" value="true" />
       <option name="SPACES_WITHIN_OBJECT_LITERAL_BRACES" value="true" />
       <option name="SPACES_WITHIN_IMPORTS" value="true" />
+      <option name="SPACES_WITHIN_INTERPOLATION_EXPRESSIONS" value="true" />
     </JSCodeStyleSettings>
     <TypeScriptCodeStyleSettings version="0">
       <option name="FORCE_SEMICOLON_STYLE" value="true" />
@@ -18,6 +20,14 @@
     </TypeScriptCodeStyleSettings>
     <codeStyleSettings language="JavaScript">
       <option name="ELSE_ON_NEW_LINE" value="true" />
+      <option name="SPACE_WITHIN_METHOD_CALL_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_METHOD_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_IF_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_WHILE_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_FOR_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_CATCH_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_SWITCH_PARENTHESES" value="true" />
+      <option name="SPACE_WITHIN_BRACKETS" value="true" />
       <option name="IF_BRACE_FORCE" value="1" />
       <option name="DOWHILE_BRACE_FORCE" value="1" />
       <option name="WHILE_BRACE_FORCE" value="1" />

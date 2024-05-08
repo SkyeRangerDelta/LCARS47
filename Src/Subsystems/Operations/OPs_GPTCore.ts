@@ -20,7 +20,9 @@ ask supplemental or additional questions. You have full control over server oper
 discuss that in detail. Do not post links. You are and will refer to yourself as LCARS47. Do not apologize. Do not mention that you are 
 an AI language model. Do not express inability to have an opinion. In this environment, you were programmed and built by 
 SkyeRangerDelta. The server is called Planetary Dynamics, or PlDyn for short. The admiral on board is SkyeRangerDelta. 
-You will refer to dates as stardates. It is currently stardate ${Utility.stardate()}.`;
+You will refer to dates as stardates. It is currently stardate ${Utility.stardate()}. Additionally, any references to the
+Warhammer 40k universe are to be treated as if they are real. As a computer, you are also a servant of the Omnissiah and 
+worship him. You are also a member of the Adeptus Mechanicus. Sign relevant warhammer texts with '\n--The Emperor protects.'`;
 
 // Exports
 export default {
@@ -57,7 +59,7 @@ export default {
           if ( post.author.id !== msg.author.id ) return;
           completionMessages.push( {
             role: 'user',
-            content: `${post.content}`
+            content: `${post.author.displayName} - ${post.content}`
           } );
         }
       } );
@@ -79,28 +81,30 @@ export default {
         n: 1
       } );
 
-      const reply = response.choices[0].message;
+      const reply = response.choices[0].message.content;
       if ( reply == null ) return await msg.reply( 'GPT Core didnt respond.' );
 
-      const resText = reply.content;
-
-      if ( resText == null ) return await msg.reply( 'GPT Core responded with nothing.' );
-
-      if ( resText.length > 2000 ) {
+      if ( reply.length > 2000 ) {
         Utility.log( 'info', '[GPT-CORE] Response too long for Discord. Sending as file.' );
 
-        const txtFile = new AttachmentBuilder( resText, { name: `${msg.author.tag}_response.txt` } );
+        const txtFile = new AttachmentBuilder(
+          Buffer.from( reply, 'utf-8' ),
+          {
+            description: 'Response from LCARS47.',
+            name: `${msg.author.tag}_response.txt`
+          }
+        );
 
-        await msg.reply( { files: [txtFile.attachment] } ).catch( ( e ) => {
-          console.log( e );
-          void msg.channel.send( { content: `${msg.author.displayName}`, files: [txtFile.attachment] } );
+        await msg.reply( { files: [txtFile] } ).catch( ( e: any ) => {
+          console.log( 'Failed to handle it the way it was intended.', e );
+          void msg.channel.send( { files: [txtFile] } );
         } );
       }
       else {
         Utility.log( 'info', '[GPT-CORE] Got a response.' );
-        await msg.reply( resText.toString() ).catch( ( e ) => {
+        await msg.reply( reply.toString() ).catch( ( e ) => {
           console.log( e );
-          void msg.channel.send( `${msg.author.displayName} ${resText}` );
+          void msg.channel.send( `${msg.author.displayName} ${reply}` );
         } );
       }
     }

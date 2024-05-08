@@ -3,7 +3,7 @@
 // Imports
 import { MongoClient } from 'mongodb';
 import Utility from '../Utilities/SysUtils.js';
-import { type RDSStatus, type StatusInterface } from '../Auxiliary/StatusInterface.js';
+import { type RDSStatus, type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
 
 // Globals
 if ( process.env.RDS == null ) {

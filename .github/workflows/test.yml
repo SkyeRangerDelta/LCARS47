@@ -4,10 +4,11 @@
 name: Node.js CI
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  workflow_run:
+    workflows:
+      - ESLint
+    types:
+      - completed
 
 permissions: read-all
 

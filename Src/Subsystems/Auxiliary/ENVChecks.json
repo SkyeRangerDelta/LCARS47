@@ -1,0 +1,17 @@
+{
+  "env_required": [
+    "TOKEN",
+    "RDS",
+    "OPENAIKEY"
+  ],
+  "env_optional": [
+    "API_HOST",
+    "API_PORT",
+    "JWST",
+    "JELLYFIN_HOST",
+    "JELLYFIN_PORT",
+    "JELLYFIN_KEY",
+    "JELLYFIN_USER",
+    "JELLYFIN_PASS"
+  ]
+}

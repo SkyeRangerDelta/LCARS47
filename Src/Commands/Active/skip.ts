@@ -8,7 +8,7 @@ import { type ChatInputCommandInteraction, type GuildMember, type InteractionRes
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 
 import { handleSongEnd } from './play.js';
-import type { Command } from '../../Subsystems/Auxiliary/CommandInterface';
+import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
 const PLDYNID = process.env.PLDYNID ?? '';
 

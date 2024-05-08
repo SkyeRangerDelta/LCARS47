@@ -15,7 +15,7 @@ import {
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
-import type { Command } from '../../Subsystems/Auxiliary/CommandInterface';
+import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
 // Cmd Data
 const data = new SlashCommandBuilder()

@@ -6,7 +6,7 @@ import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
-import { type StatusInterface } from '../Subsystems/Auxiliary/StatusInterface.js';
+import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
 
 const PLDYNID = process.env.PLDYNID;
 const LCARSID = process.env.LCARSID;

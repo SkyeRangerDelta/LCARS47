@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import Utility from '../Utilities/SysUtils.js';
-import { type Event } from '../Auxiliary/EventInterface.js';
+import { type Event } from '../Auxiliary/Interfaces/EventInterface';
 import type { LCARSClient } from '../Auxiliary/LCARSClient';
 
 // Exports

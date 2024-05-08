@@ -9,7 +9,7 @@ import {
   type InteractionResponse
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
-import { type Command } from '../../Subsystems/Auxiliary/CommandInterface';
+import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
 const PLDYNID = process.env.PLDYNID ?? '';
 

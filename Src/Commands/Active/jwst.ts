@@ -8,7 +8,7 @@ import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import https from 'https';
 
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
-import { type Command } from '../../Subsystems/Auxiliary/CommandInterface';
+import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
 // Functions
 const data = new SlashCommandBuilder()
@@ -26,7 +26,26 @@ data.addSubcommand( s => s
   .addIntegerOption( o => o
     .setName( 'program-id' )
     .setDescription( 'The ID of the JWST program to pull from.' )
-    .addChoices( [['NGC 3324 (Carina)', 2731], ["Stephan's Quintet", 2732], ['NGC 3132 (Southern Ring Nebula)', 2733], ['WASP-96b & HAT-P-18b Exoplanets', 2734]] )
+    .addChoices(
+      [
+        {
+          name: 'NGC 3324 (Carina)',
+          value: 2731
+        },
+        {
+          name: "Stephan's Quintet",
+          value: 2732
+        },
+        {
+          name: 'NGC 3132 (Southern Ring Nebula)',
+          value: 2733
+        },
+        {
+          name: 'WASP-96b & HAT-P-18b Exoplanets',
+          value: 2734
+        }
+      ]
+    )
     .setRequired( true )
   )
 );

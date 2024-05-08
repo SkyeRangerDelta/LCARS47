@@ -1,4 +1,4 @@
-import { type LCARSClient } from './LCARSClient';
+import { type LCARSClient } from '../LCARSClient';
 
 export interface Event {
   name: string
