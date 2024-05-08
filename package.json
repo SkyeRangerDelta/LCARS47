@@ -4,7 +4,7 @@
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "dev": "node Deploy/lcars47.js --test",
+    "dev": "rm -r Deploy && tsc && node Deploy/lcars57.js --test",
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
