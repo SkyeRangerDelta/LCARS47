@@ -1,10 +1,10 @@
 {
   "name": "lcars47",
-  "version": "4.7.0-Experimental.2",
+  "version": "4.7.0",
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "dev": "node Deploy/lcars47.js --test",
+    "dev": "rm -r Deploy && tsc && node Deploy/lcars47.js --test",
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
@@ -35,15 +35,12 @@
     "@discordjs/opus": "^0.9.0",
     "@discordjs/rest": "^2.2.0",
     "@discordjs/voice": "^0.15.0",
+    "@distube/ytsr": "^2.0.0",
     "@jellyfin/sdk": "^0.8.2",
-    "@typescript-eslint/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^5.10.0",
     "colors": "^1.4.0",
-    "diltz-ytsr-fixed": "^1.0.1",
     "discord-api-types": "^0.37.75",
     "discord.js": "^14.12.1",
     "dotenv": "^14.3.2",
-    "eslint": "^8.7.0",
     "express": "^4.18.2",
     "ffmpeg-static": "^5.1.0",
     "libsodium-wrappers": "^0.7.9",
@@ -52,7 +49,7 @@
     "openai": "^4.29.2",
     "opusscript": "^0.0.8",
     "ts-node": "^10.4.0",
-    "typescript": "^5.2.2",
+    "tweetnacl": "^1.0.3",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
@@ -60,13 +57,19 @@
     "@semantic-release/git": "^10.0.1",
     "@types/express": "^4.17.17",
     "@types/luxon": "^2.0.9",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
     "conventional-changelog-eslint": "^5.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-love": "^46.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
     "jsdoc": "^4.0.2",
-    "jsdoc-to-markdown": "^8.0.1",
     "luxon": "^2.3.0",
-    "semantic-release": "^23.0.5"
+    "semantic-release": "^23.0.8",
+    "typescript": "^5.4.4"
   },
   "engines": {
-    "node": ">=14.16"
+    "node": ">=18.20"
   }
 }
