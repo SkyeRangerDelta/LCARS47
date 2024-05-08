@@ -26,7 +26,26 @@ data.addSubcommand( s => s
   .addIntegerOption( o => o
     .setName( 'program-id' )
     .setDescription( 'The ID of the JWST program to pull from.' )
-    .addChoices( [['NGC 3324 (Carina)', 2731], ["Stephan's Quintet", 2732], ['NGC 3132 (Southern Ring Nebula)', 2733], ['WASP-96b & HAT-P-18b Exoplanets', 2734]] )
+    .addChoices(
+      [
+        {
+          name: 'NGC 3324 (Carina)',
+          value: 2731
+        },
+        {
+          name: "Stephan's Quintet",
+          value: 2732
+        },
+        {
+          name: 'NGC 3132 (Southern Ring Nebula)',
+          value: 2733
+        },
+        {
+          name: 'WASP-96b & HAT-P-18b Exoplanets',
+          value: 2734
+        }
+      ]
+    )
     .setRequired( true )
   )
 );
