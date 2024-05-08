@@ -5,9 +5,13 @@
   "exports": "./lcars47.js",
   "scripts": {
     "test": "tsc && node Deploy/lcars47.js --heartbeat",
-    "start": "node Deploy/lcars47.js",
+    "start": "tsc && node Deploy/lcars47.js",
     "build": "tsc",
-    "dev": "tsc && node Deploy/lcars47.js"
+    "dev": "tsc && node Deploy/lcars47.js",
+    "docker-build": "docker build -t lcars47 .",
+    "docker-run": "docker run -d lcars47",
+    "docker-stop": "docker stop $(docker ps -q --filter ancestor=lcars47)",
+    "docker-build-run": "npm run docker-build && npm run docker-run"
   },
   "repository": {
     "type": "git",
@@ -42,9 +46,12 @@
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@types/express": "^4.17.17",
     "@types/luxon": "^2.0.9",
     "@typescript-eslint/eslint-plugin": "^7.6.0",
+    "conventional-changelog-eslint": "^5.0.0",
     "eslint": "^8.57.0",
     "eslint-config-love": "^46.0.0",
     "eslint-plugin-import": "^2.29.1",
@@ -52,6 +59,7 @@
     "eslint-plugin-promise": "^6.1.1",
     "jsdoc": "^4.0.2",
     "luxon": "^2.3.0",
+    "semantic-release": "^23.0.8",
     "typescript": "^5.4.4"
   },
   "engines": {

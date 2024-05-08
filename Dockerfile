@@ -46,4 +46,4 @@ ENV JELLYFIN_PASS=YOUR_JELLYFIN_PASS
 #Expose API
 EXPOSE 9121
 
-CMD ["npm", "run", "build-run"]
+CMD ["npm", "run", "start"]
