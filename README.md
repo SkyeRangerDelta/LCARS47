@@ -4,7 +4,7 @@ The official Planetary Dynamics Discord Bot
 --
 
 [![Pldyn Official Repo](https://img.shields.io/badge/PlDyn-Official%20Repo-2d6ded)](https://pldyn.net)
-[![Node.js CI](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml/badge.svg)](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml)
+[![Node.js CI](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/test.yml/badge.svg)](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/dev-test.yml)
 [![Build & Deploy](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/release-and-deploy.yml/badge.svg)](https://github.com/SkyeRangerDelta/LCARS47/actions/workflows/release-and-deploy.yml)
 [![semantic-release: ESLint](https://img.shields.io/badge/semantic--release-eslint-341bab?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 ![GitHub top language](https://img.shields.io/github/languages/top/skyerangerdelta/LCARS47)
