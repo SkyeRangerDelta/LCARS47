@@ -1,8 +1,11 @@
 name: Build & Deploy
 
 on:
-  push:
-    branches: [ "master", "Experimental" ]
+  workflow_run:
+    workflows:
+      - "Node.js CI"
+    types:
+        - completed
 
 env:
   REGISTRY: "ghcr.io"
