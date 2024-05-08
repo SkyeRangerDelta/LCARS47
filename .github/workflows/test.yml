@@ -4,8 +4,11 @@
 name: Node.js CI
 
 on:
-  push:
-    branches: [ "master", "Experimental" ]
+  workflow_run:
+    workflows:
+      - Build & Deploy
+    types:
+      - completed
 
 permissions: read-all
 
