@@ -10,6 +10,7 @@ export interface LCARSMediaSong {
   duration: number
   durationFriendly: string
   member: GuildMember
+  playStart: number
 }
 
 export interface LCARSMediaPlayer {

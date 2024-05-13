@@ -10,6 +10,7 @@ import {
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
+import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils';
 
 const PLDYNID = process.env.PLDYNID ?? '';
 
@@ -67,10 +68,12 @@ async function displayPlaying ( LCARS47: LCARSClient, int: ChatInputCommandInter
   }
 
   const songDetail = queueList[0];
+  const currentPlaytime = Math.floor( ( Date.now() - songDetail.playStart ) / 1000 );
+
   return await int.reply( {
     content: `__[${songDetail.title}](<${songDetail.url}>)__\n` +
             `YT Channel: *${songDetail.info.videoDetails.author.name}*\n` +
-            `Length: ${songDetail.durationFriendly}\n` +
+            `Playtime: ${convertSecondsToHMS( currentPlaytime )} / ${songDetail.durationFriendly}\n` +
             `Queued by: ${songDetail.member.displayName}`
   } );
 }

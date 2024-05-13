@@ -6,7 +6,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import { type ChatInputCommandInteraction, type CommandInteraction, type InteractionResponse } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
-import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
+import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
 let PLDYNID: string;
@@ -74,13 +74,15 @@ async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): P
     } );
   }
 
+  // `__[${songDetail.title}](<${songDetail.url}>)__\n`
+
   for ( const song of queueList ) {
-    songList += `**${song.title}** - *${song.info.videoDetails.author.name}* (${song.durationFriendly})\n`;
+    songList += `**[${song.title}](${song.url})** - *${song.info.videoDetails.author.name}* (${song.durationFriendly})\n`;
     totalDuration += song.duration;
   }
 
   return await int.reply( {
-    content: `**__Player Queue__** (${convertDuration( totalDuration )})\n${songList}`
+    content: `**__Player Queue__** (${convertSecondsToHMS( totalDuration )})\n${songList}`
   } );
 }
 
