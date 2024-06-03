@@ -7,6 +7,7 @@ import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
 import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
+import * as fs from 'node:fs';
 
 const PLDYNID = process.env.PLDYNID;
 const LCARSID = process.env.LCARSID;
@@ -43,7 +44,8 @@ module.exports = {
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
     Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()}` );
 
-    const version = process.env.VERSION;
+    const packageJson = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) );
+    const version = packageJson.version;
 
     LCARS47.user?.setPresence( {
       activities: [{ name: 'for stuff | ' + version, type: ActivityType.Listening }],
