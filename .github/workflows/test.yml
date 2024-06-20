@@ -4,11 +4,7 @@
 name: Test Node
 
 on:
-  workflow_run:
-    workflows:
-      - ESLint
-    types:
-      - completed
+  push:
 
 permissions: read-all
 

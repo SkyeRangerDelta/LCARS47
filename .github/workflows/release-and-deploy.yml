@@ -1,11 +1,12 @@
 name: Release & Deploy
 
 on:
-  workflow_run:
-    workflows:
-      - "Test Node"
+  pull_request:
+    branches:
+      - Experimental
+      - master
     types:
-        - completed
+      - closed
 
 env:
   REGISTRY: "ghcr.io"
