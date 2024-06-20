@@ -19,7 +19,7 @@ const AppConfiguration: LCARSConfiguration = {
     JWST_KEY: process.env.JWST_KEY,
     JELLYFIN_HOST: process.env.JELLYFIN_HOST,
     JELLYFIN_PORT: process.env.JELLYFIN_PORT,
-    JELLYFIN_APIKEY: process,
+    JELLYFIN_APIKEY: process.env.JELLYFIN_APIKEY,
     JELLYFIN_USERNAME: process.env.JELLYFIN_USERNAME,
     JELLYFIN_PASSWORD: process.env.JELLYFIN_PASSWORD
   }
@@ -36,7 +36,7 @@ function getConfig ( configuration: LCARSConfiguration ): Record<string, string>
   // Validate and extract required configuration
   Object.keys( configuration.required ).forEach( ( key ) => {
     const value = configuration.required[key as keyof typeof configuration.required];
-    if ( value === '' || value === undefined ) {
+    if ( value === '' || value === null ) {
       throw new Error( `Required configuration "${key}" is missing.` );
     }
     validatedConfig[key] = process.env[key];
@@ -45,7 +45,7 @@ function getConfig ( configuration: LCARSConfiguration ): Record<string, string>
   // Validate and extract optional configuration
   Object.keys( configuration.optional ).forEach( ( key ) => {
     const value = configuration.optional[key as keyof typeof configuration.optional];
-    if ( value !== '' || value === undefined ) { // Only add if the value exists
+    if ( value !== '' || value === null ) { // Only add if the value exists
       validatedConfig[key] = value;
     }
   } );
