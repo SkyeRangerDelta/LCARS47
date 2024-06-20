@@ -43,7 +43,7 @@ jobs:
       - name: Install Dependencies & Compile
         run: npm ci & npm run build
 
-      - name: Build Release
+      - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.SEMRELEASE_REPO }}
           NPM_TOKEN: ${{ secrets.SEMRELEASE_NPM }}
