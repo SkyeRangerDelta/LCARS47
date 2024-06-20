@@ -1,12 +1,10 @@
 name: Release & Deploy
 
 on:
-  pull_request:
+  push:
     branches:
-      - Experimental
       - master
-    types:
-      - closed
+      - Experimental
 
 env:
   REGISTRY: "ghcr.io"
@@ -19,11 +17,11 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
@@ -40,10 +38,13 @@ jobs:
           key: ${{ runner.os }}-devbuild-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-devbuild-${{ env.cache-name }}-
 
-      - name: Install Dependencies & Compile
-        run: npm ci & npm run build
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Build Release
+      - name: Build
+        run: npm run build
+
+      - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.SEMRELEASE_REPO }}
           NPM_TOKEN: ${{ secrets.SEMRELEASE_NPM }}

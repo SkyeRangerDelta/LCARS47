@@ -1,10 +1,11 @@
 {
   "name": "lcars47",
-  "version": "6.0.0-Experimental.1",
+  "version": "6.0.0-Experimental.2",
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
     "dev": "rm -r Deploy && tsc && node Deploy/lcars47.js --test",
+    "ndev": "nodemon --watch './src/**/*.ts' --exec 'ts-node' src/lcars47.ts --test",
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
@@ -48,7 +49,6 @@
     "npm": "^10.5.0",
     "openai": "^4.29.2",
     "opusscript": "^0.0.8",
-    "ts-node": "^10.4.0",
     "tweetnacl": "^1.0.3",
     "ytdl-core": "^4.11.5"
   },
