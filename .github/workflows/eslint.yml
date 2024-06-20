@@ -11,7 +11,9 @@ name: ESLint
 
 on:
   push:
-    branches: [ "master", "Experimental" ]
+    branches:
+      - Experimental
+      - master
 
 jobs:
   eslint:
