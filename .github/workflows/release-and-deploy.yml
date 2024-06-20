@@ -1,12 +1,10 @@
 name: Release & Deploy
 
 on:
-  pull_request:
+  push:
     branches:
-      - Experimental
       - master
-    types:
-      - closed
+      - Experimental
 
 env:
   REGISTRY: "ghcr.io"
