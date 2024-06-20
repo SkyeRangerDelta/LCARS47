@@ -38,8 +38,11 @@ jobs:
           key: ${{ runner.os }}-devbuild-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-devbuild-${{ env.cache-name }}-
 
-      - name: Install Dependencies & Compile
-        run: npm ci & npm run build
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Release
         env:
