@@ -32,13 +32,6 @@
         "changelogTitle": "|| V47.${version} Changelog ||"
       }
     ],
-    "@semantic-release/github",
-    [
-      "@semantic-release/npm",
-      {
-        "npmPublish": false
-      }
-    ],
     ["@semantic-release/git", {
       "assets": [
         "package.json",
@@ -47,7 +40,14 @@
         "CHANGELOG.md"
       ],
       "message": "Chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-    }]
+    }],
+    "@semantic-release/github",
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ]
   ],
   "tagFormat": "V47.${version}",
   "GIT_AUTHOR_NAME": "SkyeRangerDelta",
