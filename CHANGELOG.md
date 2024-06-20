@@ -1,5 +1,53 @@
 || V47.${version} Changelog ||
 
+# [6.0.0-Experimental.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.0-Experimental.1...V47.6.0.0-Experimental.2) (2024-06-20)
+
+
+### Breaking
+
+* Song duration now looks nice ([61544da](https://github.com/SkyeRangerDelta/LCARS47/commit/61544dada11b0e24cc4f646dc12b510d918e6749))
+
+### Build
+
+* Cleaned package-lock ([cdec76d](https://github.com/SkyeRangerDelta/LCARS47/commit/cdec76d3cfad4d2ca69d90c3d7e1051e9a4c1d55))
+* Edit triggers for release ([1d2a14a](https://github.com/SkyeRangerDelta/LCARS47/commit/1d2a14a0965e78cb78867f6e03ba4046e707ada4))
+* Fix deployment release ([004a826](https://github.com/SkyeRangerDelta/LCARS47/commit/004a8266cbc25584a1016ee78c0e4931f30ea0d4))
+* Moved build to separate step ([550d4dc](https://github.com/SkyeRangerDelta/LCARS47/commit/550d4dced53edf41fd49a75584730ce002922c55))
+* Removed 22 matrix requirement ([34fb88a](https://github.com/SkyeRangerDelta/LCARS47/commit/34fb88ad3e6e16cfb6ef11b85c69dd3aa0b43eae))
+* Removed ts-node ([70784c2](https://github.com/SkyeRangerDelta/LCARS47/commit/70784c2530b2f5ff3cbd66227d848745adf9d7a1))
+* Revert ESLint ([1a23df0](https://github.com/SkyeRangerDelta/LCARS47/commit/1a23df05566928061cf6b2f556c52b933d64a5bc))
+* Tweak all the pipelines ([0c78be9](https://github.com/SkyeRangerDelta/LCARS47/commit/0c78be9a94e3c07fcc6e86874cef4eca66b40007))
+* Updated dependencies ([cc072c2](https://github.com/SkyeRangerDelta/LCARS47/commit/cc072c2a27948947f4fb5775a866b0cb99ac5cd8))
+
+### chore
+
+* Removed big-refactor branch from codeql ([3280aaa](https://github.com/SkyeRangerDelta/LCARS47/commit/3280aaa49dc7a169750017a24156a9df51cc0da7))
+
+### Chore
+
+* Rename step ([e235aab](https://github.com/SkyeRangerDelta/LCARS47/commit/e235aab9b119a04340f6952337fbebf2efab5d7b))
+* Tweak workflow...again ([98aabf8](https://github.com/SkyeRangerDelta/LCARS47/commit/98aabf8ebad26e8753f85911767695b76c520867))
+
+### ci
+
+* Release pipeline now builds on release ([55c540d](https://github.com/SkyeRangerDelta/LCARS47/commit/55c540dc2458548bd6bfd0f8acb964812107bd1f))
+* Rename pipeline ([c64f2ac](https://github.com/SkyeRangerDelta/LCARS47/commit/c64f2acc261760c648dae79f70b9dc5226cb2783))
+* Renamed test pipeline ([1d2004d](https://github.com/SkyeRangerDelta/LCARS47/commit/1d2004d5ac57a28e880144ab56e05305c9f4220e))
+
+### Docs
+
+* Edit README ([5b746af](https://github.com/SkyeRangerDelta/LCARS47/commit/5b746af51f4bbd08a80e6e05018cae5441d0643e))
+
+### Fix
+
+* Corrected versioning in ready event ([882b3c1](https://github.com/SkyeRangerDelta/LCARS47/commit/882b3c1879bbf8432affcfe1f7ad13e67315b149))
+
+### Test
+
+* Changed ESLint to trigger on master ([ec6b947](https://github.com/SkyeRangerDelta/LCARS47/commit/ec6b9475b98275420f23a479534b22e4cc3f0880))
+* Test script now runs after ESLint is successful ([c0a1f97](https://github.com/SkyeRangerDelta/LCARS47/commit/c0a1f971dabfb5aa2ec5551b443cb8495e7cf1fb))
+* Unfuck the tests ([92a55cc](https://github.com/SkyeRangerDelta/LCARS47/commit/92a55ccd6f332a6740ce53f913ec7806d6cb16f0))
+
 # [6.0.0-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.5.0.0...V47.6.0.0-Experimental.1) (2024-05-08)
 
 
