@@ -4,9 +4,9 @@
 import Utility from '../Subsystems/Utilities/SysUtils.js';
 import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
+import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
-import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
 import * as fs from 'node:fs';
 
 const PLDYNID = process.env.PLDYNID;
@@ -44,11 +44,11 @@ module.exports = {
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
     Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()}` );
 
-    const packageJson = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) );
-    const version = packageJson.version;
+    const pkgData = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) );
+    const version = parseVersion( `${pkgData.version}` );
 
     LCARS47.user?.setPresence( {
-      activities: [{ name: 'for stuff | ' + version, type: ActivityType.Listening }],
+      activities: [{ name: 'for stuff | ' + `V${version}`, type: ActivityType.Watching }],
       status: 'online'
     } );
 
@@ -87,6 +87,23 @@ module.exports = {
     }
 
     const engineeringLog = await LCARS47.PLDYN.channels.fetch( ENGINEERING ) as TextChannel;
-    await engineeringLog.send( `LCARS47 V${version} is ONLINE.` );
+    await engineeringLog.send( `LCARS V${version} is ONLINE.` );
   }
 };
+
+/**
+ * Returns a version that is 47 friendly.
+ * The incoming string from package is a either standard semantic versioning or an experimental tag
+ * in the form of "x.y.z-<tag>". If this is an experimental tag, return a 47 friendly version.
+ * 47 friendly versions are in the form of "47.x.y.z (Exp)" where Exp is only show if it's experimental.
+ * @param version
+ */
+function parseVersion ( version: string ): string {
+  const exp = version.split( '-' );
+  if ( exp.length > 1 ) {
+    const expTag = exp[1].split( '.' );
+    return `47.${exp[0]} (EXP.${expTag[1]})`;
+  }
+
+  return `47.${version}`;
+}
