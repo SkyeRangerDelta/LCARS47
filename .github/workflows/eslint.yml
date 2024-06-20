@@ -10,8 +10,9 @@
 name: ESLint
 
 on:
-  push:
-    branches: [ "master", "Experimental" ]
+  pull_request:
+    branches:
+      - Experimental
 
 jobs:
   eslint:
