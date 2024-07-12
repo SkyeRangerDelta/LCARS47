@@ -12,7 +12,7 @@ import {
 } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import ytsr from '@distube/ytsr';
 
 import {
@@ -103,9 +103,6 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
       return await int.editReply( 'Failed to get any song data!' );
     }
   }
-
-  console.log( songData.player_response.videoDetails );
-  console.log( songData.videoDetails );
 
   const songDuration = parseInt( songData.player_response.videoDetails.lengthSeconds );
   const songObj: LCARSMediaSong = {
@@ -219,7 +216,10 @@ async function getSongStream ( song: LCARSMediaSong ): Promise<AudioPlayer> {
 
   player.play( res );
   Utility.log( 'info', '[MEDIA-PLAYER] Starting stream.' );
-  return await entersState( player, AudioPlayerStatus.Playing, 7_000 );
+  return await entersState( player, AudioPlayerStatus.Playing, 7_000 ).catch( ( err ) => {
+    console.log( err );
+    return player;
+  } );
 }
 
 async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection | undefined> {
