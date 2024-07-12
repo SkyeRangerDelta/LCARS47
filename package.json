@@ -35,7 +35,8 @@
     "@discordjs/collection": "^2.0.0",
     "@discordjs/opus": "^0.9.0",
     "@discordjs/rest": "^2.2.0",
-    "@discordjs/voice": "^0.15.0",
+    "@discordjs/voice": "^0.17.0",
+    "@distube/ytdl-core": "^4.13.5",
     "@distube/ytsr": "^2.0.0",
     "@jellyfin/sdk": "^0.8.2",
     "colors": "^1.4.0",
@@ -49,8 +50,7 @@
     "npm": "^10.5.0",
     "openai": "^4.29.2",
     "opusscript": "^0.0.8",
-    "tweetnacl": "^1.0.3",
-    "ytdl-core": "^4.11.5"
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
