@@ -1,6 +1,6 @@
 // -- Media Player Interfaces --
 import { type GuildMember, type Message, type VoiceChannel } from 'discord.js';
-import type ytdl from 'ytdl-core';
+import type ytdl from '@distube/ytdl-core';
 import { type AudioPlayer } from '@discordjs/voice';
 
 export interface LCARSMediaSong {
@@ -10,6 +10,7 @@ export interface LCARSMediaSong {
   duration: number
   durationFriendly: string
   member: GuildMember
+  playStart: number
 }
 
 export interface LCARSMediaPlayer {

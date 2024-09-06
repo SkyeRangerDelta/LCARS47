@@ -12,7 +12,7 @@ import {
 } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import ytsr from '@distube/ytsr';
 
 import {
@@ -33,7 +33,7 @@ import {
 import { promisify } from 'util';
 
 import { type LCARSMediaPlayer, type LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces.js';
-import { convertDuration } from '../../Subsystems/Utilities/MediaUtils.js';
+import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { NoSongErr } from '../../Errors/NoSong.js';
@@ -104,14 +104,15 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
     }
   }
 
-  const songDuration = parseInt( songData.videoDetails.lengthSeconds );
+  const songDuration = parseInt( songData.player_response.videoDetails.lengthSeconds );
   const songObj: LCARSMediaSong = {
     info: songData,
     title: songData.videoDetails.title,
     url: songData.videoDetails.video_url,
     duration: songDuration,
-    durationFriendly: convertDuration( songDuration ),
-    member
+    durationFriendly: convertSecondsToHMS( songDuration ),
+    member,
+    playStart: 0
   };
 
   const mediaQueue = addToMediaQueue( LCARS47, songObj, vChannel );
@@ -215,7 +216,10 @@ async function getSongStream ( song: LCARSMediaSong ): Promise<AudioPlayer> {
 
   player.play( res );
   Utility.log( 'info', '[MEDIA-PLAYER] Starting stream.' );
-  return await entersState( player, AudioPlayerStatus.Playing, 7_000 );
+  return await entersState( player, AudioPlayerStatus.Playing, 7_000 ).catch( ( err ) => {
+    console.log( err );
+    return player;
+  } );
 }
 
 async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection | undefined> {
@@ -286,6 +290,7 @@ async function playSong ( queue: Map<string, LCARSMediaPlayer> ): Promise<void> 
 
   Utility.log( 'info', '[MEDIA-PLAYER] Starting new/next stream...' );
   const song = currentQueue.songs[0];
+  currentQueue.songs[0].playStart = Date.now();
   const connection = await joinChannel( currentQueue.voiceChannel );
 
   if ( connection == null ) {

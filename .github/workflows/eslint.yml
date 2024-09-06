@@ -11,9 +11,9 @@ name: ESLint
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches:
+      - Experimental
+      - master
 
 jobs:
   eslint:
@@ -24,7 +24,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install ESLint
         run: |
