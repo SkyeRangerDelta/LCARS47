@@ -1,5 +1,21 @@
 || V47.${version} Changelog ||
 
+## [6.0.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.0...V47.6.0.1) (2024-09-07)
+
+
+### Build
+
+* Changed `ytdl-core` to `@distube/ytdl-core` ([6834663](https://github.com/SkyeRangerDelta/LCARS47/commit/683466302e2f995ef4af64f772d1fee292b01475))
+* Upgrade NPM modules ([09392f8](https://github.com/SkyeRangerDelta/LCARS47/commit/09392f84dd2fc635108bbf303dccdf40e6440820))
+
+### ci
+
+* Update for PRs ([f5843cd](https://github.com/SkyeRangerDelta/LCARS47/commit/f5843cd14fecff7281b8062db167a32e986a7ed8))
+
+### Fix
+
+* Fixed some bullshit ([f72a116](https://github.com/SkyeRangerDelta/LCARS47/commit/f72a1162b51dd5d0be642f0d034462c3ab5469e6))
+
 ## [6.0.1-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.0...V47.6.0.1-Experimental.1) (2024-09-07)
 
 
