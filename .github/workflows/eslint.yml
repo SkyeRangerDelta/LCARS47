@@ -15,6 +15,11 @@ on:
       - Experimental
       - master
 
+  pull_request:
+    branches:
+      - Experimental
+      - master
+
 jobs:
   eslint:
     name: Run eslint scanning
