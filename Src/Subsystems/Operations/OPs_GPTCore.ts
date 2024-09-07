@@ -3,7 +3,7 @@
 
 // Imports
 import { OpenAI } from 'openai';
-import { AttachmentBuilder, type Message } from 'discord.js';
+import { AttachmentBuilder, ChannelType, type Message, type TextChannel } from 'discord.js';
 import { DateTime } from 'luxon';
 import { LCARS47 } from './OPs_CoreClient';
 import Utility from '../Utilities/SysUtils';
@@ -28,6 +28,8 @@ worship him. You are also a member of the Adeptus Mechanicus. Sign relevant warh
 export default {
   async handleGPTReq ( msg: Message, content: string, isAdv: boolean ) {
     Utility.log( 'proc', '[EVENT] [GPT-CORE] Beginning new GPT request.' );
+
+    if ( msg.channel.type !== ChannelType.GuildText ) return;
 
     await msg.channel.sendTyping();
 
@@ -97,14 +99,14 @@ export default {
 
         await msg.reply( { files: [txtFile] } ).catch( ( e: any ) => {
           console.log( 'Failed to handle it the way it was intended.', e );
-          void msg.channel.send( { files: [txtFile] } );
+          void ( msg.channel as TextChannel ).send( { files: [txtFile] } );
         } );
       }
       else {
         Utility.log( 'info', '[GPT-CORE] Got a response.' );
         await msg.reply( reply.toString() ).catch( ( e ) => {
           console.log( e );
-          void msg.channel.send( `${msg.author.displayName} ${reply}` );
+          void ( msg.channel as TextChannel ).send( `${msg.author.displayName} ${reply}` );
         } );
       }
     }
