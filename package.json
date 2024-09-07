@@ -33,11 +33,10 @@
   "dependencies": {
     "@discordjs/builders": "^1.7.0",
     "@discordjs/collection": "^2.0.0",
-    "@discordjs/opus": "^0.9.0",
     "@discordjs/rest": "^2.2.0",
     "@discordjs/voice": "^0.17.0",
-    "@distube/ytdl-core": "^4.13.5",
-    "@distube/ytsr": "^2.0.0",
+    "@distube/ytdl-core": "^4.14.4",
+    "@distube/ytsr": "^2.0.4",
     "@jellyfin/sdk": "^0.8.2",
     "colors": "^1.4.0",
     "discord-api-types": "^0.37.75",
