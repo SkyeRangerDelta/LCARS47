@@ -7,7 +7,7 @@
 # More details at https://github.com/eslint/eslint
 # and https://eslint.org
 
-name: ESLint
+name: Code Analysis (ESLint)
 
 on:
   push:
@@ -21,7 +21,7 @@ on:
       - master
 
 jobs:
-  eslint:
+  ESLint:
     name: Run eslint scanning
     runs-on: ubuntu-latest
     permissions:
