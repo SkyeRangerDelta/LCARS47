@@ -66,6 +66,7 @@
     "jsdoc": "^4.0.2",
     "luxon": "^2.3.0",
     "semantic-release": "^23.0.8",
+    "typecov": "^0.2.3",
     "typescript": "^5.4.4"
   },
   "engines": {

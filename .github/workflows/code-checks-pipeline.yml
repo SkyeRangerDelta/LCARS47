@@ -1,0 +1,21 @@
+name: Code Analysis (TypeScript Coverage)
+
+on:
+  pull_request:
+    branches:
+      - Experimental
+      - master
+
+env:
+  CC_SECRET: ${{ secrets.CODECHECKS_SECRET }}
+
+jobs:
+  code-coverage:
+    name: Run TypeScript Coverage Reports
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Runs CodeChecks
+        run: npx codechecks
