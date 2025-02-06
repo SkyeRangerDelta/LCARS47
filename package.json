@@ -37,7 +37,7 @@
     "@discordjs/voice": "^0.18.0",
     "@distube/ytdl-core": "^4.16.0",
     "@distube/ytsr": "^2.0.4",
-    "@jellyfin/sdk": "^0.8.2",
+    "@jellyfin/sdk": "^0.11.0",
     "colors": "^1.4.0",
     "discord-api-types": "^0.37.75",
     "discord.js": "^14.17.3",
@@ -46,16 +46,14 @@
     "ffmpeg-static": "^5.1.0",
     "libsodium-wrappers": "^0.7.9",
     "mongodb": "^6.5.0",
-    "npm": "^10.5.0",
     "openai": "^4.29.2",
-    "opusscript": "^0.0.8",
-    "tweetnacl": "^1.0.3"
+    "opusscript": "^0.1.1"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@types/express": "^4.17.17",
-    "@types/luxon": "^2.0.9",
+    "@types/express": "^5.0.0",
+    "@types/luxon": "^3.4.2",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "conventional-changelog-eslint": "^5.0.0",
     "eslint": "^8.57.0",
@@ -64,8 +62,8 @@
     "eslint-plugin-n": "^16.6.2",
     "eslint-plugin-promise": "^6.1.1",
     "jsdoc": "^4.0.2",
-    "luxon": "^2.3.0",
-    "semantic-release": "^23.0.8",
+    "luxon": "^3.5.0",
+    "semantic-release": "^24.2.1",
     "typescript": "^5.4.4"
   },
   "engines": {
