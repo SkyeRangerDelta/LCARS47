@@ -33,15 +33,15 @@
   "dependencies": {
     "@discordjs/builders": "^1.7.0",
     "@discordjs/collection": "^2.0.0",
-    "@discordjs/rest": "^2.2.0",
-    "@discordjs/voice": "^0.17.0",
-    "@distube/ytdl-core": "^4.14.4",
+    "@discordjs/rest": "^2.4.2",
+    "@discordjs/voice": "^0.18.0",
+    "@distube/ytdl-core": "^4.16.0",
     "@distube/ytsr": "^2.0.4",
     "@jellyfin/sdk": "^0.8.2",
     "colors": "^1.4.0",
     "discord-api-types": "^0.37.75",
-    "discord.js": "^14.12.1",
-    "dotenv": "^14.3.2",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.4.7",
     "express": "^4.21.1",
     "ffmpeg-static": "^5.1.0",
     "libsodium-wrappers": "^0.7.9",
@@ -52,7 +52,6 @@
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
-    "@codechecks/client": "^0.1.12",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/express": "^4.17.17",
@@ -67,7 +66,6 @@
     "jsdoc": "^4.0.2",
     "luxon": "^2.3.0",
     "semantic-release": "^23.0.8",
-    "typecov": "^0.2.3",
     "typescript": "^5.4.4"
   },
   "engines": {
