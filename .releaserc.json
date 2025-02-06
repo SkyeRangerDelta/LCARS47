@@ -11,21 +11,18 @@
     [
       "@semantic-release/commit-analyzer",
       {
-        "preset": "eslint",
+        "preset": "angular",
         "types": [
-          { "type": "Test", "hidden": true },
-          { "type": "Perf", "section": "Performance Changes" },
-          { "type": "Refactor", "section": "Misc." }
-        ]
+          { "type": "docs",     "scope": "README", "release": "patch" },
+          { "type": "style",                       "release": "patch" },
+          { "type": "refactor",                    "release": "patch" }
+        ],
+        "parserOpts": {
+          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+        }
       }
     ],
-    [
-      "@semantic-release/release-notes-generator",
-      {
-        "preset": "eslint"
-      }
-
-    ],
+    "@semantic-release/release-notes-generator",
     [
       "@semantic-release/changelog",
       {
