@@ -53,7 +53,7 @@ async function indexCommands ( LCARS47: LCARSClient ): Promise<void> {
     );
     Utility.log( 'warn', '[CMD-INDEXER] Finished command registration update.' );
   }
-  catch ( cmdIndexErr: any ) {
+  catch ( cmdIndexErr: Error ) {
     Utility.log( 'err', '[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!\n' + cmdIndexErr );
     await LCARS47.destroy();
     process.exit();

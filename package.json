@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "rm -r Deploy && tsc && node Deploy/lcars47.js --test",
     "ndev": "nodemon --watch './src/**/*.ts' --exec 'ts-node' src/lcars47.ts --test",
+    "lint": "eslint .",
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
