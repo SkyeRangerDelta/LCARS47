@@ -32,7 +32,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
   try {
     member = await LCARS47.PLDYN.members.fetch( int.user.id );
   }
-  catch ( noUserErr ) {
+  catch {
     return await int.reply( {
       content: 'No data could be found on your user. Process terminated.',
       ephemeral: true
@@ -50,7 +50,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
       return await displayQueue( LCARS47, int );
     }
   }
-  catch ( noVoiceErr ) {
+  catch {
     return await int.reply( {
       content: 'Error retrieving valid voice channel. Process terminated.',
       ephemeral: true
