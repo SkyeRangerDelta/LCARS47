@@ -33,7 +33,7 @@ async function indexCommands ( LCARS47: LCARSClient ): Promise<void> {
   const commandIndex = fs.readdirSync( cmdPath ).filter( f => f.endsWith( '.js' ) );
   for ( const command of commandIndex ) {
     const cPath = `../../Commands/Active/${command}`;
-    await import ( cPath ).then( c => {
+    await import ( cPath ).then( (c: { default: Command }) => {
       const cmd: Command = c.default;
       Utility.log( 'info', `[CMD-INDEXER] Indexing ${cmd.name}` );
       cmdJSON.push( cmd.data.toJSON() );
@@ -53,8 +53,8 @@ async function indexCommands ( LCARS47: LCARSClient ): Promise<void> {
     );
     Utility.log( 'warn', '[CMD-INDEXER] Finished command registration update.' );
   }
-  catch ( cmdIndexErr: Error ) {
-    Utility.log( 'err', '[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!\n' + cmdIndexErr );
+  catch ( cmdIndexErr: unknown ) {
+    Utility.log( 'err', `[CMD-INDEXER] ERROR REGISTERING/UPDATING SLASH COMMANDS!\n${cmdIndexErr as string}` );
     await LCARS47.destroy();
     process.exit();
   }
