@@ -20,7 +20,7 @@ export default APICore;
 const API_PORT = process.env.API_PORT;
 
 // Functions
-async function loadAPI ( LCARS47: LCARSClient ): Promise<void> {
+function loadAPI ( LCARS47: LCARSClient ): void {
   const rtr: Application = exp();
 
   rtr.get( '/stats', ( req: Request, res: Response ) => {
@@ -35,7 +35,7 @@ async function loadAPI ( LCARS47: LCARSClient ): Promise<void> {
       .then( stats => {
         res.status( 200 ).send( stats );
       } )
-      .catch( err => {
+      .catch( ( err: Error ) => {
         Utility.log( 'error', '[API] Error building stats.\n' + err.message );
         res.status( 500 ).send(
           { STATE: false }
