@@ -86,7 +86,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
       Utility.log( 'info', '[MEDIA-PLAYER] Received new play request for channel: ' + vChannel.name );
     }
   }
-  catch ( noVChannel ) {
+  catch {
     return await int.editReply( 'You need to be in a voice channel first!' );
   }
 
@@ -140,8 +140,8 @@ async function determineSong ( url: string ): Promise<boolean> {
         return true;
       }
     }
-    catch ( searchErr: any ) {
-      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${searchErr}` );
+    catch ( searchErr ) {
+      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${ searchErr as string }` );
       return false;
     }
   }
@@ -160,7 +160,7 @@ async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo | null> {
     try {
       songData = await ytdl.getInfo( videoUrl );
     }
-    catch ( noDataErr ) {
+    catch {
       throw new NoSongErr( 'Invalid URL?' );
     }
   }
@@ -169,8 +169,8 @@ async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo | null> {
       const searchResults = await ytsr( url, { limit: 1 } );
       songData = await ytdl.getInfo( searchResults.items[0].url );
     }
-    catch ( searchErr: any ) {
-      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${searchErr}` );
+    catch ( searchErr ) {
+      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${ searchErr as string }` );
       return null;
     }
   }
@@ -247,7 +247,7 @@ async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection |
               await entersState( playerConnection, VoiceConnectionStatus.Connecting, 5_000 );
               Utility.log( 'info', '[MEDIA-PLAYER] Reconnected.' );
             }
-            catch ( disconnected ) {
+            catch {
               playerConnection.destroy();
             }
           }
@@ -331,8 +331,8 @@ export async function handleSongEnd ( currentQueue: Map<string, LCARSMediaPlayer
   try {
     await playSong( currentQueue );
   }
-  catch ( err: any ) {
-    Utility.log( 'err', '[MEDIA-PLAYER] Unexpected:\n' + err );
+  catch ( err ) {
+    Utility.log( 'err', `[MEDIA-PLAYER] Unexpected: ${ err as string }`);
   }
 }
 
