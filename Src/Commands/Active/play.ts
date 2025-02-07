@@ -347,9 +347,19 @@ function handleEmptyQueue ( currentQueue: Map<string, LCARSMediaPlayer>, playerQ
   }
 
   setTimeout( () => {
-    if ( playerQueue.songs.length === 0 ) {
-      connection?.destroy();
-      currentQueue.delete( PLDYNID );
+    try {
+      if ( playerQueue.songs.length === 0 ) {
+        connection?.destroy();
+        currentQueue.delete( PLDYNID );
+      }
+    }
+    catch ( e ) {
+      if ( ( e as string ).includes('Cannot destroy') ) {
+        Utility.log( 'warn', '[MEDIA-PLAYER] Connection was already dropped.' );
+      }
+      else {
+        Utility.log( 'warn', `[MEDIA-PLAYER] ${ e as string }` );
+      }
     }
   }, 300000 );
 }
