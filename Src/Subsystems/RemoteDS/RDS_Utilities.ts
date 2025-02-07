@@ -26,7 +26,7 @@ export default {
     try {
       database = connection.db( 'LCARS47_DS' );
     }
-    catch ( RDS_Err ) {
+    catch {
       Utility.log( 'info', 'Error initializing RDS transaction!' );
       return null;
     }
@@ -42,7 +42,7 @@ export default {
     try {
       database = connection.db( 'LCARS47_DS' );
     }
-    catch ( RDS_Err ) {
+    catch {
       Utility.log( 'info', 'Error initializing RDS transaction!' );
       return null;
     }
@@ -60,7 +60,7 @@ export default {
     try {
       database = connection.db( 'LCARS47_DS' );
     }
-    catch ( RDS_Err ) {
+    catch {
       Utility.log( 'warn', '[RDS] Failed to get RDS DB Connection!' );
       throw new Error( 'Invalid RDS state.' );
     }
@@ -78,7 +78,7 @@ export default {
     try {
       database = connection.db( 'LCARS47_DS' );
     }
-    catch ( RDS_Err ) {
+    catch {
       Utility.log( 'info', 'Error getting RDS status!' );
       return 'OFFLINE';
     }
@@ -107,7 +107,7 @@ export default {
     try {
       database = connection.db( 'LCARS47_DS' );
     }
-    catch ( RDSErr ) {
+    catch {
       Utility.log( 'warn', '[RDS] Failed to get RDS Connection!' );
       throw new Error( 'Invalid RDS State!' );
     }
@@ -115,17 +115,6 @@ export default {
     const BotStateRes = await database.collection( 'rds_status' ).findOne( query );
     if ( BotStateRes == null ) throw new Error( 'Failed to get bot status!' );
 
-    const BotState = {
-      STATE: BotStateRes.STATE,
-      VERSION: BotStateRes.VERSION,
-      SESSION: BotStateRes.SESSION,
-      STARTUP_TIME: BotStateRes.STARTUP_TIME,
-      STARTUP_UTC: BotStateRes.STARTUP_UTC,
-      QUERIES: BotStateRes.QUERIES,
-      CMD_QUERIES: BotStateRes.CMD_QUERIES,
-      CMD_QUERIES_FAILED: BotStateRes.CMD_QUERIES_FAILED
-    };
-
-    return BotState as StatusInterface;
+    return BotStateRes as unknown as StatusInterface;
   }
 };
