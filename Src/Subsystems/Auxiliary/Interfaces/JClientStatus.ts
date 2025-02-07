@@ -5,14 +5,14 @@ import {
   type BaseItemDtoQueryResult,
   type LibraryApi,
   type PublicSystemInfo,
-  type SessionInfo
+  type SessionInfoDto
 } from '@jellyfin/sdk/lib/generated-client';
 
 // Exports
 export interface JClientStatus {
   AUTH: boolean
   CONNECTED: boolean
-  SESSION_DATA: SessionInfo | undefined
+  SESSION_DATA: SessionInfoDto | undefined
   SYS_INFO: PublicSystemInfo | undefined
   LIBRARY_API: LibraryApi | undefined
   LIBRARIES: BaseItemDtoQueryResult | undefined

@@ -1,7 +1,7 @@
 // -- STATUS --
 
 // Imports
-import { type ChatInputCommandInteraction, type Message } from 'discord.js';
+import { type ChatInputCommandInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 
@@ -9,6 +9,11 @@ import https from 'https';
 
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
+import type {
+  JWST_Request,
+  JWST_Request_Data,
+  JWST_Request_Data_Body
+} from '../../Subsystems/Auxiliary/Interfaces/JWSTTypeInterfaces';
 
 // Functions
 const data = new SlashCommandBuilder()
@@ -59,17 +64,17 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
 
   switch ( cmd ) {
     case 'status':
-      await doJWSTRequest( '/', int );
+       doJWSTRequest( '/', int );
       break;
     case 'random':
-      await doJWSTRequest( `/program/id/${int.options.getInteger( 'program-id' )}`, int );
+       doJWSTRequest( `/program/id/${int.options.getInteger( 'program-id' )}`, int );
       break;
     default:
       break;
   }
 }
 
-async function doJWSTRequest ( reqPath: string, int: ChatInputCommandInteraction ): Promise<void> {
+function doJWSTRequest ( reqPath: string, int: ChatInputCommandInteraction ): void {
   if ( int.options.getSubcommand() === 'status' ) {
     const options = {
       method: 'GET',
@@ -84,7 +89,7 @@ async function doJWSTRequest ( reqPath: string, int: ChatInputCommandInteraction
 
       res.on( 'data', ( chunk: Buffer ) => {
         Utility.log( 'info', '[JWST] Request Data:\n' + chunk.toString() );
-        const data = JSON.parse( chunk.toString() );
+        const data: JWST_Request = JSON.parse( chunk.toString() ) as JWST_Request;
         if ( data.statusCode === 401 ) {
           void int.editReply( {
             content: 'Reject: Invalid API key.'
@@ -132,22 +137,22 @@ async function doJWSTRequest ( reqPath: string, int: ChatInputCommandInteraction
       res.on( 'end', () => {
         Utility.log( 'info', '[JWST] Request Ended.' );
         const resData = Buffer.concat( chunks );
-        const data = JSON.parse( resData.toString() );
-        const records = [];
+        const data: JWST_Request_Data = JSON.parse( resData.toString() ) as JWST_Request_Data;
+        const records: JWST_Request_Data_Body[] = [];
 
-        for ( const entry in data.body ) {
-          if ( data.body[entry].file_type === 'jpg' ) {
-            records.push( data.body[entry] );
+        data.body.forEach( ( record: JWST_Request_Data_Body ) => {
+          if ( record.file_type === 'jpg' ) {
+            records.push( record );
           }
-        }
+        });
 
         const rEntryIndex = Math.floor( Math.random() * records.length );
-        const rEntry = records[rEntryIndex];
+        const rEntry: JWST_Request_Data_Body = records[rEntryIndex];
 
         void int.editReply( {
           content: `[${rEntry.program}] ${rEntry.id}\nDesc: ${rEntry.details.description}`,
           files: [`${rEntry.location}`]
-        } ).then( ( msg: Message ) => {
+        } ).then( () => {
           console.log( 'JWST message edited.' );
         } );
       } );
