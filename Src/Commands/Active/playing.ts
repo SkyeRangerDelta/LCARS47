@@ -6,7 +6,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
   type ChatInputCommandInteraction,
-  type InteractionResponse
+  type InteractionResponse, MessageFlags
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
@@ -30,7 +30,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
   catch {
     return await int.reply( {
       content: 'No data could be found on your user. Process terminated.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     } );
   }
 
@@ -38,7 +38,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
     if ( member.voice?.channel == null ) {
       return await int.reply( {
         content: 'User must be attached to a valid voice channel.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       } );
     }
     else {
@@ -48,7 +48,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
   catch {
     return await int.reply( {
       content: 'Error retrieving valid voice channel. Process terminated.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     } );
   }
 }

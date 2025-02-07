@@ -9,7 +9,7 @@ import {
   type ChatInputCommandInteraction,
   type DiscordAPIError,
   type GuildMemberRoleManager,
-  type InteractionResponse,
+  type InteractionResponse, MessageFlags,
   type Role
 } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
@@ -56,7 +56,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
     default:
       return await int.reply( {
         content: 'Unauthorized segment access. Command terminated.',
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       } );
   }
 }
@@ -75,14 +75,14 @@ async function joinRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction
         Utility.log( 'warn', '[ROLE-SYS] Unable to add role\n' + err.message );
         return await int.reply( {
           content: 'Permissions failure, are you trying to add a role above your paygrade?',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         } );
       }
       else {
         Utility.log( 'warn', '[ROLE-SYS] Unable to add role\n' + err.message );
         return await int.reply( {
           content: 'Unable to add role to you. Do you already have it?',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         } );
       }
     }
@@ -90,13 +90,13 @@ async function joinRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction
     Utility.log( 'warn', '[ROLE-SYS] Role added' );
     return await int.reply( {
       content: 'Role added.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     } );
   }
   else {
     return await int.reply( {
       content: 'Segment fault: unable to identify member role manager.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     } );
   }
 }
@@ -115,14 +115,14 @@ async function leaveRole ( LCARS47: LCARSClient, int: ChatInputCommandInteractio
         Utility.log( 'warn', '[ROLE-SYS] Unable to remove role\n' + err.message );
         return await int.reply( {
           content: 'Permissions failure, are you trying to resign without approval?',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         } );
       }
       else {
         Utility.log( 'warn', '[ROLE-SYS] Unable to remove role\n' + err.message );
         return await int.reply( {
           content: 'Unable to remove a role from you, do you mean to add it instead?',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         } );
       }
     }
@@ -130,13 +130,13 @@ async function leaveRole ( LCARS47: LCARSClient, int: ChatInputCommandInteractio
     Utility.log( 'warn', '[ROLE-SYS] Role removed' );
     return await int.reply( {
       content: 'Role removed.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     } );
   }
   else {
     return await int.reply( {
       content: 'Segment fault: unable to identify member role manager.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     } );
   }
 }
