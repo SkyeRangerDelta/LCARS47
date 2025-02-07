@@ -4,7 +4,12 @@
 // Imports
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
-import { type ChatInputCommandInteraction, type CommandInteraction, type InteractionResponse } from 'discord.js';
+import {
+  type ChatInputCommandInteraction,
+  type CommandInteraction,
+  type InteractionResponse,
+  MessageFlags
+} from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
@@ -66,7 +71,7 @@ async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): P
   if ( LCARS47.MEDIA_QUEUE.has( PLDYNID ) ) {
     queueList = LCARS47.MEDIA_QUEUE.get( PLDYNID )?.songs;
 
-    if ( queueList == null ) return await int.reply( { content: 'No media in queue.' } );
+    if ( queueList == null ) return await int.reply( { content: 'No media in queue.', flags: MessageFlags.SuppressEmbeds } );
   }
   else {
     return await int.reply( {
@@ -82,7 +87,8 @@ async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): P
   }
 
   return await int.reply( {
-    content: `**__Player Queue__** (${convertSecondsToHMS( totalDuration )})\n${songList}`
+    content: `**__Player Queue__** (${convertSecondsToHMS( totalDuration )})\n${songList}`,
+    flags: MessageFlags.SuppressEmbeds
   } );
 }
 
