@@ -22,16 +22,16 @@ export default {
       // Command done, update stats
       await RDS_Utilities.rds_update( LCARS47.RDS_CONNECTION, 'rds_status', { id: 1 }, { $inc: { CMD_QUERIES: 1 } } );
     }
-    catch ( cmdErr: any ) {
+    catch ( cmdErr ) {
       if ( int.deferred || int.replied ) {
-        await int.followUp( `*Bzzt* Sector Failure!\n${cmdErr}` );
-        Utility.log( 'err', `[INT-HANDLER] Cmd execution failed!\n${cmdErr}` );
+        await int.followUp( `*Bzzt* Sector Failure!\n${ cmdErr as string }` );
+        Utility.log( 'err', `[INT-HANDLER] Cmd execution failed!\n${ cmdErr as string} ` );
 
         // Command failed, update stats
         await RDS_Utilities.rds_update( LCARS47.RDS_CONNECTION, 'rds_status', { id: 1 }, { $inc: { CMD_QUERIES_FAILED: 1 } } );
       }
       else {
-        await int.reply( 'Looks like something is busted on the subnet.\n' + cmdErr );
+        await int.reply( `Looks like something is busted on the subnet.\n${ cmdErr as string }`);
 
         // Command failed, update stats
         await RDS_Utilities.rds_update( LCARS47.RDS_CONNECTION, 'rds_status', { id: 1 }, { $inc: { CMD_QUERIES_FAILED: 1 } } );

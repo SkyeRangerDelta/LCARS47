@@ -38,7 +38,11 @@ void LCARS47.login( process.env.TOKEN ).then( () => {
 
 if ( !process.argv.includes( '--heartbeat' ) ) {
   // -- API --
-  void APICore.loadAPI( LCARS47 ).then( () => {
+  try {
+    APICore.loadAPI( LCARS47 )
     Utility.log( 'info', '[CLIENT] API Online.' );
-  } );
+  }
+  catch {
+    Utility.log( 'error', '[CLIENT] API Offline.' );
+  }
 }

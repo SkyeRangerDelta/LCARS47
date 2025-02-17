@@ -31,7 +31,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
   try {
     member = await LCARS47.PLDYN.members.fetch( int.user.id );
   }
-  catch ( noMember ) {
+  catch {
     throw new Error( 'Couldnt locate the calling member!' );
   }
 
@@ -49,8 +49,8 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
       content: 'Queue skipped forward.'
     } );
   }
-  catch ( endErr: any ) {
-    throw new Error( `Failed to terminate player.\n${endErr}` );
+  catch ( endErr ) {
+    throw new Error( `Failed to terminate player.\n${ endErr as string }` );
   }
 }
 

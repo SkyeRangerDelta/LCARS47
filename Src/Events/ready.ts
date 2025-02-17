@@ -13,6 +13,10 @@ const PLDYNID = process.env.PLDYNID;
 const LCARSID = process.env.LCARSID;
 const ENGINEERING = process.env.ENGINEERING;
 
+interface pkgData {
+  version: string;
+}
+
 // Exports
 module.exports = {
   name: 'ready',
@@ -20,6 +24,10 @@ module.exports = {
   execute: async ( LCARS47: LCARSClient, args?: string[] ) => {
     if ( ( PLDYNID == null ) || ( LCARSID == null ) || ( ENGINEERING == null ) ) {
       throw new Error( 'One or more environment variables are missing.' );
+    }
+
+    if ( args != undefined && args?.length > 0 ) {
+      Utility.log( 'info', '[READY] Received arguments for startup.' );
     }
 
     LCARS47.PLDYN = await LCARS47.guilds.fetch( PLDYNID );
@@ -44,7 +52,7 @@ module.exports = {
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
     Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()}` );
 
-    const pkgData = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) );
+    const pkgData = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) ) as pkgData;
     const version = parseVersion( `${pkgData.version}` );
 
     LCARS47.user?.setPresence( {

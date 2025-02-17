@@ -67,10 +67,10 @@ export default {
       } );
       // completionMessages.push({ role: 'user', content: msg.content ? msg.content : initMessage });
 
-      let gptModel = 'gpt-3.5-turbo';
+      let gptModel = 'gpt-4o-mini';
       if ( isAdv ) {
-        console.log( 'Using GPT-4 Turbo' );
-        gptModel = 'gpt-4-0125-preview';
+        console.log( 'Using GPT-4 Omni' );
+        gptModel = 'gpt-4o';
       }
 
       const response = await OAI.chat.completions.create( {
@@ -97,8 +97,8 @@ export default {
           }
         );
 
-        await msg.reply( { files: [txtFile] } ).catch( ( e: any ) => {
-          console.log( 'Failed to handle it the way it was intended.', e );
+        await msg.reply( { files: [txtFile] } ).catch( ( e: Error ) => {
+          console.log( 'Failed to handle it the way it was intended.', e.message );
           void ( msg.channel as TextChannel ).send( { files: [txtFile] } );
         } );
       }

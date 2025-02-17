@@ -6,6 +6,6 @@ export interface Command {
   name: string
   data: SlashCommandBuilder
   ownerOnly?: boolean
-  execute: ( LCARSClient: LCARSClient, interaction: ChatInputCommandInteraction ) => any
+  execute: ( LCARSClient: LCARSClient, interaction: ChatInputCommandInteraction ) => unknown
   help: () => string
 }

@@ -44,7 +44,7 @@ export default {
 
     return newStardate;
   },
-  formatMSDiff ( ms: number, obj?: boolean ): Duration {
+  formatMSDiff ( ms: number ): Duration {
     const date = new Date( ms );
     let impDate = DateTime.fromISO( date.toISOString() );
     impDate = impDate.setZone( 'UTC-5' );

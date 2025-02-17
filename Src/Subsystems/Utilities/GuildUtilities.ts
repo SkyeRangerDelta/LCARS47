@@ -33,10 +33,10 @@ export default {
         await runSimData( LCARS47, msg, false );
         break;
       case 'ENGINEERING':
-        runEngineering( LCARS47, msg );
+        runEngineering( msg );
         break;
       case 'MEDIALOG':
-        runMediaData( LCARS47, msg );
+        runMediaData( msg );
         break;
       case 'DEVLAB':
         await runSimData( LCARS47, msg, true );
@@ -63,12 +63,12 @@ async function runSimData ( LCARS47: LCARSClient, msg: Message, isAdv: boolean )
   await GPTCore.handleGPTReq( msg, msgContent, isAdv );
 }
 
-function runEngineering ( LCARS47: LCARSClient, msg: Message ): void {
-  Utility.log( 'proc', '[EVENT] [MSG-CREATE] Reached engineering deck event' );
+function runEngineering ( msg: Message ): void {
+  Utility.log( 'proc', `[EVENT] [MSG-CREATE] Reached engineering deck event. Message: ${msg.content}` );
 }
 
-function runMediaData ( LCARS47: LCARSClient, msg: Message ): void {
-  Utility.log( 'proc', '[EVENT] [MSG-CREATE] Reached media log event.' );
+function runMediaData ( msg: Message ): void {
+  Utility.log( 'proc', `[EVENT] [MSG-CREATE] Reached media log event.. Message: ${msg.content}` );
 }
 
 function readSpecChannels (): SpecChannel[] {

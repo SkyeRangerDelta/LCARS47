@@ -20,7 +20,7 @@ async function indexEvents ( LCARS47: LCARSClient ): Promise<void> {
   const evPath = path.join( __dirname, '../..', 'Events' );
   const eventsIndex = fs.readdirSync( evPath ).filter( f => f.endsWith( '.js' ) );
   for ( const event of eventsIndex ) {
-    await import( `../../Events/${event}` ).then( e => {
+    await import( `../../Events/${event}` ).then( ( e: { default: Event }) => {
       const ev: Event = e.default;
       Utility.log( 'info', `[EVENT-HANDLER] Indexing ${ev.name}` );
       if ( ev.once ) {
