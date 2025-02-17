@@ -14,8 +14,6 @@ name: "CodeQL"
 on:
   pull_request:
     types: [closed]
-  schedule:
-    - cron: '31 15 * * 4'
 
 permissions: read-all
 
