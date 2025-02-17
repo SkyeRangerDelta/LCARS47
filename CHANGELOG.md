@@ -1,5 +1,13 @@
 || V47.${version} Changelog ||
 
+## [6.0.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.1...V47.6.0.2) (2025-02-17)
+
+
+### Bug Fixes
+
+* Added error handling to player inactivity timeout ([ab53f9c](https://github.com/SkyeRangerDelta/LCARS47/commit/ab53f9c2dd32068806b590a2e51afa297601cd18))
+* Fixed a type import ([2a35547](https://github.com/SkyeRangerDelta/LCARS47/commit/2a355477b024b666ab0a8a745207334163088a37))
+
 ## [6.0.2-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.1...V47.6.0.2-Experimental.1) (2025-02-07)
 
 
