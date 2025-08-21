@@ -24,31 +24,28 @@
     ],
     "@semantic-release/release-notes-generator",
     [
-      "@semantic-release/changelog",
+      "@semantic-release/github",
       {
-        "changelogTitle": "|| V47.${version} Changelog ||"
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+        "assets": [],
+        "successCommentCondition": false,
+        "failCommentCondition": false
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
       }
     ],
     ["@semantic-release/git", {
       "assets": [
         "package.json",
         "package-lock.json",
-        "README.md",
-        "CHANGELOG.md"
+        "README.md"
       ],
       "message": "Chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-    }],
-    "@semantic-release/github",
-    [
-      "@semantic-release/npm",
-      {
-        "npmPublish": false
-      }
-    ]
+    }]
   ],
-  "tagFormat": "V47.${version}",
-  "GIT_AUTHOR_NAME": "SkyeRangerDelta",
-  "GIT_AUTHOR_EMAIL": "skyerangerdelta@pldyn.net",
-  "GIT_COMMITTER_NAME": "SkyeRangerDelta",
-  "GIT_COMMITTER_EMAIL": "skyerangerdelta@pldyn.net"
+  "tagFormat": "V47.${version}"
 }
