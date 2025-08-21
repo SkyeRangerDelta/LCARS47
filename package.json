@@ -4,7 +4,7 @@
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "dev": "rm -r Deploy && tsc && node Deploy/lcars47.js --test",
+    "dev": "tsc && node Deploy/lcars47.js --test",
     "ndev": "nodemon --watch './src/**/*.ts' --exec 'ts-node' src/lcars47.ts --test",
     "lint": "eslint .",
     "start": "node Deploy/lcars47.js",
@@ -37,8 +37,6 @@
     "@discordjs/opus": "^0.10.0",
     "@discordjs/rest": "^2.6.0",
     "@discordjs/voice": "^0.19.0",
-    "@distube/ytdl-core": "^4.16.12",
-    "@distube/ytsr": "^2.0.4",
     "@jellyfin/sdk": "^0.11.0",
     "@snazzah/davey": "^0.1.6",
     "colors": "^1.4.0",
@@ -50,7 +48,9 @@
     "libsodium-wrappers": "^0.7.9",
     "mongodb": "^6.18.0",
     "openai": "^5.13.1",
-    "opusscript": "^0.1.1"
+    "opusscript": "^0.1.1",
+    "youtube-sr": "^4.3.12",
+    "ytdlp-nodejs": "^2.3.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
