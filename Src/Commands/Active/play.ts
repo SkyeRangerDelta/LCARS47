@@ -12,8 +12,8 @@ import {
 } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 
-import ytdl from '@distube/ytdl-core';
-import ytsr from '@distube/ytsr';
+import { YtDlp } from 'ytdlp-nodejs';
+import { Video, YouTube } from 'youtube-sr';
 
 import {
   type AudioPlayer,
@@ -31,16 +31,19 @@ import {
 } from '@discordjs/voice';
 
 import { promisify } from 'util';
+import { PassThrough } from 'stream';
 
 import { type LCARSMediaPlayer, type LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces.js';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
-import { NoSongErr } from '../../Errors/NoSong.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 
+// Constants
 let PLDYNID: string;
 let MEDIALOG: string;
+
+const ytdlp = new YtDlp();
 
 if ( process.env.PLDYNID == null || process.env.MEDIALOG == null ) {
   throw new Error( 'Missing environment variables!' );
@@ -92,27 +95,36 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
 
   const ytLink = int.options.getString( 'video-query' ) ?? '';
 
-  const validSong = await determineSong( ytLink );
-  let songData: ytdl.videoInfo | null;
-  if ( !validSong ) {
-    return await int.editReply( 'Failed to get any song data!' );
+  let data: Video;
+  if ( !isYouTubeUrl( ytLink ) ) {
+    const searchRes = await YouTube.search( ytLink, { type: 'video' } );
+    if ( searchRes.length === 0 ) {
+      return await int.editReply( 'No search results found!' );
+    }
+
+    data = searchRes[0];
   }
   else {
-    songData = await getBasicInfo( ytLink );
-    if ( songData == null ) {
-      return await int.editReply( 'Failed to get any song data!' );
-    }
+    data = await YouTube.getVideo( ytLink );
   }
 
-  const songDuration = parseInt( songData.player_response.videoDetails.lengthSeconds );
+  if ( !data || !data.id || !data.title || !data.duration || !data.url || !data.channel ) {
+    return await int.editReply( 'Invalid video data received!' );
+  }
+
+  const songDuration = data.duration / 1000 || 1;
+  const channelName = data.channel.name ? data.channel.name : 'Unknown Channel';
+
   const songObj: LCARSMediaSong = {
-    info: songData,
-    title: songData.videoDetails.title,
-    url: songData.videoDetails.video_url,
+    info: data,
+    title: data.title,
+    url: data.url,
+    id: data.id,
     duration: songDuration,
     durationFriendly: convertSecondsToHMS( songDuration ),
     member,
-    playStart: 0
+    playStart: 0,
+    channelName: channelName
   };
 
   const mediaQueue = addToMediaQueue( LCARS47, songObj, vChannel );
@@ -124,58 +136,8 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
   return await int.editReply( `Queued **${songObj.title}** (${songObj.durationFriendly})` );
 }
 
-async function determineSong ( url: string ): Promise<boolean> {
-  Utility.log( 'info', '[MEDIA-PLAYER] Determine validity...' );
-  if ( ytdl.validateURL( url ) ) {
-    Utility.log( 'info', '[MEDIA-PLAYER] Identified a song from url.' );
-    return true;
-  }
-  else {
-    // Do search
-    try {
-      const searchResults = await ytsr( url, { limit: 1 } );
-
-      if ( searchResults.results !== 0 ) {
-        Utility.log( 'info', `[MEDIA-PLAYER] ${searchResults.results} were found from a general search, sending song data.` );
-        return true;
-      }
-    }
-    catch ( searchErr ) {
-      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${ searchErr as string }` );
-      return false;
-    }
-  }
-
-  return false;
-}
-
-async function getBasicInfo ( url: string ): Promise<ytdl.videoInfo | null> {
-  Utility.log( 'info', '[MEDIA-PLAYER] Building and parsing song data' );
-
-  const videoUrl = url;
-  let songData: ytdl.videoInfo;
-
-  // Validate
-  if ( ytdl.validateURL( videoUrl ) ) {
-    try {
-      songData = await ytdl.getInfo( videoUrl );
-    }
-    catch {
-      throw new NoSongErr( 'Invalid URL?' );
-    }
-  }
-  else {
-    try {
-      const searchResults = await ytsr( url, { limit: 1 } );
-      songData = await ytdl.getInfo( searchResults.items[0].url );
-    }
-    catch ( searchErr ) {
-      Utility.log( 'err', `[MEDIA-PLAYER] Hit a determination snag/search err.\n ${ searchErr as string }` );
-      return null;
-    }
-  }
-
-  return songData;
+function isYouTubeUrl ( url: string ): boolean {
+  return /^https?:\/\/(www\.)?youtube\.com\/watch\?v=|youtu\.be\//.test(url);
 }
 
 function addToMediaQueue (
@@ -197,29 +159,31 @@ function addToMediaQueue (
     LCARS47.MEDIA_QUEUE.set( PLDYNID, currentQueue );
   }
 
-  Utility.log( 'info', '[MEDIA-PLAYER] Adding new song to queue...' );
+  Utility.log( 'info', `[MEDIA-PLAYER] Adding new song (${ song.title }) to queue...` );
   currentQueue.songs.push( song );
   return currentQueue;
 }
 
-async function getSongStream ( song: LCARSMediaSong ): Promise<AudioPlayer> {
+function getSongStream ( song: LCARSMediaSong ): AudioPlayer {
   const player = createAudioPlayer();
-  const stream = ytdl( song.url, {
-    filter: 'audioonly',
-    quality: 'highestaudio',
-    highWaterMark: 1 << 25
-  } );
 
-  const res = createAudioResource( stream, {
-    inputType: StreamType.Arbitrary
+  const ytStream = ytdlp.stream( song.url );
+  const pt = new PassThrough();
+  ytStream.pipe( pt );
+
+  const res = createAudioResource( pt, {
+    inputType: StreamType.Arbitrary,
+    metadata: { title: song.title }
   } );
 
   player.play( res );
-  Utility.log( 'info', '[MEDIA-PLAYER] Starting stream.' );
-  return await entersState( player, AudioPlayerStatus.Playing, 7_000 ).catch( ( err ) => {
-    console.log( err );
-    return player;
-  } );
+  Utility.log( 'info', '[MEDIA-PLAYER] Starting stream...' );
+  return player;
+  // return await entersState( player, AudioPlayerStatus.Playing, 10_000 ).catch( ( err ) => {
+  //   Utility.log('warn', '[MEDIA-PLAYER] Stream failed to enter playing state in time.' );
+  //   console.log( err );
+  //   return player;
+  // } );
 }
 
 async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection | undefined> {
@@ -299,9 +263,18 @@ async function playSong ( queue: Map<string, LCARSMediaPlayer> ): Promise<void> 
   }
 
   Utility.log( 'info', '[MEDIA-PLAYER] Getting stream...' );
-  currentQueue.songStream = await getSongStream( song );
-  connection.subscribe( currentQueue.songStream );
-  currentQueue.isPlaying = true;
+
+  try {
+    currentQueue.songStream = getSongStream( song );
+    connection.subscribe( currentQueue.songStream );
+    currentQueue.isPlaying = true;
+  }
+  catch ( e ) {
+    console.error( e );
+
+    void handleSongEnd( queue, currentQueue );
+    return;
+  }
 
   currentQueue.songStream.on( AudioPlayerStatus.Buffering, () => {
     void defaultReportChannel.send( 'Song Buffering!?' );

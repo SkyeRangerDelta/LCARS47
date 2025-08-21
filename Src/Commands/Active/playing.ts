@@ -70,9 +70,11 @@ async function displayPlaying ( LCARS47: LCARSClient, int: ChatInputCommandInter
   const songDetail = queueList[0];
   const currentPlaytime = Math.floor( ( Date.now() - songDetail.playStart ) / 1000 );
 
+  const channelName = songDetail.title;
+
   return await int.reply( {
     content: `__[${songDetail.title}](<${songDetail.url}>)__\n` +
-            `YT Channel: *${songDetail.info.videoDetails.author.name}*\n` +
+            `YT Channel: *${ channelName }*\n` +
             `Playtime: ${convertSecondsToHMS( currentPlaytime )} / ${songDetail.durationFriendly}\n` +
             `Queued by: ${songDetail.member.displayName}`
   } );

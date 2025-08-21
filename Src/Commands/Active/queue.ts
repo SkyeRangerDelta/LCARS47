@@ -82,7 +82,9 @@ async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): P
   // `__[${songDetail.title}](<${songDetail.url}>)__\n`
 
   for ( const song of queueList ) {
-    songList += `**[${song.title}](${song.url})** - *${song.info.videoDetails.author.name}* (${song.durationFriendly})\n`;
+    const channelName = song.info.channel ? song.info.channel.name : 'Unknown Channel';
+
+    songList += `**[${song.title}](${song.url})** - *${ channelName }* (${song.durationFriendly})\n`;
     totalDuration += song.duration;
   }
 
