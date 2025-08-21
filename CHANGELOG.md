@@ -1,5 +1,13 @@
 || V47.${version} Changelog ||
 
+## [6.0.3-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.2...V47.6.0.3-Experimental.1) (2025-08-21)
+
+
+### Bug Fixes
+
+* Corrected the youtube media player ([6dbe2eb](https://github.com/SkyeRangerDelta/LCARS47/commit/6dbe2eb4c1329aa0a559bc46f8c3d6b73c757769))
+* Updated ready event to clientReady ([b406358](https://github.com/SkyeRangerDelta/LCARS47/commit/b406358a951dfa773277c9b01bd50b9d8d21d563))
+
 ## [6.0.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.1...V47.6.0.2) (2025-02-17)
 
 
