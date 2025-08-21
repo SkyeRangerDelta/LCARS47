@@ -19,7 +19,7 @@ interface pkgData {
 
 // Exports
 module.exports = {
-  name: 'ready',
+  name: 'clientReady',
   once: true,
   execute: async ( LCARS47: LCARSClient, args?: string[] ) => {
     if ( ( PLDYNID == null ) || ( LCARSID == null ) || ( ENGINEERING == null ) ) {

@@ -19,7 +19,7 @@ export default {
         console.warn( colors.yellow( data ) );
         break;
       case 'err':
-        console.error( colors.red( data ) );
+        console.error( colors.red( data) );
     }
   },
   flexTime ( date?: Date ): string {
