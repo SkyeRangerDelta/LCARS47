@@ -4,7 +4,12 @@
 // Imports
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
-import { type ChatInputCommandInteraction, type GuildMember, type InteractionResponse } from 'discord.js';
+import {
+  type AutocompleteInteraction,
+  type ChatInputCommandInteraction,
+  type GuildMember,
+  type InteractionResponse
+} from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 
 import { handleSongEnd } from './play.js';
@@ -18,7 +23,14 @@ const data = new SlashCommandBuilder()
   .setDescription( 'Moves the music player on to the next song in queue (if any).' );
 
 // Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[MEDIA-PLAYER] Received a skip command.' );
 
   const serverQueue = LCARS47.MEDIA_QUEUE.get( PLDYNID );

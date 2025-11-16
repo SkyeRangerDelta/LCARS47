@@ -5,7 +5,6 @@ import Utility from '../Utilities/SysUtils.js';
 import type {
   BeszelSystemRecord,
   BeszelSystemMetrics,
-  BeszelSystemInfo,
   BeszelSystemStats
 } from '../Auxiliary/Interfaces/BeszelInterfaces.js';
 

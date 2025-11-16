@@ -3,6 +3,7 @@
 
 // Imports
 import {
+  type AutocompleteInteraction,
   type CacheType,
   type ChatInputCommandInteraction,
   type GuildCacheMessage,
@@ -64,7 +65,14 @@ data.addStringOption( o => o.setName( 'video-query' ).setDescription( 'The link 
 
 let defaultReportChannel: TextChannel;
 
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<GuildCacheMessage<CacheType>> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<GuildCacheMessage<CacheType> | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   await int.deferReply();
 
   defaultReportChannel = await LCARS47.PLDYN.channels.fetch( MEDIALOG ) as TextChannel;

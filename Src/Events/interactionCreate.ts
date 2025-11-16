@@ -17,7 +17,7 @@ export default {
 
       try {
         // Type assertion: autocomplete-enabled commands handle both interaction types internally
-        await cmd.execute( LCARS47, int as any );
+        await cmd.execute( LCARS47, int );
       } catch ( autocompleteErr ) {
         Utility.log( 'err', `[INT-HANDLER] Autocomplete failed: ${ autocompleteErr as string }` );
       }
