@@ -525,9 +525,9 @@ await collection.updateOne(
 
 ---
 
-#### `BESZEL_CLIENT: BeszelClient`
+#### `BESZEL_CLIENT: PocketBase`
 
-**Purpose:** Beszel API client with authentication token
+**Purpose:** PocketBase client for Beszel API access with authentication
 
 **Usage:**
 ```typescript
