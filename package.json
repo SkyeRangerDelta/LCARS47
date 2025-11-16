@@ -49,6 +49,7 @@
     "mongodb": "^6.18.0",
     "openai": "^5.13.1",
     "opusscript": "^0.1.1",
+    "pocketbase": "^0.26.3",
     "youtube-sr": "^4.3.12",
     "ytdlp-nodejs": "^2.3.4"
   },
