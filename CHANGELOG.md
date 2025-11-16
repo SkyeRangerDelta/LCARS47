@@ -1,3 +1,15 @@
+# [6.1.0-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.3...V47.6.1.0-Experimental.1) (2025-11-16)
+
+
+### Bug Fixes
+
+* Corrected Autocomplete type evaluation ([b3f6ea9](https://github.com/SkyeRangerDelta/LCARS47/commit/b3f6ea9e02719b0a13b9b43a4d73cdf2266b94f0))
+
+
+### Features
+
+* Added Beszel statistics logic ([670248d](https://github.com/SkyeRangerDelta/LCARS47/commit/670248dd81a8f1f3dbbd212f57d97bba8fb084ea))
+
 || V47.${version} Changelog ||
 
 ## [6.0.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.2...V47.6.0.3) (2025-08-21)
