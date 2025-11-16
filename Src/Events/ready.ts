@@ -4,6 +4,8 @@
 import Utility from '../Subsystems/Utilities/SysUtils.js';
 import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
+import Beszel from '../Subsystems/RemoteDS/Beszel_Connect.js';
+import BeszelUtils from '../Subsystems/RemoteDS/Beszel_Utilities.js';
 import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
@@ -66,6 +68,19 @@ module.exports = {
     }
 
     LCARS47.RDS_CONNECTION = await RDS.rds_connect();
+
+    // Initialize Beszel client
+    try {
+      LCARS47.BESZEL_CLIENT = await Beszel.beszel_connect();
+
+      // Fetch initial systems list
+      LCARS47.BESZEL_SYSTEMS = await BeszelUtils.beszel_getSystems(LCARS47.BESZEL_CLIENT);
+      Utility.log('proc', `[BESZEL] Loaded ${LCARS47.BESZEL_SYSTEMS.length} systems for autocomplete cache`);
+    } catch (beszelErr) {
+      Utility.log('warn', `[BESZEL] Failed to initialize Beszel client: ${(beszelErr as Error).message}`);
+      Utility.log('warn', '[BESZEL] Server monitoring features will be unavailable.');
+      LCARS47.BESZEL_SYSTEMS = []; // Empty array as fallback
+    }
 
     Utility.log( 'info', '[CLIENT] Getting old stats page.' );
     const oldBotData = await RDS.rds_getStatusFull( LCARS47.RDS_CONNECTION );

@@ -10,6 +10,20 @@ import RDS_Utilities from '../Subsystems/RemoteDS/RDS_Utilities.js';
 export default {
   name: 'interactionCreate',
   async execute ( LCARS47: LCARSClient, int: BaseInteraction ) {
+    // Handle autocomplete interactions
+    if ( int.isAutocomplete() ) {
+      const cmd = LCARS47.CMD_INDEX.get( int.commandName );
+      if ( cmd == null ) return;
+
+      try {
+        // Type assertion: autocomplete-enabled commands handle both interaction types internally
+        await cmd.execute( LCARS47, int as any );
+      } catch ( autocompleteErr ) {
+        Utility.log( 'err', `[INT-HANDLER] Autocomplete failed: ${ autocompleteErr as string }` );
+      }
+      return;
+    }
+
     if ( !int.isChatInputCommand() ) return;
 
     const cmd = LCARS47.CMD_INDEX.get( int.commandName );
