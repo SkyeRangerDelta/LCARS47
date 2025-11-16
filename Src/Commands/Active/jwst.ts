@@ -1,7 +1,7 @@
 // -- STATUS --
 
 // Imports
-import { type ChatInputCommandInteraction } from 'discord.js';
+import { type AutocompleteInteraction, type ChatInputCommandInteraction } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 
@@ -55,7 +55,14 @@ data.addSubcommand( s => s
   )
 );
 
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<void> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[JWST] Received a JWST inquiry command.' );
   await int.deferReply();
 

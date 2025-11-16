@@ -23,29 +23,31 @@
       }
     ],
     "@semantic-release/release-notes-generator",
-    [
-      "@semantic-release/github",
-      {
-        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
-        "assets": [],
-        "successCommentCondition": false,
-        "failCommentCondition": false
-      }
-    ],
+    "@semantic-release/changelog",
     [
       "@semantic-release/npm",
       {
         "npmPublish": false
       }
     ],
-    ["@semantic-release/git", {
-      "assets": [
-        "package.json",
-        "package-lock.json",
-        "README.md"
-      ],
-      "message": "Chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-    }]
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "successCommentCondition": false,
+        "failCommentCondition": false
+      }
+    ]
   ],
   "tagFormat": "V47.${version}"
 }

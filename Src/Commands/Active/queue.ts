@@ -5,6 +5,7 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
   type CommandInteraction,
   type InteractionResponse,
@@ -30,7 +31,14 @@ const data = new SlashCommandBuilder()
   .setDescription( 'Displays a list of the songs in the playlist.' );
 
 // Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[MEDIA-PLAYER] Received a queue request.' );
 
   let member;

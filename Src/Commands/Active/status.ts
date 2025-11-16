@@ -1,7 +1,7 @@
 // -- STATUS --
 
 // Imports
-import { type ChatInputCommandInteraction, type InteractionResponse } from 'discord.js';
+import { type AutocompleteInteraction, type ChatInputCommandInteraction, type InteractionResponse } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 
@@ -13,7 +13,14 @@ const data = new SlashCommandBuilder()
   .setName( 'status' )
   .setDescription( 'Displays a report of all LCARS47s system states and session variables.' );
 
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[AUXILIARY] Received status display request.' );
 
   const statusRP = await RDS_Utilities.rds_selectOne( LCARS47.RDS_CONNECTION, 'rds_status', 1 );
