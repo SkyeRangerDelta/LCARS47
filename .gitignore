@@ -12,3 +12,7 @@ Deploy/
 .idea/
 /.idea
 .idea
+
+#Claude Code
+.claude/
+.mcp/
