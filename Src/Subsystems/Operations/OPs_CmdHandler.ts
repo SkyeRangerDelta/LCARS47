@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import Utility from '../Utilities/SysUtils.js';
 import path from 'path';
 import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
-import { REST } from '@discordjs/rest';
+import { REST } from 'discord.js';
 import { Routes } from 'discord-api-types/v10';
 import { type Command } from '../Auxiliary/Interfaces/CommandInterface';
 
