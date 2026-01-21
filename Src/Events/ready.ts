@@ -19,7 +19,7 @@ interface pkgData {
 }
 
 // Exports
-module.exports = {
+export default {
   name: 'clientReady',
   once: true,
   execute: async ( LCARS47: LCARSClient, args?: string[] ) => {

@@ -7,7 +7,7 @@ import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
   type AutocompleteInteraction,
   type ChatInputCommandInteraction,
-  type CommandInteraction,
+  type CommandInteraction, type GuildMember,
   type InteractionResponse,
   MessageFlags
 } from 'discord.js';
@@ -15,6 +15,7 @@ import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
+import type { LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces';
 
 const env = getEnv();
 const PLDYNID = env.PLDYNID;
@@ -35,7 +36,7 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
 
   Utility.log( 'info', '[MEDIA-PLAYER] Received a queue request.' );
 
-  let member;
+  let member: GuildMember;
   try {
     member = await LCARS47.PLDYN.members.fetch( int.user.id );
   }
@@ -66,12 +67,13 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
 }
 
 async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): Promise<InteractionResponse> {
-  let queueList;
+  const player = LCARS47.MEDIA_QUEUE.get( PLDYNID );
+  let queueList: LCARSMediaSong[];
   let songList = '';
   let totalDuration = 0;
 
-  if ( LCARS47.MEDIA_QUEUE.has( PLDYNID ) ) {
-    queueList = LCARS47.MEDIA_QUEUE.get( PLDYNID )?.songs;
+  if ( player ) {
+    queueList = player.songs;
 
     if ( queueList == null ) return await int.reply( { content: 'No media in queue.', flags: MessageFlags.SuppressEmbeds } );
   }

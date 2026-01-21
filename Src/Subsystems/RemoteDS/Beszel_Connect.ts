@@ -3,6 +3,7 @@
 import PocketBase from 'pocketbase';
 import Utility from '../Utilities/SysUtils.js';
 import { getEnv, isFeatureEnabled } from '../Utilities/EnvUtils.js';
+import type { RecordModelOverride } from '../Auxiliary/Interfaces/BeszelInterfaces';
 
 /**
  * Initialize and authenticate PocketBase client for Beszel
@@ -24,10 +25,15 @@ export async function beszel_connect(): Promise<PocketBase> {
     const pb = new PocketBase(baseUrl);
 
     // Authenticate as admin
-    await pb.admins.authWithPassword(email, password);
+    await pb.collection("_superusers").authWithPassword(email, password);
 
-    Utility.log('proc', `[BESZEL] Authenticated as ${pb.authStore.record?.email}`);
-    Utility.log('info', `[BESZEL] Auth token valid: ${pb.authStore.isValid}`);
+    const authRecord = pb.authStore.record as RecordModelOverride;
+    if (!authRecord) {
+      throw new Error('[BESZEL] Authentication failed - no auth record returned');
+    }
+
+    Utility.log('proc', `[BESZEL] Authenticated as ${ authRecord.email }`);
+    Utility.log('info', `[BESZEL] Auth token valid: ${ pb.authStore.isValid }`);
 
     return pb;
   } catch (error) {

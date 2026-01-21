@@ -104,7 +104,7 @@ export default {
       }
       else {
         Utility.log( 'info', '[GPT-CORE] Got a response.' );
-        await msg.reply( reply.toString() ).catch( ( e ) => {
+        await msg.reply( reply.toString() ).catch( ( e: Error ) => {
           console.log( e );
           void ( msg.channel as TextChannel ).send( `${msg.author.displayName} ${reply}` );
         } );

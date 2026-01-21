@@ -1,5 +1,7 @@
 // Beszel API Type Interfaces
 
+import type { RecordModel } from 'pocketbase';
+
 /**
  * System record from Beszel systems collection
  */
@@ -15,6 +17,10 @@ export interface BeszelSystemRecord {
   status: string;
   users: string[];
   info?: BeszelSystemInfo; // System details object (not JSON string)
+}
+
+export interface RecordModelOverride extends RecordModel {
+  email: string;
 }
 
 /**
