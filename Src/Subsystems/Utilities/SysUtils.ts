@@ -33,16 +33,19 @@ export default {
 
     return newFlex;
   },
-  stardate ( date?: Date ): string {
-    let newStardate: string;
-    if ( date == null ) {
-      newStardate = DateTime.now().setZone( 'UTC-5' ).toFormat( 'LdyyHm.s' );
-    }
-    else {
-      newStardate = DateTime.fromJSDate( date ).toFormat( 'LdyyHm.s' );
-    }
-
-    return newStardate;
+  stardate(date?: Date): string {
+    const dt = date
+      ? DateTime.fromJSDate(date).setZone('UTC-5')
+      : DateTime.now().setZone('UTC-5');
+    const base = dt.toFormat('Ldyy');
+    const secondsInDay = 24 * 60 * 60;
+    const currentSeconds =
+      dt.hour * 3600 + dt.minute * 60 + dt.second;
+    const tenth = Math.floor((currentSeconds / secondsInDay) * 10);
+    return `${base}.${tenth}`;
+  },
+  shipboardTime() {
+    return DateTime.now().toFormat('HH:mm:ss');
   },
   formatMSDiff ( ms: number ): Duration {
     const date = new Date( ms );

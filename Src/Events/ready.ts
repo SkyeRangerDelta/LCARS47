@@ -52,7 +52,7 @@ module.exports = {
     } satisfies StatusInterface;
 
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
-    Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()}` );
+    Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()} - Shipboard time: ${ Utility.shipboardTime() }` );
 
     const pkgData = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) ) as pkgData;
     const version = parseVersion( `${pkgData.version}` );
