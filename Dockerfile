@@ -1,9 +1,9 @@
 #===========================
 #LCARS47 Docker Image Config
 #===========================
-FROM node:20-alpine
+FROM node:24-alpine
 LABEL   authors="SkyeRangerDelta" \
-        version="47.4.7.0" \
+        version="${GIT_TAG:-latest}" \
         description="LCARS47 Discord Bot" \
         vendor="Planetary Dynamics" \
         org.opencontainers.image.source="https://github.com/SkyeRangerDelta/LCARS47" \
