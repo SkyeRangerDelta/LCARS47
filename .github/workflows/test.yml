@@ -18,8 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [22.x, 24.x]
 
     steps:
     - name: Checkout
@@ -44,7 +43,7 @@ jobs:
         key: ${{ runner.os }}-devbuild-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
         restore-keys: ${{ runner.os }}-devbuild-${{ env.cache-name }}-
 
-    - run: npm ci
+    - run: npm i
 
     - run: npm run test --if-present
 
