@@ -39,20 +39,14 @@ import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
 
 // Constants
-let PLDYNID: string;
-let MEDIALOG: string;
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
+const MEDIALOG = env.MEDIALOG;
 
 const ytdlp = new YtDlp();
-
-if ( process.env.PLDYNID == null || process.env.MEDIALOG == null ) {
-  throw new Error( 'Missing environment variables!' );
-}
-else {
-  PLDYNID = process.env.PLDYNID;
-  MEDIALOG = process.env.MEDIALOG;
-}
 
 const wait = promisify( setTimeout );
 

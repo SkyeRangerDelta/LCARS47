@@ -14,16 +14,10 @@ import {
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
 
-let PLDYNID: string;
-
-if ( process.env.PLDYNID == null ) {
-  Utility.log( 'error', '[MEDIA-PLAYER] PLDYNID not set.' );
-  throw new Error( 'PLDYNID not set.' );
-}
-else {
-  PLDYNID = process.env.PLDYNID;
-}
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
 
 // Globals
 const data = new SlashCommandBuilder()

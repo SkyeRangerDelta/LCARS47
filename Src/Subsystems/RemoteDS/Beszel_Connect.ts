@@ -2,19 +2,21 @@
 
 import PocketBase from 'pocketbase';
 import Utility from '../Utilities/SysUtils.js';
+import { getEnv, isFeatureEnabled } from '../Utilities/EnvUtils.js';
 
 /**
  * Initialize and authenticate PocketBase client for Beszel
  * @returns Promise<PocketBase> - Authenticated PocketBase instance
  */
 export async function beszel_connect(): Promise<PocketBase> {
-  const baseUrl = process.env.BESZEL_URL;
-  const email = process.env.BESZEL_EMAIL;
-  const password = process.env.BESZEL_PASSWORD;
-
-  if (!baseUrl || !email || !password) {
-    throw new Error('[BESZEL] Missing environment variables (BESZEL_URL, BESZEL_EMAIL, BESZEL_PASSWORD)');
+  if ( !isFeatureEnabled( 'beszel' ) ) {
+    throw new Error( '[BESZEL] Feature not enabled - missing environment variables' );
   }
+
+  const env = getEnv();
+  const baseUrl = env.BESZEL_URL!;
+  const email = env.BESZEL_EMAIL!;
+  const password = env.BESZEL_PASSWORD!;
 
   Utility.log('info', '[BESZEL] Initializing PocketBase connection...');
 

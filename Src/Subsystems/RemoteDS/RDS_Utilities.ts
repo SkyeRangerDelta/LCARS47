@@ -4,12 +4,11 @@
 import { MongoClient } from 'mongodb';
 import Utility from '../Utilities/SysUtils.js';
 import { type RDSStatus, type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
+import { getEnv } from '../Utilities/EnvUtils.js';
 
 // Globals
-if ( process.env.RDS == null ) {
-  throw new Error( 'RDS connection string is missing.' );
-}
-const client = new MongoClient( process.env.RDS );
+const env = getEnv();
+const client = new MongoClient( env.RDS );
 
 let database;
 

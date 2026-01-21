@@ -1,17 +1,117 @@
 {
-  "env_required": [
-    "TOKEN",
-    "RDS",
-    "OPENAIKEY"
+  "critical": [
+    {
+      "name": "TOKEN",
+      "description": "Discord bot authentication token",
+      "feature": "Core Bot Authentication"
+    },
+    {
+      "name": "RDS",
+      "description": "MongoDB connection string for Remote Data Store",
+      "feature": "Database Connectivity"
+    },
+    {
+      "name": "PLDYNID",
+      "description": "Discord Guild ID for Planetary Dynamics server",
+      "feature": "Guild Operations"
+    },
+    {
+      "name": "LCARSID",
+      "description": "Bot's own Discord User ID",
+      "feature": "Command Registration"
+    }
   ],
-  "env_optional": [
-    "API_HOST",
-    "API_PORT",
-    "JWST",
-    "JELLYFIN_HOST",
-    "JELLYFIN_PORT",
-    "JELLYFIN_KEY",
-    "JELLYFIN_USER",
-    "JELLYFIN_PASS"
+  "required": [
+    {
+      "name": "OPENAIKEY",
+      "description": "OpenAI API key for GPT/AI features",
+      "feature": "AI/GPT Integration"
+    },
+    {
+      "name": "MEDIALOG",
+      "description": "Channel ID for media player logging",
+      "feature": "Media Player"
+    },
+    {
+      "name": "ENGINEERING",
+      "description": "Channel ID for engineering deck logs",
+      "feature": "System Notifications"
+    },
+    {
+      "name": "SIMLAB",
+      "description": "Channel ID for simulation lab (GPT basic)",
+      "feature": "AI/GPT Integration"
+    },
+    {
+      "name": "DEVLAB",
+      "description": "Channel ID for dev lab (GPT advanced)",
+      "feature": "AI/GPT Integration"
+    }
+  ],
+  "feature_groups": {
+    "beszel": {
+      "description": "Beszel server monitoring integration",
+      "required_together": true,
+      "vars": [
+        {
+          "name": "BESZEL_URL",
+          "description": "Beszel PocketBase instance URL"
+        },
+        {
+          "name": "BESZEL_EMAIL",
+          "description": "Beszel admin email for authentication"
+        },
+        {
+          "name": "BESZEL_PASSWORD",
+          "description": "Beszel admin password"
+        }
+      ]
+    },
+    "jellyfin": {
+      "description": "Jellyfin media server integration",
+      "required_together": true,
+      "vars": [
+        {
+          "name": "JELLYFIN_HOST",
+          "description": "Jellyfin server hostname"
+        },
+        {
+          "name": "JELLYFIN_PORT",
+          "description": "Jellyfin server port",
+          "default": "8096"
+        },
+        {
+          "name": "JELLYFIN_KEY",
+          "description": "Jellyfin API key"
+        },
+        {
+          "name": "JELLYFIN_USER",
+          "description": "Jellyfin username"
+        },
+        {
+          "name": "JELLYFIN_PASS",
+          "description": "Jellyfin password"
+        }
+      ]
+    }
+  },
+  "optional": [
+    {
+      "name": "JWST",
+      "description": "James Webb Space Telescope API key",
+      "feature": "JWST Command"
+    },
+    {
+      "name": "API_HOST",
+      "description": "API server host",
+      "default": "localhost",
+      "feature": "Status API"
+    },
+    {
+      "name": "API_PORT",
+      "description": "API server port",
+      "default": "9121",
+      "feature": "Status API"
+    }
   ]
 }

@@ -12,8 +12,10 @@ import {
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
 
-const PLDYNID = process.env.PLDYNID ?? '';
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
 
 // Globals
 const data = new SlashCommandBuilder()

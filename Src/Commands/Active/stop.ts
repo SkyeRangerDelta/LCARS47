@@ -13,7 +13,10 @@ import {
 } from 'discord.js';
 
 import { getVoiceConnection } from '@discordjs/voice';
-const PLDYNID = process.env.PLDYNID ?? '';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
+
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
 
 // Functions
 const data = new SlashCommandBuilder()
