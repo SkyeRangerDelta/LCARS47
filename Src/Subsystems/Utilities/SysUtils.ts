@@ -65,6 +65,8 @@ export default {
   getVersion(): string {
     const packagePath = join( process.cwd(), 'package.json' );
     const packageJson = JSON.parse( readFileSync( packagePath, 'utf8' ) );
-    return packageJson.version;
+    // Normalize prerelease format: 6.1.0-E.1 -> 6.1.0-E1
+    const version = ( packageJson.version as string ).replace( /-E\./, '-E' );
+    return `V47.${ version }`;
   }
 };
