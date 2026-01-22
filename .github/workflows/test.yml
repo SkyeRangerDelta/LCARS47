@@ -60,7 +60,7 @@ jobs:
 
         echo "$OUTPUT"
 
-        COVERAGE=$(echo "$OUTPUT" | grep -oE '^[0-9]+\.?[0-9]*%' | head -1)
+        COVERAGE=$(echo "$OUTPUT" | grep -oE '[0-9]+\.[0-9]+%' | head -1)
         COVERAGE_NUM=$(echo "$COVERAGE" | tr -d '%')
 
         if [ -z "$COVERAGE_NUM" ]; then
