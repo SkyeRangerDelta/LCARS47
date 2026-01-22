@@ -4,7 +4,8 @@
 // Imports
 import colors from 'colors';
 import { DateTime, type Duration } from 'luxon';
-import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 // Exports
 export default {
@@ -62,6 +63,8 @@ export default {
     return Math.round( processData / 1024 / 1024 * 100 ) / 100;
   },
   getVersion(): string {
-    return execSync( 'git describe --tags --abbrev=0', { encoding: 'utf8' } ).trim();
+    const packagePath = join( process.cwd(), 'package.json' );
+    const packageJson = JSON.parse( readFileSync( packagePath, 'utf8' ) );
+    return packageJson.version;
   }
 };
