@@ -15,9 +15,13 @@ export async function beszel_connect(): Promise<PocketBase> {
   }
 
   const env = getEnv();
-  const baseUrl = env.BESZEL_URL!;
-  const email = env.BESZEL_EMAIL!;
-  const password = env.BESZEL_PASSWORD!;
+  const baseUrl = env.BESZEL_URL;
+  const email = env.BESZEL_EMAIL;
+  const password = env.BESZEL_PASSWORD;
+
+  if ( !baseUrl || !email || !password ) {
+    throw new Error( '[BESZEL] Missing required environment variables for Beszel connection' );
+  }
 
   Utility.log('info', '[BESZEL] Initializing PocketBase connection...');
 
