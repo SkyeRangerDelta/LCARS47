@@ -4,7 +4,7 @@
     {
       "name": "Experimental",
       "prerelease": true,
-      "channel": "exp"
+      "channel": "E"
     }
   ],
   "plugins": [
@@ -15,7 +15,8 @@
         "types": [
           { "type": "docs",     "scope": "README", "release": "patch" },
           { "type": "style",                       "release": "patch" },
-          { "type": "refactor",                    "release": "patch" }
+          { "type": "refactor",                    "release": "patch" },
+          { "type": "fix",                         "release": "patch" }
         ],
         "parserOpts": {
           "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]

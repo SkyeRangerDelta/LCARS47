@@ -5,14 +5,12 @@ import * as fs from 'fs';
 import Utility from '../Utilities/SysUtils.js';
 import path from 'path';
 import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
-import { REST } from '@discordjs/rest';
+import { REST } from 'discord.js';
 import { Routes } from 'discord-api-types/v10';
 import { type Command } from '../Auxiliary/Interfaces/CommandInterface';
+import { getEnv } from '../Utilities/EnvUtils.js';
 
-const PLDYNID = process.env.PLDYNID;
-const LCARSID = process.env.LCARSID;
-const MEDIALOG = process.env.MEDIALOG;
-const TOKEN = process.env.TOKEN;
+const env = getEnv();
 
 // Exports
 const CommandIndexer = {
@@ -23,9 +21,6 @@ export default CommandIndexer;
 
 // Functions
 async function indexCommands ( LCARS47: LCARSClient ): Promise<void> {
-  if ( ( PLDYNID == null ) || ( LCARSID == null ) || ( MEDIALOG == null ) || ( TOKEN == null ) ) {
-    throw new Error( 'One or more environment variables are missing.' );
-  }
 
   const cmdJSON: object[] = [];
 
@@ -42,12 +37,12 @@ async function indexCommands ( LCARS47: LCARSClient ): Promise<void> {
   }
 
   Utility.log( 'warn', '[CMD-INDEXER] Starting command registration update.' );
-  const rest = new REST( { version: '9' } ).setToken( TOKEN );
+  const rest = new REST( { version: '9' } ).setToken( env.TOKEN );
   try {
     await rest.put(
       Routes.applicationGuildCommands(
-        LCARSID,
-        PLDYNID
+        env.LCARSID,
+        env.PLDYNID
       ),
       { body: cmdJSON }
     );

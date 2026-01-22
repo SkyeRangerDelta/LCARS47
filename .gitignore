@@ -16,3 +16,4 @@ Deploy/
 #Claude Code
 .claude/
 .mcp/
+.git_tag

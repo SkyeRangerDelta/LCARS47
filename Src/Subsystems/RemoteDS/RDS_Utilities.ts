@@ -1,17 +1,16 @@
 // ---- Remote Data Store Utilities ----
 
 // Imports
-import { MongoClient } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
 import Utility from '../Utilities/SysUtils.js';
 import { type RDSStatus, type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
+import { getEnv } from '../Utilities/EnvUtils.js';
 
 // Globals
-if ( process.env.RDS == null ) {
-  throw new Error( 'RDS connection string is missing.' );
-}
-const client = new MongoClient( process.env.RDS );
+const env = getEnv();
+const client = new MongoClient( env.RDS );
 
-let database;
+let database: Db;
 
 // Exports
 export default {
@@ -55,8 +54,6 @@ export default {
   rds_update: async ( connection: MongoClient, collection: string, filter: object, value: object ): Promise<boolean> => {
     Utility.log( 'info', '[RDS] Updating a record.' );
 
-    let database;
-
     try {
       database = connection.db( 'LCARS47_DS' );
     }
@@ -73,7 +70,6 @@ export default {
     Utility.log( 'info', 'Pending RDS status request...' );
 
     const query = { id: 1 };
-    let database;
 
     try {
       database = connection.db( 'LCARS47_DS' );
@@ -102,7 +98,6 @@ export default {
     Utility.log( 'info', '[RDS] Grabbing latest bot state data.' );
 
     const query = { id: 1 };
-    let database;
 
     try {
       database = connection.db( 'LCARS47_DS' );

@@ -1,13 +1,14 @@
 #===========================
 #LCARS47 Docker Image Config
 #===========================
-FROM node:20-alpine
-LABEL   authors="SkyeRangerDelta" \
-        version="47.4.7.0" \
-        description="LCARS47 Discord Bot" \
-        vendor="Planetary Dynamics" \
-        org.opencontainers.image.source="https://github.com/SkyeRangerDelta/LCARS47" \
-        org.opencontainers.image.description="The Official PlDyn Discord Bot"
+FROM node:24-alpine
+ARG GIT_TAG=latest
+LABEL authors="SkyeRangerDelta" \
+      version="${GIT_TAG}" \
+      description="LCARS47 Discord Bot" \
+      vendor="Planetary Dynamics" \
+      org.opencontainers.image.source="https://github.com/SkyeRangerDelta/LCARS47" \
+      org.opencontainers.image.description="The Official PlDyn Discord Bot"
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD curl -f http://localhost:9121/status || exit 1
 
@@ -16,29 +17,12 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD curl 
 #===========================
 WORKDIR /LCARS47
 COPY package*.json ./
-RUN apk --update add --no-cache python3 make g++
+RUN apk --update add --no-cache ca-certificates python3 py3-pip make g++ ffmpeg curl
 RUN npm ci
+COPY yt-dlp.conf /etc/yt-dlp.conf
 COPY . .
 
-#===========================
-#Set environment variables
-#===========================
-#Required
-ENV TOKEN=YOUR_DISCORD_BOT_TOKEN
-ENV RDS=YOUR_MONGO_DB_CONNECTION_STRING
-ENV OPENAIKEY=YOUR_OPENAI_API_KEY
-
-#Optional
-ENV API_HOST=localhost
-ENV API_PORT=9121
-
-ENV JWST=YOUR_JWST_API_KEY
-
-ENV JELLYFIN_HOST=localhost
-ENV JELLYFIN_PORT=8096
-ENV JELLYFIN_KEY=YOUR_JELLYFIN_API_KEY
-ENV JELLYFIN_USER=YOUR_JELLYFIN_USER
-ENV JELLYFIN_PASS=YOUR_JELLYFIN_PASS
+ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 
 #===========================
 #Post & Run

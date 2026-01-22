@@ -39,20 +39,14 @@ import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
 
 // Constants
-let PLDYNID: string;
-let MEDIALOG: string;
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
+const MEDIALOG = env.MEDIALOG;
 
 const ytdlp = new YtDlp();
-
-if ( process.env.PLDYNID == null || process.env.MEDIALOG == null ) {
-  throw new Error( 'Missing environment variables!' );
-}
-else {
-  PLDYNID = process.env.PLDYNID;
-  MEDIALOG = process.env.MEDIALOG;
-}
 
 const wait = promisify( setTimeout );
 
@@ -172,12 +166,24 @@ function addToMediaQueue (
   return currentQueue;
 }
 
-function getSongStream ( song: LCARSMediaSong ): AudioPlayer {
+async function getSongStream( song: LCARSMediaSong ): Promise<AudioPlayer> {
   const player = createAudioPlayer();
 
-  const ytStream = ytdlp.stream( song.url );
   const pt = new PassThrough();
-  ytStream.pipe( pt );
+
+  try {
+    const ytStream = ytdlp.stream(
+      song.url,
+      {
+        format: 'bestaudio/best',
+        output: '-'
+      });
+    ytStream.pipe( pt );
+  }
+  catch ( streamErr ) {
+    Utility.log( 'warn', `[MEDIA-PLAYER] Failed to get stream from yt-dlp.\n${ streamErr as string }` );
+    throw new Error( 'Failed to get stream from yt-dlp.', { cause: streamErr } );
+  }
 
   const res = createAudioResource( pt, {
     inputType: StreamType.Arbitrary,
@@ -186,12 +192,12 @@ function getSongStream ( song: LCARSMediaSong ): AudioPlayer {
 
   player.play( res );
   Utility.log( 'info', '[MEDIA-PLAYER] Starting stream...' );
-  return player;
-  // return await entersState( player, AudioPlayerStatus.Playing, 10_000 ).catch( ( err ) => {
-  //   Utility.log('warn', '[MEDIA-PLAYER] Stream failed to enter playing state in time.' );
-  //   console.log( err );
-  //   return player;
-  // } );
+  // return player;
+  return await entersState( player, AudioPlayerStatus.Playing, 10_000 ).catch( ( err ) => {
+    Utility.log('warn', '[MEDIA-PLAYER] Stream failed to enter playing state in time.' );
+    console.log( err );
+    return player;
+  } );
 }
 
 async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection | undefined> {
@@ -273,7 +279,7 @@ async function playSong ( queue: Map<string, LCARSMediaPlayer> ): Promise<void> 
   Utility.log( 'info', '[MEDIA-PLAYER] Getting stream...' );
 
   try {
-    currentQueue.songStream = getSongStream( song );
+    currentQueue.songStream = await getSongStream( song );
     connection.subscribe( currentQueue.songStream );
     currentQueue.isPlaying = true;
   }

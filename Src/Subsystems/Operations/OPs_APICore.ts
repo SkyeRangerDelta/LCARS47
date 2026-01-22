@@ -6,8 +6,9 @@ import exp, { type Application, type Request, type Response } from 'express';
 import { type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
 import RDS_Utilities from '../RemoteDS/RDS_Utilities.js';
 import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
+import { getEnv } from '../Utilities/EnvUtils.js';
 
-const PLDYNID = process.env.PLDYNID as string | null;
+const env = getEnv();
 
 // Exports
 const APICore = {
@@ -15,9 +16,6 @@ const APICore = {
 };
 
 export default APICore;
-
-// Variables
-const API_PORT = process.env.API_PORT;
 
 // Functions
 function loadAPI ( LCARS47: LCARSClient ): void {
@@ -43,17 +41,12 @@ function loadAPI ( LCARS47: LCARSClient ): void {
       } );
   } );
 
-  rtr.listen( API_PORT, () => {
-    Utility.log( 'info', `[API] Service online at ${API_PORT}` );
+  rtr.listen( env.API_PORT, () => {
+    Utility.log( 'info', `[API] Service online at ${env.API_PORT}` );
   } );
 }
 
 async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | null > {
-  if ( PLDYNID == null ) {
-    Utility.log( 'error', '[API] PLDYNID not set.' );
-    return null;
-  }
-
   Utility.log( 'info', '[API] Loading latest API Stats.' );
   const botStats = await RDS_Utilities.rds_getStatusFull( LCARS47.RDS_CONNECTION );
   botStats.CLIENT_MEM_USAGE = Utility.formatProcess_mem( process.memoryUsage().heapUsed );
@@ -65,7 +58,7 @@ async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | n
     diff: timeDiff.toObject()
   };
 
-  const mediaQueue = LCARS47.MEDIA_QUEUE.get( PLDYNID );
+  const mediaQueue = LCARS47.MEDIA_QUEUE.get( env.PLDYNID );
   botStats.MEDIA_PLAYER_STATE = !( mediaQueue == null );
 
   if ( ( mediaQueue?.isPlaying ) === true ) {
