@@ -6,7 +6,6 @@ import colors from 'colors';
 import envConfig from '../Auxiliary/ENVChecks.json';
 import type {
   EnvConfig,
-  EnvVarDefinition,
   EnvValidationResult,
   LCARSEnv
 } from '../Auxiliary/Interfaces/EnvInterface.js';
