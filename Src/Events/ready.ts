@@ -10,13 +10,8 @@ import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusI
 import { getEnv, isFeatureEnabled } from '../Subsystems/Utilities/EnvUtils.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
-import * as fs from 'node:fs';
 
 const env = getEnv();
-
-interface pkgData {
-  version: string;
-}
 
 // Exports
 export default {
@@ -50,8 +45,7 @@ export default {
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
     Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()} - Shipboard time: ${ Utility.shipboardTime() }` );
 
-    const pkgData = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) ) as pkgData;
-    const version = parseVersion( `${pkgData.version}` );
+    const version = Utility.getVersion();
 
     LCARS47.user?.setPresence( {
       activities: [{ name: 'for stuff | ' + `V${version}`, type: ActivityType.Watching }],
@@ -112,7 +106,7 @@ export default {
     }
 
     const engineeringLog = await LCARS47.PLDYN.channels.fetch( env.ENGINEERING ) as TextChannel;
-    await engineeringLog.send( `LCARS V${version} is ONLINE.` );
+    await engineeringLog.send( `LCARS ${version} is ONLINE.` );
   }
 };
 

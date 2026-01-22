@@ -4,6 +4,7 @@
 // Imports
 import colors from 'colors';
 import { DateTime, type Duration } from 'luxon';
+import { execSync } from 'child_process';
 
 // Exports
 export default {
@@ -59,5 +60,8 @@ export default {
   },
   formatProcess_mem ( processData: number ): number {
     return Math.round( processData / 1024 / 1024 * 100 ) / 100;
+  },
+  getVersion(): string {
+    return execSync( 'git describe --tags --abbrev=0', { encoding: 'utf8' } ).trim();
   }
 };
