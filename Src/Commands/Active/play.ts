@@ -180,9 +180,9 @@ async function getSongStream( song: LCARSMediaSong ): Promise<AudioPlayer> {
       });
     ytStream.pipe( pt );
   }
-  catch {
-    Utility.log( 'warn', '[MEDIA-PLAYER] Failed to get stream from yt-dlp.' );
-    throw new Error( 'Failed to get stream from yt-dlp.' );
+  catch ( streamErr ) {
+    Utility.log( 'warn', `[MEDIA-PLAYER] Failed to get stream from yt-dlp.\n${ streamErr as string }` );
+    throw new Error( 'Failed to get stream from yt-dlp.', { cause: streamErr } );
   }
 
   const res = createAudioResource( pt, {
