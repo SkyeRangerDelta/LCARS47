@@ -3,7 +3,7 @@
     "master",
     {
       "name": "Experimental",
-      "prerelease": true,
+      "prerelease": "E",
       "channel": "E"
     }
   ],

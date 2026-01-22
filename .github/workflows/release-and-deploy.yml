@@ -10,16 +10,20 @@ permissions:
   contents: write
 
 concurrency:
-  group: 'release'
+  group: 'release-${{ github.ref_name }}'
   cancel-in-progress: false
 
 jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
 
       - name: Use Node.js Setup
         uses: actions/setup-node@v4
@@ -47,12 +51,16 @@ jobs:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: [release]
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -101,7 +109,7 @@ jobs:
     name: Sync Branches
     runs-on: ubuntu-latest
     needs: [deploy]
-    if: github.event_name == 'push' && github.ref_name == 'master'
+    if: github.event_name == 'push' && github.ref_name == 'master' && !contains(github.event.head_commit.message, '[skip ci]')
     steps:
       - name: Checkout Experimental
         uses: actions/checkout@v4
@@ -118,7 +126,7 @@ jobs:
 
       - name: Merge master into Experimental
         run: |
-          git merge --no-ff --no-edit origin/master
+          git merge --no-ff -m "chore: sync master into Experimental [skip ci]" origin/master
 
       - name: Push changes
         run: git push origin HEAD:Experimental
