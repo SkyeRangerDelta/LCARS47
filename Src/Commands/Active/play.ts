@@ -166,12 +166,24 @@ function addToMediaQueue (
   return currentQueue;
 }
 
-function getSongStream ( song: LCARSMediaSong ): AudioPlayer {
+async function getSongStream( song: LCARSMediaSong ): Promise<AudioPlayer> {
   const player = createAudioPlayer();
 
-  const ytStream = ytdlp.stream( song.url );
   const pt = new PassThrough();
-  ytStream.pipe( pt );
+
+  try {
+    const ytStream = ytdlp.stream(
+      song.url,
+      {
+        format: 'bestaudio/best',
+        output: '-'
+      });
+    ytStream.pipe( pt );
+  }
+  catch {
+    Utility.log( 'warn', '[MEDIA-PLAYER] Failed to get stream from yt-dlp.' );
+    throw new Error( 'Failed to get stream from yt-dlp.' );
+  }
 
   const res = createAudioResource( pt, {
     inputType: StreamType.Arbitrary,
@@ -180,12 +192,12 @@ function getSongStream ( song: LCARSMediaSong ): AudioPlayer {
 
   player.play( res );
   Utility.log( 'info', '[MEDIA-PLAYER] Starting stream...' );
-  return player;
-  // return await entersState( player, AudioPlayerStatus.Playing, 10_000 ).catch( ( err ) => {
-  //   Utility.log('warn', '[MEDIA-PLAYER] Stream failed to enter playing state in time.' );
-  //   console.log( err );
-  //   return player;
-  // } );
+  // return player;
+  return await entersState( player, AudioPlayerStatus.Playing, 10_000 ).catch( ( err ) => {
+    Utility.log('warn', '[MEDIA-PLAYER] Stream failed to enter playing state in time.' );
+    console.log( err );
+    return player;
+  } );
 }
 
 async function joinChannel ( vChannel: VoiceChannel ): Promise<VoiceConnection | undefined> {
@@ -267,7 +279,7 @@ async function playSong ( queue: Map<string, LCARSMediaPlayer> ): Promise<void> 
   Utility.log( 'info', '[MEDIA-PLAYER] Getting stream...' );
 
   try {
-    currentQueue.songStream = getSongStream( song );
+    currentQueue.songStream = await getSongStream( song );
     connection.subscribe( currentQueue.songStream );
     currentQueue.isPlaying = true;
   }
