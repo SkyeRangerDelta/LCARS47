@@ -18,7 +18,9 @@ dotenv.config();
 const config = envConfig as EnvConfig;
 
 /**
- * Validates all environment variables against ENVChecks.json
+ * Validates all environment variables against ENVChecks.json. Default values are applied.
+ * The function also may modify process.env calls with item defaults if needed.
+ *
  * @returns EnvValidationResult with details about missing/present vars
  */
 function validateEnvironment(): EnvValidationResult {
