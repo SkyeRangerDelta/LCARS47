@@ -1,3 +1,27 @@
+# [6.1.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.3...V47.6.1.0-E.1) (2026-01-22)
+
+
+### Bug Fixes
+
+* Corrected a ytdlp stream issue ([9e04333](https://github.com/SkyeRangerDelta/LCARS47/commit/9e04333c6b1df20eb9de9142b1b570afa305cfc8))
+* Corrected Autocomplete type evaluation ([b3f6ea9](https://github.com/SkyeRangerDelta/LCARS47/commit/b3f6ea9e02719b0a13b9b43a4d73cdf2266b94f0))
+* Corrected package version handling to use git ([dfceec8](https://github.com/SkyeRangerDelta/LCARS47/commit/dfceec87f80858edf9928c4ef2e29bfc2c1cd10e))
+* Prevent error from being consumed in play ([dfc7743](https://github.com/SkyeRangerDelta/LCARS47/commit/dfc77438d021da7aed7105f5ae33af47990890f9))
+* Reverted getVersion back to reading package in favor of environment agnostic limits ([a8f175e](https://github.com/SkyeRangerDelta/LCARS47/commit/a8f175e6bfa92006d3e7a90ab8ee3cf47ae41007))
+
+
+### Features
+
+* Added Beszel statistics logic ([670248d](https://github.com/SkyeRangerDelta/LCARS47/commit/670248dd81a8f1f3dbbd212f57d97bba8fb084ea))
+* Added Stardate / Timestamp funcs ([a1fb29e](https://github.com/SkyeRangerDelta/LCARS47/commit/a1fb29eaae7152f474b9b52935c679aed7330ade))
+* Added stardate and shipboard time to status ([976fd68](https://github.com/SkyeRangerDelta/LCARS47/commit/976fd689e7c838666e137cfdb2863c8990b6da9c))
+* Implement proper env checks ([543cf48](https://github.com/SkyeRangerDelta/LCARS47/commit/543cf48a2912b5fc6aa75f559f15f7cffbd358f1)), closes [#29](https://github.com/SkyeRangerDelta/LCARS47/issues/29)
+
+
+### Performance Improvements
+
+* Added validation race check on envs ([1e64642](https://github.com/SkyeRangerDelta/LCARS47/commit/1e646423091f55cf3e2ac6e5ba812d5f20315e13))
+
 # [6.1.0-Experimental.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.3...V47.6.1.0-Experimental.1) (2026-01-22)
 
 
