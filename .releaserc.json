@@ -2,9 +2,9 @@
   "branches": [
     "master",
     {
-      "name": "E",
+      "name": "Experimental",
       "prerelease": true,
-      "channel": "exp"
+      "channel": "E"
     }
   ],
   "plugins": [
