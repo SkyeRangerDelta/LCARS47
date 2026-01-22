@@ -17,6 +17,8 @@ dotenv.config();
 // Cast the imported JSON to our typed interface
 const config = envConfig as EnvConfig;
 
+let validated = false;
+
 /**
  * Validates all environment variables against ENVChecks.json. Default values are applied.
  * The function also may modify process.env calls with item defaults if needed.
@@ -161,6 +163,7 @@ function bootCheck(): void {
     process.exit( 1 );
   }
 
+  validated = true;
   console.log( colors.green( '[ENV] Environment validation complete. All required variables present.' ) );
 }
 
@@ -185,6 +188,10 @@ export function isFeatureEnabled( groupName: string ): boolean {
  * Only call after validation has passed
  */
 export function getEnv(): LCARSEnv {
+  if ( !validated ) {
+    throw new Error( '[ENV] Environment not validated yet. Cannot access variables.' );
+  }
+
   return {
     TOKEN: process.env.TOKEN!,
     RDS: process.env.RDS!,
