@@ -48,7 +48,11 @@ jobs:
 
     - run: npm i
 
-    - run: npm run test --if-present
+    - name: Run Unit Tests
+      run: npm run test
+
+    - name: Run Healthcheck
+      run: npm run healthcheck
 
     - name: Type Coverage Check
       id: type-coverage
