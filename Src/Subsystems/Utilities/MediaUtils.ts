@@ -6,10 +6,10 @@ export function convertDuration ( time: number ): string {
     return 'Livestream';
   }
   else if ( time < 3600 ) {
-    return new Date( time / 60 ).toISOString().substring( 14, 5 );
+    return new Date( time * 1000 ).toISOString().substring( 14, 19 );
   }
   else {
-    return new Date( time * 1000 ).toISOString().substring( 11, 8 );
+    return new Date( time * 1000 ).toISOString().substring( 11, 19 );
   }
 }
 
