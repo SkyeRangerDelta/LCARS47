@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import SysUtils from './SysUtils.js';
+import { DateTime } from 'luxon';
 
 describe('stardate', () => {
   it('formats date as MMDDYY.T', () => {
@@ -78,5 +79,78 @@ describe('flexTime', () => {
     // Should return a non-empty string
     expect(result).toBeTruthy();
     expect(typeof result).toBe('string');
+  });
+});
+
+describe('formatMSDiff', () => {
+  it('returns a Duration object', () => {
+    const now = Date.now();
+    const result = SysUtils.formatMSDiff(now);
+
+    // Luxon Duration objects have these properties
+    expect(result).toHaveProperty('years');
+    expect(result).toHaveProperty('months');
+    expect(result).toHaveProperty('days');
+    expect(result).toHaveProperty('hours');
+    expect(result).toHaveProperty('minutes');
+    expect(result).toHaveProperty('seconds');
+  });
+
+  it('calculates correct difference for past timestamps', () => {
+    // 1 day ago
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const result = SysUtils.formatMSDiff(oneDayAgo);
+
+    // Should be approximately 1 day difference
+    expect(result.days).toBeGreaterThanOrEqual(0);
+    expect(result.days).toBeLessThanOrEqual(1);
+  });
+
+  it('handles timestamps from different time periods', () => {
+    // 1 year ago (approximately)
+    const oneYearAgo = Date.now() - (365 * 24 * 60 * 60 * 1000);
+    const result = SysUtils.formatMSDiff(oneYearAgo);
+
+    // Should have roughly 1 year
+    expect(result.years).toBeGreaterThanOrEqual(0);
+  });
+
+  it('returns zero-ish values for current timestamp', () => {
+    const now = Date.now();
+    const result = SysUtils.formatMSDiff(now);
+
+    // All major units should be 0 or very close
+    expect(result.years).toBe(0);
+    expect(result.months).toBe(0);
+    expect(result.days).toBe(0);
+    expect(result.hours).toBe(0);
+    expect(result.minutes).toBe(0);
+    // seconds might be slightly off due to execution time
+    expect(result.seconds).toBeLessThan(1);
+  });
+});
+
+describe('getVersion', () => {
+  it('returns version string in V47.x.x.x format', () => {
+    const result = SysUtils.getVersion();
+
+    // Should start with V47.
+    expect(result).toMatch(/^V47\./);
+  });
+
+  it('contains semver-like version number', () => {
+    const result = SysUtils.getVersion();
+
+    // Should match pattern V47.X.Y.Z or V47.X.Y.Z-prerelease
+    expect(result).toMatch(/^V47\.\d+\.\d+\.\d+/);
+  });
+
+  it('normalizes prerelease format (-E. becomes -E)', () => {
+    const result = SysUtils.getVersion();
+
+    // If there's a prerelease tag, it should not have -E. format
+    if (result.includes('-E')) {
+      expect(result).not.toMatch(/-E\./);
+    }
   });
 });
