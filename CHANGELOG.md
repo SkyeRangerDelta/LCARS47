@@ -1,3 +1,10 @@
+# [6.1.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.1.0-E.1...V47.6.1.0-E.2) (2026-01-24)
+
+
+### Bug Fixes
+
+* Corrected a bug in conversion helper ([16a0224](https://github.com/SkyeRangerDelta/LCARS47/commit/16a022435e21c2fd268852e95c9561a76d3135d1))
+
 # [6.1.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.3...V47.6.1.0-E.1) (2026-01-22)
 
 

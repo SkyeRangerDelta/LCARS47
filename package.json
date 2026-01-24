@@ -1,6 +1,6 @@
 {
   "name": "lcars47",
-  "version": "6.1.0-E.1",
+  "version": "6.1.0-E.2",
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
