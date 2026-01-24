@@ -156,7 +156,7 @@ export async function beszel_getMetrics(
  * @param gb - Number in gigabytes
  * @returns Formatted string (e.g., "2.69 GB")
  */
-function formatGB(gb: number): string {
+export function formatGB(gb: number): string {
   if (gb === 0) return '0 GB';
   if (gb < 1) return `${(gb * 1024).toFixed(2)} MB`;
   return `${gb.toFixed(2)} GB`;
@@ -167,7 +167,7 @@ function formatGB(gb: number): string {
  * @param bytes - Number of bytes
  * @returns Formatted string (e.g., "1.5 GB")
  */
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
 
   const k = 1024;
@@ -183,7 +183,7 @@ function formatBytes(bytes: number): string {
  * @param seconds - Uptime in seconds
  * @returns Formatted string (e.g., "5d 12h 30m")
  */
-function formatUptime(seconds: number): string {
+export function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
