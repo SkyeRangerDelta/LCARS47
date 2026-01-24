@@ -51,6 +51,9 @@ jobs:
     - name: Run Unit Tests
       id: unit-tests
       run: |
+        # Ensure logs directory exists for tee command in npm test script
+        mkdir -p logs/tests
+
         set +e
         OUTPUT=$(npm run test 2>&1)
         EXIT_CODE=$?
@@ -58,9 +61,12 @@ jobs:
 
         echo "$OUTPUT"
 
+        # Strip ANSI codes before parsing test results
+        CLEAN_OUTPUT=$(echo "$OUTPUT" | sed 's/\x1b\[[0-9;]*m//g')
+
         # Parse test results from Vitest output
-        PASSED=$(echo "$OUTPUT" | grep -oE 'Tests\s+[0-9]+ passed' | grep -oE '[0-9]+' || echo "0")
-        FAILED=$(echo "$OUTPUT" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' || echo "0")
+        PASSED=$(echo "$CLEAN_OUTPUT" | grep -oE 'Tests\s+[0-9]+ passed' | grep -oE '[0-9]+' || echo "0")
+        FAILED=$(echo "$CLEAN_OUTPUT" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' || echo "0")
         TOTAL=$((PASSED + FAILED))
 
         if [ "$EXIT_CODE" -eq 0 ]; then
