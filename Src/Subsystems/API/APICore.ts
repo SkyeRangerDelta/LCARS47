@@ -10,10 +10,17 @@ import * as fs from 'node:fs';
 
 const env = getEnv();
 
+/**
+ * LCARS47 API Subsystem. Handles all API-related functionality.
+ */
 export class API {
   public LCARS47: LCARSClient;
   private app = exp();
 
+  /**
+   * API Subsystem Constructor
+   * @param lcars - The main LCARS47 client instance
+   */
   constructor ( public lcars: LCARSClient ) {
     Utility.log( 'info', '[API] Initializing LCARS47 API subsystem...' );
     this.LCARS47 = lcars;
@@ -25,6 +32,10 @@ export class API {
     } );
   }
 
+  /**
+   * Initializes API routes. Loads dynamic modules before setting up base routes and middleware.
+   * @private
+   */
   private initializeRoutes() {
     Utility.log( 'info', '[API] Initializing system routes...' );
 
@@ -41,6 +52,10 @@ export class API {
     this.loadMiddleware();
   }
 
+  /**
+   * Loads base API routes.
+   * @private
+   */
   private loadBaseRoutes() {
     this.app.get( '/api', ( req, res ) => {
       res.status( 200 ).send( { message: 'LCARS47 API is operational.', loadedRoutes: this.getAllRoutes() } );
@@ -49,6 +64,10 @@ export class API {
     Utility.log( 'info', '[API] Loaded base routes.' );
   }
 
+  /**
+   * Loads middleware for the API.
+   * @private
+   */
   private loadMiddleware() {
     // Request logging
     this.app.use( ( req, res, next ) => {
@@ -57,6 +76,10 @@ export class API {
     });
   }
 
+  /**
+   * Retrieves all expected API routes.
+   * @private
+   */
   private getAllRoutes() {
     const routes: string[] = [];
 
