@@ -29,6 +29,8 @@ function loadRoute( LCARS47: LCARSClient ) {
         );
       } );
   });
+
+  return rtr;
 }
 
 async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | null > {
