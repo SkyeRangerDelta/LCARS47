@@ -40,7 +40,15 @@ if ( !process.argv.includes( '--heartbeat' ) ) {
   // -- API --
   try {
     APICore.loadAPI( LCARS47 )
-    Utility.log( 'info', '[CLIENT] API Online.' );
+      .then(
+        () => {
+          Utility.log( 'info', '[CLIENT] API Online.' );
+        }
+      ).catch(
+        ( err: Error ) => {
+          Utility.log( 'error', `[CLIENT] API Offline.\n${err.message}` );
+        }
+    );
   }
   catch {
     Utility.log( 'error', '[CLIENT] API Offline.' );
