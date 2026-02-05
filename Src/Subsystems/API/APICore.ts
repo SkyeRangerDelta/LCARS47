@@ -39,6 +39,9 @@ export class API {
   private initializeRoutes() {
     Utility.log( 'info', '[API] Initializing system routes...' );
 
+    this.loadMiddleware();
+    this.loadBaseRoutes();
+
     loadRoutes( this.LCARS47 )
       .then( ( router ) => {
         this.app.use( '/api/v1', router );
@@ -47,9 +50,6 @@ export class API {
       .catch( ( err: Error ) => {
         Utility.log( 'error', '[API] Error initializing routes.\n' + err.message );
       } );
-
-    this.loadBaseRoutes();
-    this.loadMiddleware();
   }
 
   /**
@@ -69,9 +69,12 @@ export class API {
    * @private
    */
   private loadMiddleware() {
+    // Body Parser
+    this.app.use( exp.json() );
+
     // Request logging
     this.app.use( ( req, res, next ) => {
-      Utility.log( 'info', `[API] ${ req.method } request received for ${ req.url }` );
+      Utility.log( 'info', `[API] ${ req.method } : ${ req.url }${ req.body ? ' (Has body)' : '' }` );
       next();
     });
   }
