@@ -1,27 +1,16 @@
-// -- API Core --
-
-// Imports
-import Utility from '../Utilities/SysUtils.js';
-import exp, { type Application, type Request, type Response } from 'express';
-import { type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
-import RDS_Utilities from '../RemoteDS/RDS_Utilities.js';
-import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
-import { getEnv } from '../Utilities/EnvUtils.js';
+import exp from 'express';
+import type { LCARSClient } from '../../Auxiliary/LCARSClient';
+import Utility from '../../Utilities/SysUtils.js';
+import type { StatusInterface } from '../../Auxiliary/Interfaces/StatusInterface';
+import RDS_Utilities from '../../RemoteDS/RDS_Utilities';
+import { getEnv } from '../../Utilities/EnvUtils';
 
 const env = getEnv();
 
-// Exports
-const APICore = {
-  loadAPI
-};
+function loadRoute( LCARS47: LCARSClient ) {
+  const rtr = exp();
 
-export default APICore;
-
-// Functions
-function loadAPI ( LCARS47: LCARSClient ): void {
-  const rtr: Application = exp();
-
-  rtr.get( '/stats', ( req: Request, res: Response ) => {
+  rtr.get( '/stats', ( req, res ) => {
     if ( !LCARS47.isReady() ) {
       res.status( 200 ).send(
         { STATE: false }
@@ -39,11 +28,9 @@ function loadAPI ( LCARS47: LCARSClient ): void {
           { STATE: false }
         );
       } );
-  } );
+  });
 
-  rtr.listen( env.API_PORT, () => {
-    Utility.log( 'info', `[API] Service online at ${env.API_PORT}` );
-  } );
+  return rtr;
 }
 
 async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | null > {
@@ -72,3 +59,10 @@ async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | n
 
   return botStats;
 }
+
+const rt = {
+  name: 'stats',
+  router: loadRoute
+}
+
+export default rt;

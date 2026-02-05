@@ -24,6 +24,31 @@ export default {
       return;
     }
 
+    // Handle button interactions
+    if ( int.isButton() ) {
+      const customId = int.customId;
+
+      // Route buttons based on prefix (e.g., "dabo_spin_123" -> "dabo" command)
+      const cmdName = customId.split( '_' )[0];
+      const cmd = LCARS47.CMD_INDEX.get( cmdName );
+
+      if ( cmd == null || cmd.handleButton == null ) {
+        Utility.log( 'warn', `[INT-HANDLER] No button handler for: ${customId}` );
+        return;
+      }
+
+      try {
+        Utility.log( 'info', `[INT-HANDLER] Button interaction received: ${customId}` );
+        await cmd.handleButton( LCARS47, int );
+      } catch ( buttonErr ) {
+        Utility.log( 'err', `[INT-HANDLER] Button handler failed: ${ buttonErr as string }` );
+        if ( !int.replied && !int.deferred ) {
+          await int.reply( { content: 'Button interaction failed!', ephemeral: true } );
+        }
+      }
+      return;
+    }
+
     if ( !int.isChatInputCommand() ) return;
 
     const cmd = LCARS47.CMD_INDEX.get( int.commandName );

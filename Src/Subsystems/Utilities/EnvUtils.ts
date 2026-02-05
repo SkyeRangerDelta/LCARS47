@@ -9,6 +9,8 @@ import type {
   EnvValidationResult,
   LCARSEnv
 } from '../Auxiliary/Interfaces/EnvInterface.js';
+import crypto from 'crypto';
+import Utility from './SysUtils.js';
 
 // Load .env file first
 dotenv.config();
@@ -162,6 +164,13 @@ function bootCheck(): void {
     process.exit( 1 );
   }
 
+  // Generate API_AUTH_TOKEN if not set (not saved to .env, just for this session)
+  if ( !process.env.API_AUTH_TOKEN ) {
+    const token = crypto.randomUUID();
+    process.env.API_AUTH_TOKEN = token;
+    Utility.log( 'warn', `[ENV] API_AUTH_TOKEN not set. Generated session token: ${token}` );
+  }
+
   validated = true;
   console.log( colors.green( '[ENV] Environment validation complete. All required variables present.' ) );
 }
@@ -211,7 +220,8 @@ export function getEnv(): LCARSEnv {
     JELLYFIN_USER: process.env.JELLYFIN_USER,
     JELLYFIN_PASS: process.env.JELLYFIN_PASS,
     API_HOST: process.env.API_HOST!,
-    API_PORT: process.env.API_PORT!
+    API_PORT: process.env.API_PORT!,
+    API_AUTH_TOKEN: process.env.API_AUTH_TOKEN!
   };
 }
 

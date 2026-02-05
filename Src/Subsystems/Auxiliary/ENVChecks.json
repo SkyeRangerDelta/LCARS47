@@ -105,13 +105,18 @@
       "name": "API_HOST",
       "description": "API server host",
       "default": "localhost",
-      "feature": "Status API"
+      "feature": "RESTful API"
     },
     {
       "name": "API_PORT",
       "description": "API server port",
       "default": "9121",
-      "feature": "Status API"
+      "feature": "RESTful API"
+    },
+    {
+      "name": "API_AUTH_TOKEN",
+      "description": "API authorization token (auto-generated if not set)",
+      "feature": "RESTful API"
     }
   ]
 }

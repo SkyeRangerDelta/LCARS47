@@ -5,7 +5,7 @@
   "exports": "./lcars47.js",
   "scripts": {
     "dev": "tsc && node Deploy/lcars47.js --test",
-    "ndev": "nodemon --watch './src/**/*.ts' --exec 'ts-node' src/lcars47.ts --test",
+    "ndev": "nodemon --watch './src/*' dev",
     "lint": "eslint .",
     "start": "node Deploy/lcars47.js",
     "build": "tsc",
@@ -48,13 +48,13 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "ffmpeg-static": "^5.3.0",
-    "libsodium-wrappers": "^0.8.1",
+    "libsodium-wrappers": "^0.8.2",
     "mongodb": "^7.0.0",
-    "openai": "^6.16.0",
+    "openai": "^6.17.0",
     "opusscript": "^0.1.1",
-    "pocketbase": "^0.26.6",
+    "pocketbase": "^0.26.7",
     "youtube-sr": "^4.3.12",
-    "ytdlp-nodejs": "^2.3.5"
+    "ytdlp-nodejs": "^3.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -62,15 +62,15 @@
     "@semantic-release/git": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/luxon": "^3.7.1",
-    "@vitest/coverage-v8": "^3.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
     "jsdoc": "^4.0.5",
     "luxon": "^3.7.2",
     "semantic-release": "^25.0.2",
     "type-coverage": "^2.29.7",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.1",
-    "vitest": "^3.0.0"
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=24"

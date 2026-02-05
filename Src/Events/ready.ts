@@ -109,20 +109,3 @@ export default {
     await engineeringLog.send( `LCARS ${version} is ONLINE.` );
   }
 };
-
-/**
- * Returns a version that is 47 friendly.
- * The incoming string from package is a either standard semantic versioning or an experimental tag
- * in the form of "x.y.z-<tag>". If this is an experimental tag, return a 47 friendly version.
- * 47 friendly versions are in the form of "47.x.y.z (Exp)" where Exp is only show if it's experimental.
- * @param version
- */
-function parseVersion ( version: string ): string {
-  const exp = version.split( '-' );
-  if ( exp.length > 1 ) {
-    const expTag = exp[1].split( '.' );
-    return `47.${exp[0]} (EXP.${expTag[1]})`;
-  }
-
-  return `47.${version}`;
-}

@@ -57,4 +57,5 @@ export interface LCARSEnv {
   JELLYFIN_PASS?: string;
   API_HOST: string; // Has default
   API_PORT: string; // Has default
+  API_AUTH_TOKEN: string; // Has default or auto-generated
 }
