@@ -1,3 +1,18 @@
+# [7.0.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.1.0-E.2...V47.7.0.0-E.1) (2026-02-05)
+
+
+### Bug Fixes
+
+* Corrected body parsing middleware ([9ff67e3](https://github.com/SkyeRangerDelta/LCARS47/commit/9ff67e3ac0dc8623b9c95c0c60faabda2302a347))
+
+
+### Features
+
+* Added API auth token ([0b1b568](https://github.com/SkyeRangerDelta/LCARS47/commit/0b1b568a155e7ce02c1c5f48d7613908ec30a064))
+* Added sendMessage endpoint ([536e88d](https://github.com/SkyeRangerDelta/LCARS47/commit/536e88dd85197c391797bee0629b438d88b70bc3))
+* Added sendMessage logic ([2ea1a29](https://github.com/SkyeRangerDelta/LCARS47/commit/2ea1a294a43f4717b9576f8f4420eb5bfb664039))
+* Adds the entirety of Dabo to LCARS ([3f32ff5](https://github.com/SkyeRangerDelta/LCARS47/commit/3f32ff5812ecd663ecae676a40cb06bf3e245b7d))
+
 # [6.1.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.1.0-E.1...V47.6.1.0-E.2) (2026-01-24)
 
 
