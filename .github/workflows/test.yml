@@ -148,7 +148,13 @@ jobs:
           }
 
     - name: Run Healthcheck
-      run: npm run healthcheck
+      run: |
+        npx tsc
+        if [ -n "$ENV_DATA" ]; then
+          node Deploy/lcars47.js --heartbeat
+        else
+          echo "Skipping heartbeat (no env secrets available)"
+        fi
 
     - name: Type Coverage Check
       id: type-coverage
