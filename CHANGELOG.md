@@ -1,3 +1,10 @@
+# [7.0.0-E.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0-E.2...V47.7.0.0-E.3) (2026-04-04)
+
+
+### Bug Fixes
+
+* Corrected an issue with ytStream pipes ([aabdcfc](https://github.com/SkyeRangerDelta/LCARS47/commit/aabdcfc6bbe6f13c4403204726baa6245a05fe63))
+
 # [7.0.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0-E.1...V47.7.0.0-E.2) (2026-04-04)
 
 
