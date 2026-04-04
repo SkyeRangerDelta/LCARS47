@@ -1,3 +1,18 @@
+# [7.0.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0-E.1...V47.7.0.0-E.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* Bro what's with these TypeScript fixes ([c901edf](https://github.com/SkyeRangerDelta/LCARS47/commit/c901edf54cd787cb2bbae7c968da0afd365e9fbe))
+* Changed module resolution ([ff18a55](https://github.com/SkyeRangerDelta/LCARS47/commit/ff18a55373222edcb5b77939d07b24ab7408a332))
+* Corrected a dependency issue ([44c6775](https://github.com/SkyeRangerDelta/LCARS47/commit/44c67757e1e3105500ec65ca57ae09cf918dc7eb))
+* Typescript version change fixes ([1deb2a4](https://github.com/SkyeRangerDelta/LCARS47/commit/1deb2a4a84e00e916148f12be1e136f1ac3bfd9f))
+
+
+### Features
+
+* Added dependabot config ([1a8b165](https://github.com/SkyeRangerDelta/LCARS47/commit/1a8b165d038ca409aa67f046d2f256c119cc0da0))
+
 # [7.0.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.1.0-E.2...V47.7.0.0-E.1) (2026-02-05)
 
 
