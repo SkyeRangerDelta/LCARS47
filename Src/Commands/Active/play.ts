@@ -171,19 +171,16 @@ async function getSongStream( song: LCARSMediaSong ): Promise<AudioPlayer> {
 
   const pt = new PassThrough();
 
-  try {
-    const ytStream = ytdlp.stream(
-      song.url,
-      {
-        format: 'bestaudio/best',
-        output: '-'
-      });
-    ytStream.pipe( pt );
-  }
-  catch ( streamErr ) {
+  const ytStream = ytdlp.stream(
+    song.url,
+    {
+      format: 'bestaudio/best',
+      output: '-'
+    });
+  void ytStream.pipe( pt ).catch( ( streamErr: unknown ) => {
     Utility.log( 'warn', `[MEDIA-PLAYER] Failed to get stream from yt-dlp.\n${ streamErr as string }` );
-    throw new Error( 'Failed to get stream from yt-dlp.', { cause: streamErr } );
-  }
+    pt.destroy();
+  });
 
   const res = createAudioResource( pt, {
     inputType: StreamType.Arbitrary,
