@@ -25,10 +25,10 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -88,7 +88,7 @@ jobs:
 
     - name: Comment Unit Tests on PR
       if: always() && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         TEST_STATUS: ${{ steps.unit-tests.outputs.status }}
         TEST_PASSED: ${{ steps.unit-tests.outputs.passed }}
@@ -187,7 +187,7 @@ jobs:
 
     - name: Comment Type Coverage on PR
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       env:
         COVERAGE_STATUS: ${{ steps.type-coverage.outputs.status }}
         COVERAGE_PERCENT: ${{ steps.type-coverage.outputs.coverage }}

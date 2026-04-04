@@ -6,8 +6,19 @@ on:
       - master
       - Experimental
 
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'Experimental'
+
 permissions:
   contents: write
+
+env:
+  REGISTRY: "ghcr.io"
+  IMAGE_NAME: "SkyeRangerDelta/lcars47"
 
 concurrency:
   group: 'release-${{ github.ref_name }}'
@@ -20,13 +31,13 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: true
 
       - name: Use Node.js Setup
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'
@@ -55,55 +66,59 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v4.1.1
         with:
-          registry: ghcr.io
+          cosign-release: 'v2.2.2'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract repository name
-        id: repo
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ github.ref_name == 'master' && 'latest' || 'experimental' }}
+            type=raw,value=${{ github.sha }}
 
-      - name: Extract repository owner
-        id: owner
-        run: echo "OWNER=$(echo ${GITHUB_REPOSITORY%%/*} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Set image tag
-        id: tag
-        run: |
-          if [[ "${GITHUB_REF##*/}" == "master" ]]; then
-            echo "TAG=latest" >> $GITHUB_ENV
-          elif [[ "${GITHUB_REF##*/}" == "Experimental" ]]; then
-            echo "TAG=experimental" >> $GITHUB_ENV
-          else
-            echo "TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
-          fi
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
 
-      - name: Build Docker image
-        run: |
-          docker build \
-            --label "org.opencontainers.image.source=https://github.com/${{ env.REPO }}" \
-            --label "org.opencontainers.image.authors=${{ github.actor }}" \
-            --label "org.opencontainers.image.title=${{ env.REPO }}" \
-            -t ghcr.io/${{ env.OWNER }}/lcars47:${{ github.sha }} \
-            -t ghcr.io/${{ env.OWNER }}/lcars47:${{ env.TAG }} .
-
-      - name: Push Docker image ( sha )
-        run: |
-          docker push ghcr.io/${{ env.OWNER }}/lcars47:${{ github.sha }} 
-
-      - name: Push Docker image ( tag )
-        run: |
-          docker push ghcr.io/${{ env.OWNER }}/lcars47:${{ env.TAG }}
 
   sync-branches:
     name: Sync Branches
@@ -112,7 +127,7 @@ jobs:
     if: github.event_name == 'push' && github.ref_name == 'master' && !contains(github.event.head_commit.message, '[skip ci]')
     steps:
       - name: Checkout Experimental
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: Experimental
 
