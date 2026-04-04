@@ -10,6 +10,45 @@ import RDS_Utilities from '../Subsystems/RemoteDS/RDS_Utilities.js';
 export default {
   name: 'interactionCreate',
   async execute ( LCARS47: LCARSClient, int: BaseInteraction ) {
+    // Handle autocomplete interactions
+    if ( int.isAutocomplete() ) {
+      const cmd = LCARS47.CMD_INDEX.get( int.commandName );
+      if ( cmd == null ) return;
+
+      try {
+        // Type assertion: autocomplete-enabled commands handle both interaction types internally
+        await cmd.execute( LCARS47, int );
+      } catch ( autocompleteErr ) {
+        Utility.log( 'err', `[INT-HANDLER] Autocomplete failed: ${ autocompleteErr as string }` );
+      }
+      return;
+    }
+
+    // Handle button interactions
+    if ( int.isButton() ) {
+      const customId = int.customId;
+
+      // Route buttons based on prefix (e.g., "dabo_spin_123" -> "dabo" command)
+      const cmdName = customId.split( '_' )[0];
+      const cmd = LCARS47.CMD_INDEX.get( cmdName );
+
+      if ( cmd == null || cmd.handleButton == null ) {
+        Utility.log( 'warn', `[INT-HANDLER] No button handler for: ${customId}` );
+        return;
+      }
+
+      try {
+        Utility.log( 'info', `[INT-HANDLER] Button interaction received: ${customId}` );
+        await cmd.handleButton( LCARS47, int );
+      } catch ( buttonErr ) {
+        Utility.log( 'err', `[INT-HANDLER] Button handler failed: ${ buttonErr as string }` );
+        if ( !int.replied && !int.deferred ) {
+          await int.reply( { content: 'Button interaction failed!', ephemeral: true } );
+        }
+      }
+      return;
+    }
+
     if ( !int.isChatInputCommand() ) return;
 
     const cmd = LCARS47.CMD_INDEX.get( int.commandName );

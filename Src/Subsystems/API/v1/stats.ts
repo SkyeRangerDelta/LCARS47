@@ -1,29 +1,16 @@
-// -- API Core --
+import exp from 'express';
+import type { LCARSClient } from '../../Auxiliary/LCARSClient';
+import Utility from '../../Utilities/SysUtils.js';
+import type { StatusInterface } from '../../Auxiliary/Interfaces/StatusInterface';
+import RDS_Utilities from '../../RemoteDS/RDS_Utilities';
+import { getEnv } from '../../Utilities/EnvUtils';
 
-// Imports
-import Utility from '../Utilities/SysUtils.js';
-import exp, { type Application, type Request, type Response } from 'express';
-import { type StatusInterface } from '../Auxiliary/Interfaces/StatusInterface.js';
-import RDS_Utilities from '../RemoteDS/RDS_Utilities.js';
-import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
+const env = getEnv();
 
-const PLDYNID = process.env.PLDYNID as string | null;
+function loadRoute( LCARS47: LCARSClient ) {
+  const rtr = exp();
 
-// Exports
-const APICore = {
-  loadAPI
-};
-
-export default APICore;
-
-// Variables
-const API_PORT = process.env.API_PORT;
-
-// Functions
-function loadAPI ( LCARS47: LCARSClient ): void {
-  const rtr: Application = exp();
-
-  rtr.get( '/stats', ( req: Request, res: Response ) => {
+  rtr.get( '/stats', ( req, res ) => {
     if ( !LCARS47.isReady() ) {
       res.status( 200 ).send(
         { STATE: false }
@@ -41,19 +28,12 @@ function loadAPI ( LCARS47: LCARSClient ): void {
           { STATE: false }
         );
       } );
-  } );
+  });
 
-  rtr.listen( API_PORT, () => {
-    Utility.log( 'info', `[API] Service online at ${API_PORT}` );
-  } );
+  return rtr;
 }
 
 async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | null > {
-  if ( PLDYNID == null ) {
-    Utility.log( 'error', '[API] PLDYNID not set.' );
-    return null;
-  }
-
   Utility.log( 'info', '[API] Loading latest API Stats.' );
   const botStats = await RDS_Utilities.rds_getStatusFull( LCARS47.RDS_CONNECTION );
   botStats.CLIENT_MEM_USAGE = Utility.formatProcess_mem( process.memoryUsage().heapUsed );
@@ -65,7 +45,7 @@ async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | n
     diff: timeDiff.toObject()
   };
 
-  const mediaQueue = LCARS47.MEDIA_QUEUE.get( PLDYNID );
+  const mediaQueue = LCARS47.MEDIA_QUEUE.get( env.PLDYNID );
   botStats.MEDIA_PLAYER_STATE = !( mediaQueue == null );
 
   if ( ( mediaQueue?.isPlaying ) === true ) {
@@ -79,3 +59,10 @@ async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | n
 
   return botStats;
 }
+
+const rt = {
+  name: 'stats',
+  router: loadRoute
+}
+
+export default rt;

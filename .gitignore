@@ -4,6 +4,9 @@
 node_modules
 .env
 
+.git_tag
+/logs/
+
 Deploy/
 
 #Subsystems
@@ -12,3 +15,7 @@ Deploy/
 .idea/
 /.idea
 .idea
+
+#Claude Code
+.claude/
+.mcp/

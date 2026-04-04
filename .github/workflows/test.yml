@@ -4,9 +4,12 @@
 name: Test Node
 
 on:
-  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
-permissions: read-all
+permissions:
+  contents: read
+  pull-requests: write
 
 env:
   ENV_DATA: ${{ secrets.ENV }}
@@ -18,15 +21,14 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [24.x]
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -38,13 +40,209 @@ jobs:
         echo $ENV_DATA | base64 --decode > .env
 
     - name: Cache
-      uses: actions/cache@v4.0.0
+      uses: actions/cache@v5
       with:
         path: node_modules
         key: ${{ runner.os }}-devbuild-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
         restore-keys: ${{ runner.os }}-devbuild-${{ env.cache-name }}-
 
-    - run: npm ci
+    - run: npm i
 
-    - run: npm run test --if-present
+    - name: Run Unit Tests
+      id: unit-tests
+      run: |
+        # Ensure logs directory exists for tee command in npm test script
+        mkdir -p logs/tests
+
+        set +e
+        OUTPUT=$(npm run test 2>&1)
+        EXIT_CODE=$?
+        set -e
+
+        echo "$OUTPUT"
+
+        # Strip ANSI codes before parsing test results
+        CLEAN_OUTPUT=$(echo "$OUTPUT" | sed 's/\x1b\[[0-9;]*m//g')
+
+        # Parse test results from Vitest output
+        PASSED=$(echo "$CLEAN_OUTPUT" | grep -oE 'Tests\s+[0-9]+ passed' | grep -oE '[0-9]+' || echo "0")
+        FAILED=$(echo "$CLEAN_OUTPUT" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' || echo "0")
+        TOTAL=$((PASSED + FAILED))
+
+        if [ "$EXIT_CODE" -eq 0 ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+        fi
+
+        echo "passed=$PASSED" >> $GITHUB_OUTPUT
+        echo "failed=$FAILED" >> $GITHUB_OUTPUT
+        echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+        EOF_MARKER=$(openssl rand -hex 8)
+        echo "details<<$EOF_MARKER" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "$EOF_MARKER" >> $GITHUB_OUTPUT
+
+        exit $EXIT_CODE
+
+    - name: Comment Unit Tests on PR
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/github-script@v8
+      env:
+        TEST_STATUS: ${{ steps.unit-tests.outputs.status }}
+        TEST_PASSED: ${{ steps.unit-tests.outputs.passed }}
+        TEST_FAILED: ${{ steps.unit-tests.outputs.failed }}
+        TEST_TOTAL: ${{ steps.unit-tests.outputs.total }}
+        TEST_DETAILS: ${{ steps.unit-tests.outputs.details }}
+        NODE_VER: ${{ matrix.node-version }}
+      with:
+        script: |
+          const status = process.env.TEST_STATUS;
+          const passed = process.env.TEST_PASSED;
+          const failed = process.env.TEST_FAILED;
+          const total = process.env.TEST_TOTAL;
+          const details = process.env.TEST_DETAILS;
+          const nodeVersion = process.env.NODE_VER;
+
+          const statusEmoji = status === 'success' ? '✅' : '❌';
+
+          const body = [
+            `## ${statusEmoji} Unit Test Report (Node ${nodeVersion})`,
+            '',
+            `**${passed}/${total} tests passed**${failed > 0 ? ` (${failed} failed)` : ''}`,
+            '',
+            '<details>',
+            '<summary>Details</summary>',
+            '',
+            '```',
+            details,
+            '```',
+            '',
+            '</details>'
+          ].join('\n');
+
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          const marker = `Unit Test Report (Node ${nodeVersion})`;
+          const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }
+
+    - name: Run Healthcheck
+      run: |
+        npx tsc
+        if [ -n "$ENV_DATA" ]; then
+          node Deploy/lcars47.js --heartbeat
+        else
+          echo "Skipping heartbeat (no env secrets available)"
+        fi
+
+    - name: Type Coverage Check
+      id: type-coverage
+      run: |
+        set +e
+        OUTPUT=$(npx type-coverage 2>&1)
+        EXIT_CODE=$?
+        set -e
+
+        echo "$OUTPUT"
+
+        COVERAGE=$(echo "$OUTPUT" | grep -oE '[0-9]+\.[0-9]+%' | head -1)
+        COVERAGE_NUM=$(echo "$COVERAGE" | tr -d '%')
+
+        if [ -z "$COVERAGE_NUM" ]; then
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "coverage=unknown" >> $GITHUB_OUTPUT
+        elif [ "$(echo "$COVERAGE_NUM < 90" | bc -l)" -eq 1 ]; then
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        else
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+        fi
+
+        EOF_MARKER=$(openssl rand -hex 8)
+        echo "details<<$EOF_MARKER" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "$EOF_MARKER" >> $GITHUB_OUTPUT
+
+    - name: Comment Type Coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v8
+      env:
+        COVERAGE_STATUS: ${{ steps.type-coverage.outputs.status }}
+        COVERAGE_PERCENT: ${{ steps.type-coverage.outputs.coverage }}
+        COVERAGE_DETAILS: ${{ steps.type-coverage.outputs.details }}
+        NODE_VER: ${{ matrix.node-version }}
+      with:
+        script: |
+          const status = process.env.COVERAGE_STATUS;
+          const coverage = process.env.COVERAGE_PERCENT;
+          const details = process.env.COVERAGE_DETAILS;
+          const nodeVersion = process.env.NODE_VER;
+
+          const statusEmoji = status === 'success' ? '✅' : '❌';
+
+          const body = [
+            `## ${statusEmoji} Type Coverage Report (Node ${nodeVersion})`,
+            '',
+            `**Coverage: ${coverage}** (threshold: 90%)`,
+            '',
+            '<details>',
+            '<summary>Details</summary>',
+            '',
+            '```',
+            details,
+            '```',
+            '',
+            '</details>'
+          ].join('\n');
+
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+
+          const marker = `Type Coverage Report (Node ${nodeVersion})`;
+          const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }
+
+    - name: Fail if Type Coverage Below Threshold
+      if: steps.type-coverage.outputs.status == 'failure'
+      run: exit 1
 

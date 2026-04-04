@@ -5,14 +5,18 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
-  type ChatInputCommandInteraction,
+  type AutocompleteInteraction,
+  type ChatInputCommandInteraction, type GuildMember,
   type InteractionResponse, MessageFlags
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
+import type { LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces';
 
-const PLDYNID = process.env.PLDYNID ?? '';
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
 
 // Globals
 const data = new SlashCommandBuilder()
@@ -20,10 +24,17 @@ const data = new SlashCommandBuilder()
   .setDescription( 'Displays details about the currently playing song.' );
 
 // Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[MEDIA-PLAYER] Received a song detail request.' );
 
-  let member;
+  let member: GuildMember;
   try {
     member = await LCARS47.PLDYN.members.fetch( int.user.id );
   }
@@ -54,10 +65,11 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
 }
 
 async function displayPlaying ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
-  let queueList;
+  const player = LCARS47.MEDIA_QUEUE.get( PLDYNID );
+  let queueList: LCARSMediaSong[];
 
-  if ( LCARS47.MEDIA_QUEUE.has( PLDYNID ) ) {
-    queueList = LCARS47.MEDIA_QUEUE.get( PLDYNID )?.songs;
+  if ( player ) {
+    queueList = player.songs;
 
     if ( queueList == null ) return await int.reply( { content: 'No media in queue.' } );
   }

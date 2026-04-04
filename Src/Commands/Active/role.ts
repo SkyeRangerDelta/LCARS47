@@ -4,6 +4,7 @@
 // Imports
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
+  type AutocompleteInteraction,
   type BooleanCache,
   type CacheType,
   type ChatInputCommandInteraction,
@@ -43,7 +44,14 @@ data.addSubcommand( s => s
 );
 
 // Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse<BooleanCache<CacheType>>> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse<BooleanCache<CacheType>> | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+  
   const subCmd = int.options.getSubcommand();
 
   Utility.log( 'info', `[ROLE-SYS] Received a new ${subCmd} role command.` );

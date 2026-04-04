@@ -7,20 +7,21 @@ import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 
 import RDS_Utilities from '../../Subsystems/RemoteDS/RDS_Utilities.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
+import type { RDSStatus } from '../../Subsystems/Auxiliary/Interfaces/StatusInterface';
 
 // Functions
 const data = new SlashCommandBuilder()
   .setName( 'status' )
   .setDescription( 'Displays a report of all LCARS47s system states and session variables.' );
 
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse | void> {
   Utility.log( 'info', '[AUXILIARY] Received status display request.' );
 
-  const statusRP = await RDS_Utilities.rds_selectOne( LCARS47.RDS_CONNECTION, 'rds_status', 1 );
+  const statusRP: RDSStatus | null = await RDS_Utilities.rds_selectOne( LCARS47.RDS_CONNECTION, 'rds_status', 1 ) as RDSStatus | null;
   console.log( statusRP );
 
-  if ( statusRP != null ) {
-    return await int.reply( { content: `LCARS RDS Status Report:\nState: ${statusRP.STATE}\nQueries: ${statusRP.QUERIES}` } );
+  if ( statusRP ) {
+    return await int.reply( { content: `LCARS RDS Status Report:\nState: ${statusRP.STATE}\nQueries: ${statusRP.QUERIES}\nStardate: ${ Utility.stardate() } : ${ Utility.shipboardTime() }` } );
   }
 
   return await int.reply( { content: 'Unable to generate LCARS status report.' } );

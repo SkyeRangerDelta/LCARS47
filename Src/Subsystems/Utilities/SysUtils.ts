@@ -4,6 +4,8 @@
 // Imports
 import colors from 'colors';
 import { DateTime, type Duration } from 'luxon';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 // Exports
 export default {
@@ -33,16 +35,19 @@ export default {
 
     return newFlex;
   },
-  stardate ( date?: Date ): string {
-    let newStardate: string;
-    if ( date == null ) {
-      newStardate = DateTime.now().setZone( 'UTC-5' ).toFormat( 'LdyyHm.s' );
-    }
-    else {
-      newStardate = DateTime.fromJSDate( date ).toFormat( 'LdyyHm.s' );
-    }
-
-    return newStardate;
+  stardate(date?: Date): string {
+    const dt = date
+      ? DateTime.fromJSDate(date).setZone('UTC-5')
+      : DateTime.now().setZone('UTC-5');
+    const base = dt.toFormat('Ldyy');
+    const secondsInDay = 24 * 60 * 60;
+    const currentSeconds =
+      dt.hour * 3600 + dt.minute * 60 + dt.second;
+    const tenth = Math.floor((currentSeconds / secondsInDay) * 10);
+    return `${base}.${tenth}`;
+  },
+  shipboardTime() {
+    return DateTime.now().toFormat('HH:mm:ss');
   },
   formatMSDiff ( ms: number ): Duration {
     const date = new Date( ms );
@@ -56,5 +61,12 @@ export default {
   },
   formatProcess_mem ( processData: number ): number {
     return Math.round( processData / 1024 / 1024 * 100 ) / 100;
+  },
+  getVersion(): string {
+    const packagePath = join( process.cwd(), 'package.json' );
+    const packageJson = JSON.parse( readFileSync( packagePath, 'utf8' ) ) as { [p: string]: string };
+    // Normalize prerelease format: 6.1.0-E.1 -> 6.1.0-E1
+    const version = ( packageJson.version ).replace( /-E\./, '-E' );
+    return `V47.${ version }`;
   }
 };

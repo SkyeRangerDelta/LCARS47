@@ -5,24 +5,20 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
-  type CommandInteraction,
+  type CommandInteraction, type GuildMember,
   type InteractionResponse,
   MessageFlags
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
+import type { LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces';
 
-let PLDYNID: string;
-
-if ( process.env.PLDYNID == null ) {
-  Utility.log( 'error', '[MEDIA-PLAYER] PLDYNID not set.' );
-  throw new Error( 'PLDYNID not set.' );
-}
-else {
-  PLDYNID = process.env.PLDYNID;
-}
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
 
 // Globals
 const data = new SlashCommandBuilder()
@@ -30,10 +26,17 @@ const data = new SlashCommandBuilder()
   .setDescription( 'Displays a list of the songs in the playlist.' );
 
 // Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[MEDIA-PLAYER] Received a queue request.' );
 
-  let member;
+  let member: GuildMember;
   try {
     member = await LCARS47.PLDYN.members.fetch( int.user.id );
   }
@@ -64,12 +67,13 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
 }
 
 async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): Promise<InteractionResponse> {
-  let queueList;
+  const player = LCARS47.MEDIA_QUEUE.get( PLDYNID );
+  let queueList: LCARSMediaSong[];
   let songList = '';
   let totalDuration = 0;
 
-  if ( LCARS47.MEDIA_QUEUE.has( PLDYNID ) ) {
-    queueList = LCARS47.MEDIA_QUEUE.get( PLDYNID )?.songs;
+  if ( player ) {
+    queueList = player.songs;
 
     if ( queueList == null ) return await int.reply( { content: 'No media in queue.', flags: MessageFlags.SuppressEmbeds } );
   }

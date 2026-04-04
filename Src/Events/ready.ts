@@ -4,34 +4,27 @@
 import Utility from '../Subsystems/Utilities/SysUtils.js';
 import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
+import Beszel from '../Subsystems/RemoteDS/Beszel_Connect.js';
+import BeszelUtils from '../Subsystems/RemoteDS/Beszel_Utilities.js';
 import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
+import { getEnv, isFeatureEnabled } from '../Subsystems/Utilities/EnvUtils.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
-import * as fs from 'node:fs';
 
-const PLDYNID = process.env.PLDYNID;
-const LCARSID = process.env.LCARSID;
-const ENGINEERING = process.env.ENGINEERING;
-
-interface pkgData {
-  version: string;
-}
+const env = getEnv();
 
 // Exports
-module.exports = {
+export default {
   name: 'clientReady',
   once: true,
   execute: async ( LCARS47: LCARSClient, args?: string[] ) => {
-    if ( ( PLDYNID == null ) || ( LCARSID == null ) || ( ENGINEERING == null ) ) {
-      throw new Error( 'One or more environment variables are missing.' );
-    }
 
     if ( args != undefined && args?.length > 0 ) {
       Utility.log( 'info', '[READY] Received arguments for startup.' );
     }
 
-    LCARS47.PLDYN = await LCARS47.guilds.fetch( PLDYNID );
-    LCARS47.MEMBER = await LCARS47.PLDYN.members.fetch( LCARSID );
+    LCARS47.PLDYN = await LCARS47.guilds.fetch( env.PLDYNID );
+    LCARS47.MEMBER = await LCARS47.PLDYN.members.fetch( env.LCARSID );
     LCARS47.MEDIA_QUEUE = new Map();
     LCARS47.CLIENT_STATS = {
       CLIENT_MEM_USAGE: 0,
@@ -50,10 +43,9 @@ module.exports = {
     } satisfies StatusInterface;
 
     Utility.log( 'proc', '[CLIENT] IM ALIVE!' );
-    Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()}` );
+    Utility.log( 'proc', `[CLIENT] Current Stardate: ${Utility.stardate()} - Shipboard time: ${ Utility.shipboardTime() }` );
 
-    const pkgData = JSON.parse( fs.readFileSync( './package.json', 'utf8' ) ) as pkgData;
-    const version = parseVersion( `${pkgData.version}` );
+    const version = Utility.getVersion();
 
     LCARS47.user?.setPresence( {
       activities: [{ name: 'for stuff | ' + `V${version}`, type: ActivityType.Watching }],
@@ -66,6 +58,25 @@ module.exports = {
     }
 
     LCARS47.RDS_CONNECTION = await RDS.rds_connect();
+
+    // Initialize Beszel client if feature is enabled
+    if ( isFeatureEnabled( 'beszel' ) ) {
+      try {
+        LCARS47.BESZEL_CLIENT = await Beszel.beszel_connect();
+
+        // Fetch initial systems list
+        LCARS47.BESZEL_SYSTEMS = await BeszelUtils.beszel_getSystems(LCARS47.BESZEL_CLIENT);
+        Utility.log('proc', `[BESZEL] Loaded ${LCARS47.BESZEL_SYSTEMS.length} systems for autocomplete cache`);
+      } catch (beszelErr) {
+        Utility.log('warn', `[BESZEL] Failed to initialize Beszel client: ${(beszelErr as Error).message}`);
+        Utility.log('warn', '[BESZEL] Server monitoring features will be unavailable.');
+        LCARS47.BESZEL_SYSTEMS = []; // Empty array as fallback
+      }
+    }
+    else {
+      Utility.log( 'info', '[BESZEL] Feature not enabled - skipping initialization.' );
+      LCARS47.BESZEL_SYSTEMS = [];
+    }
 
     Utility.log( 'info', '[CLIENT] Getting old stats page.' );
     const oldBotData = await RDS.rds_getStatusFull( LCARS47.RDS_CONNECTION );
@@ -94,24 +105,7 @@ module.exports = {
       throw new Error( 'RDS status update failed!' );
     }
 
-    const engineeringLog = await LCARS47.PLDYN.channels.fetch( ENGINEERING ) as TextChannel;
-    await engineeringLog.send( `LCARS V${version} is ONLINE.` );
+    const engineeringLog = await LCARS47.PLDYN.channels.fetch( env.ENGINEERING ) as TextChannel;
+    await engineeringLog.send( `LCARS ${version} is ONLINE.` );
   }
 };
-
-/**
- * Returns a version that is 47 friendly.
- * The incoming string from package is a either standard semantic versioning or an experimental tag
- * in the form of "x.y.z-<tag>". If this is an experimental tag, return a 47 friendly version.
- * 47 friendly versions are in the form of "47.x.y.z (Exp)" where Exp is only show if it's experimental.
- * @param version
- */
-function parseVersion ( version: string ): string {
-  const exp = version.split( '-' );
-  if ( exp.length > 1 ) {
-    const expTag = exp[1].split( '.' );
-    return `47.${exp[0]} (EXP.${expTag[1]})`;
-  }
-
-  return `47.${version}`;
-}

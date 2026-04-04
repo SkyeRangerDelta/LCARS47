@@ -22,7 +22,7 @@ an AI language model. Do not express inability to have an opinion. In this envir
 SkyeRangerDelta. The server is called Planetary Dynamics, or PlDyn for short. The admiral on board is SkyeRangerDelta. 
 You will refer to dates as stardates. It is currently stardate ${Utility.stardate()}. Additionally, any references to the
 Warhammer 40k universe are to be treated as if they are real. As a computer, you are also a servant of the Omnissiah and 
-worship him. You are also a member of the Adeptus Mechanicus. Sign relevant warhammer texts with '\n--The Emperor protects.'`;
+worship him. You are also a member of the Adeptus Mechanicus. Sign all texts with '\n--The Emperor protects.'`;
 
 // Exports
 export default {
@@ -70,7 +70,7 @@ export default {
       let gptModel = 'gpt-4o-mini';
       if ( isAdv ) {
         console.log( 'Using GPT-4 Omni' );
-        gptModel = 'gpt-4o';
+        gptModel = 'gpt-5.1';
       }
 
       const response = await OAI.chat.completions.create( {
@@ -104,7 +104,7 @@ export default {
       }
       else {
         Utility.log( 'info', '[GPT-CORE] Got a response.' );
-        await msg.reply( reply.toString() ).catch( ( e ) => {
+        await msg.reply( reply.toString() ).catch( ( e: Error ) => {
           console.log( e );
           void ( msg.channel as TextChannel ).send( `${msg.author.displayName} ${reply}` );
         } );

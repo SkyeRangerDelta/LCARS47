@@ -6,20 +6,31 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import {
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
   type GuildMember,
   type InteractionResponse
 } from 'discord.js';
 
 import { getVoiceConnection } from '@discordjs/voice';
-const PLDYNID = process.env.PLDYNID ?? '';
+import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
+
+const env = getEnv();
+const PLDYNID = env.PLDYNID;
 
 // Functions
 const data = new SlashCommandBuilder()
   .setName( 'stop' )
   .setDescription( 'Halts and disconnects the media player.' );
 
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
+async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+  if ( int.isAutocomplete() ) return await int.respond([
+    {
+      name: 'This command does not support autocomplete.',
+      value: 'none'
+    }
+  ]);
+
   Utility.log( 'info', '[MEDIA-PLAYER] Received a stop command.' );
 
   const serverQueue = LCARS47.MEDIA_QUEUE.get( PLDYNID );

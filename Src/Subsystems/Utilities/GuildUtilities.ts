@@ -7,6 +7,7 @@ import { type LCARSClient } from '../Auxiliary/LCARSClient';
 import { type Message } from 'discord.js';
 import Utility from './SysUtils';
 import GPTCore from '../Operations/OPs_GPTCore';
+import { getEnv } from './EnvUtils.js';
 
 // Types
 interface SpecChannel {
@@ -15,7 +16,13 @@ interface SpecChannel {
 }
 
 // Globals
-const specChannels: SpecChannel[] = readSpecChannels();
+const env = getEnv();
+const specChannels: SpecChannel[] = [
+  { name: 'SIMLAB', id: env.SIMLAB },
+  { name: 'ENGINEERING', id: env.ENGINEERING },
+  { name: 'MEDIALOG', id: env.MEDIALOG },
+  { name: 'DEVLAB', id: env.DEVLAB }
+];
 
 export default {
   isSpecChannel ( chID: Snowflake ): { name: string, id: string } | null {
@@ -71,41 +78,3 @@ function runMediaData ( msg: Message ): void {
   Utility.log( 'proc', `[EVENT] [MSG-CREATE] Reached media log event.. Message: ${msg.content}` );
 }
 
-function readSpecChannels (): SpecChannel[] {
-  const specChannels: SpecChannel[] = [];
-
-  const simlab = process.env.SIMLAB;
-  const engineering = process.env.ENGINEERING;
-  const medialog = process.env.MEDIALOG;
-  const devlab = process.env.DEVLAB;
-
-  if ( simlab == null ) {
-    throw new Error( 'SIMLAB channel ID not set.' );
-  }
-  else {
-    specChannels.push( { name: 'SIMLAB', id: simlab } );
-  }
-
-  if ( engineering == null ) {
-    throw new Error( 'ENGINEERING channel ID not set.' );
-  }
-  else {
-    specChannels.push( { name: 'ENGINEERING', id: engineering } );
-  }
-
-  if ( medialog == null ) {
-    throw new Error( 'MEDIALOG channel ID not set.' );
-  }
-  else {
-    specChannels.push( { name: 'MEDIALOG', id: medialog } );
-  }
-
-  if ( devlab == null ) {
-    throw new Error( 'DEVLAB channel ID not set.' );
-  }
-  else {
-    specChannels.push( { name: 'DEVLAB', id: devlab } );
-  }
-
-  return specChannels;
-}
