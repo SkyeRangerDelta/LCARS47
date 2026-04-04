@@ -1,3 +1,39 @@
+# [7.0.0](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.3...V47.7.0.0) (2026-04-04)
+
+
+### Bug Fixes
+
+* Bro what's with these TypeScript fixes ([c901edf](https://github.com/SkyeRangerDelta/LCARS47/commit/c901edf54cd787cb2bbae7c968da0afd365e9fbe))
+* Changed module resolution ([ff18a55](https://github.com/SkyeRangerDelta/LCARS47/commit/ff18a55373222edcb5b77939d07b24ab7408a332))
+* Corrected a bug in conversion helper ([16a0224](https://github.com/SkyeRangerDelta/LCARS47/commit/16a022435e21c2fd268852e95c9561a76d3135d1))
+* Corrected a dependency issue ([44c6775](https://github.com/SkyeRangerDelta/LCARS47/commit/44c67757e1e3105500ec65ca57ae09cf918dc7eb))
+* Corrected a ytdlp stream issue ([9e04333](https://github.com/SkyeRangerDelta/LCARS47/commit/9e04333c6b1df20eb9de9142b1b570afa305cfc8))
+* Corrected an issue with ytStream pipes ([aabdcfc](https://github.com/SkyeRangerDelta/LCARS47/commit/aabdcfc6bbe6f13c4403204726baa6245a05fe63))
+* Corrected Autocomplete type evaluation ([b3f6ea9](https://github.com/SkyeRangerDelta/LCARS47/commit/b3f6ea9e02719b0a13b9b43a4d73cdf2266b94f0))
+* Corrected body parsing middleware ([9ff67e3](https://github.com/SkyeRangerDelta/LCARS47/commit/9ff67e3ac0dc8623b9c95c0c60faabda2302a347))
+* Corrected package version handling to use git ([dfceec8](https://github.com/SkyeRangerDelta/LCARS47/commit/dfceec87f80858edf9928c4ef2e29bfc2c1cd10e))
+* Prevent error from being consumed in play ([dfc7743](https://github.com/SkyeRangerDelta/LCARS47/commit/dfc77438d021da7aed7105f5ae33af47990890f9))
+* Reverted getVersion back to reading package in favor of environment agnostic limits ([a8f175e](https://github.com/SkyeRangerDelta/LCARS47/commit/a8f175e6bfa92006d3e7a90ab8ee3cf47ae41007))
+* Typescript version change fixes ([1deb2a4](https://github.com/SkyeRangerDelta/LCARS47/commit/1deb2a4a84e00e916148f12be1e136f1ac3bfd9f))
+
+
+### Features
+
+* Added API auth token ([0b1b568](https://github.com/SkyeRangerDelta/LCARS47/commit/0b1b568a155e7ce02c1c5f48d7613908ec30a064))
+* Added Beszel statistics logic ([670248d](https://github.com/SkyeRangerDelta/LCARS47/commit/670248dd81a8f1f3dbbd212f57d97bba8fb084ea))
+* Added dependabot config ([1a8b165](https://github.com/SkyeRangerDelta/LCARS47/commit/1a8b165d038ca409aa67f046d2f256c119cc0da0))
+* Added sendMessage endpoint ([536e88d](https://github.com/SkyeRangerDelta/LCARS47/commit/536e88dd85197c391797bee0629b438d88b70bc3))
+* Added sendMessage logic ([2ea1a29](https://github.com/SkyeRangerDelta/LCARS47/commit/2ea1a294a43f4717b9576f8f4420eb5bfb664039))
+* Added Stardate / Timestamp funcs ([a1fb29e](https://github.com/SkyeRangerDelta/LCARS47/commit/a1fb29eaae7152f474b9b52935c679aed7330ade))
+* Added stardate and shipboard time to status ([976fd68](https://github.com/SkyeRangerDelta/LCARS47/commit/976fd689e7c838666e137cfdb2863c8990b6da9c))
+* Adds the entirety of Dabo to LCARS ([3f32ff5](https://github.com/SkyeRangerDelta/LCARS47/commit/3f32ff5812ecd663ecae676a40cb06bf3e245b7d))
+* Implement proper env checks ([543cf48](https://github.com/SkyeRangerDelta/LCARS47/commit/543cf48a2912b5fc6aa75f559f15f7cffbd358f1)), closes [#29](https://github.com/SkyeRangerDelta/LCARS47/issues/29)
+
+
+### Performance Improvements
+
+* Added validation race check on envs ([1e64642](https://github.com/SkyeRangerDelta/LCARS47/commit/1e646423091f55cf3e2ac6e5ba812d5f20315e13))
+
 # [7.0.0-E.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0-E.2...V47.7.0.0-E.3) (2026-04-04)
 
 
