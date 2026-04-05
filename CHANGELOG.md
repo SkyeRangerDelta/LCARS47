@@ -1,3 +1,10 @@
+## [7.0.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0...V47.7.0.1) (2026-04-05)
+
+
+### Bug Fixes
+
+* Corrected a crash in docker healthcheck ([c3546d0](https://github.com/SkyeRangerDelta/LCARS47/commit/c3546d006caa8dd3c2125edee8a49cff3afd30b6))
+
 ## [7.0.1-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0...V47.7.0.1-E.1) (2026-04-04)
 
 
