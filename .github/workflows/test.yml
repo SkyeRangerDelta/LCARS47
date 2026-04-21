@@ -88,7 +88,7 @@ jobs:
 
     - name: Comment Unit Tests on PR
       if: always() && github.event_name == 'pull_request'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         TEST_STATUS: ${{ steps.unit-tests.outputs.status }}
         TEST_PASSED: ${{ steps.unit-tests.outputs.passed }}
@@ -187,7 +187,7 @@ jobs:
 
     - name: Comment Type Coverage on PR
       if: github.event_name == 'pull_request'
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         COVERAGE_STATUS: ${{ steps.type-coverage.outputs.status }}
         COVERAGE_PERCENT: ${{ steps.type-coverage.outputs.coverage }}
