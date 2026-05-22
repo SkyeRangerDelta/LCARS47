@@ -18,6 +18,10 @@ export interface Track {
   channelOrAlbumLabel: string;
   requestedBy: GuildMember;
   playStart: number;
+  /** Public URL or signed URL pointing to a small (~256px) cover image.
+   *  Sized by the source: YouTube returns a fixed-resolution thumbnail;
+   *  Jellyfin transcodes server-side via maxWidth/maxHeight params. */
+  thumbnailUrl?: string;
 }
 
 export interface StreamHandle {

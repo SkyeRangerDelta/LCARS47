@@ -13,12 +13,14 @@ function makeClient(overrides: Partial<{
   searchAudio: (q: string, limit?: number) => Promise<JellyfinItem[]>;
   expandContainer: (id: string) => Promise<JellyfinItem[]>;
   buildStreamUrl: (id: string) => string;
+  buildImageUrl: (id: string, maxSide?: number) => string;
 }> = {}): JellyfinClient {
   return {
     isReady: () => overrides.isReady ?? true,
     searchAudio: overrides.searchAudio ?? (() => Promise.resolve([])),
     expandContainer: overrides.expandContainer ?? (() => Promise.resolve([])),
-    buildStreamUrl: overrides.buildStreamUrl ?? (id => `http://stub/audio/${id}`)
+    buildStreamUrl: overrides.buildStreamUrl ?? (id => `http://stub/audio/${id}`),
+    buildImageUrl: overrides.buildImageUrl ?? (id => `http://stub/image/${id}`)
   } as unknown as JellyfinClient;
 }
 

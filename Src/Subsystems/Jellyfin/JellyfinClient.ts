@@ -132,6 +132,21 @@ export class JellyfinClient {
       .filter( ( item ): item is JellyfinItem => item != null );
   }
 
+  /** Build a server-side resized cover-art URL for an item. Jellyfin
+   *  transcodes to the requested dimensions so the bot doesn't need an
+   *  image library. For audio items the Primary image is the album cover
+   *  (Jellyfin returns it even when the audio item itself has no image). */
+  buildImageUrl( itemId: string, maxSide = 256 ): string {
+    const token = this.requireAccessToken();
+    const params = new URLSearchParams( {
+      api_key: token,
+      maxWidth: String( maxSide ),
+      maxHeight: String( maxSide ),
+      quality: '80'
+    } );
+    return `${ this.baseUrl }/Items/${ encodeURIComponent( itemId ) }/Images/Primary?${ params.toString() }`;
+  }
+
   /** Build a direct HTTP stream URL for an audio item. Prefers opus to
    *  avoid an FFmpeg roundtrip on the bot side. */
   buildStreamUrl( itemId: string ): string {

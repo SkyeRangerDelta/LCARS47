@@ -65,6 +65,12 @@ export class YouTubeProvider implements MediaProvider {
     const duration = ( video.duration ?? 0 ) / 1000 || 1;
     const channelLabel = video.channel?.name ?? 'Unknown Channel';
 
+    // `mqdefault` is 320x180 — closest to our 256-ish target without
+    // pulling a 1280x720 maxres frame for every /play.
+    const thumbnailUrl = video.thumbnail?.displayThumbnailURL?.( 'mqdefault' )
+      ?? video.thumbnail?.url
+      ?? undefined;
+
     const track: Track = {
       id: video.id,
       source: 'youtube',
@@ -75,7 +81,8 @@ export class YouTubeProvider implements MediaProvider {
       durationFriendly: convertSecondsToHMS( duration ),
       channelOrAlbumLabel: channelLabel,
       requestedBy: opts.requestedBy,
-      playStart: 0
+      playStart: 0,
+      thumbnailUrl
     };
 
     return {

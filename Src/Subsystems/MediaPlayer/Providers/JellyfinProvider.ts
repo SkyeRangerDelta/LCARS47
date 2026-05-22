@@ -134,7 +134,8 @@ export class JellyfinProvider implements MediaProvider {
       durationFriendly: convertSecondsToHMS( item.duration || 1 ),
       channelOrAlbumLabel: label,
       requestedBy,
-      playStart: 0
+      playStart: 0,
+      thumbnailUrl: this.client.buildImageUrl( item.id )
     };
   }
 
