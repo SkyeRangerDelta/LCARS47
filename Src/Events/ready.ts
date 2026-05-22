@@ -54,7 +54,7 @@ export default {
     const version = Utility.getVersion();
 
     LCARS47.user?.setPresence( {
-      activities: [{ name: 'for stuff | ' + `V${version}`, type: ActivityType.Watching }],
+      activities: [{ name: `for stuff | ${ version }`, type: ActivityType.Watching }],
       status: 'online'
     } );
 
