@@ -1,35 +1,30 @@
 // -- PLAYING --
-// Displays details about the currently playing song
+// Displays details about the currently-playing track.
 
-// Imports
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
   type AutocompleteInteraction,
-  type ChatInputCommandInteraction, type GuildMember,
-  type InteractionResponse, MessageFlags
+  type ChatInputCommandInteraction,
+  type GuildMember,
+  type InteractionResponse,
+  MessageFlags
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils';
-import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
-import type { LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces';
+import { sourceAndDuration } from '../../Subsystems/MediaPlayer/TrackFormat.js';
 
-const env = getEnv();
-const PLDYNID = env.PLDYNID;
-
-// Globals
 const data = new SlashCommandBuilder()
   .setName( 'playing' )
   .setDescription( 'Displays details about the currently playing song.' );
 
-// Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+async function execute (
+  LCARS47: LCARSClient,
+  int: ChatInputCommandInteraction | AutocompleteInteraction
+): Promise<InteractionResponse | void> {
   if ( int.isAutocomplete() ) return await int.respond([
-    {
-      name: 'This command does not support autocomplete.',
-      value: 'none'
-    }
+    { name: 'This command does not support autocomplete.', value: 'none' }
   ]);
 
   Utility.log( 'info', '[MEDIA-PLAYER] Received a song detail request.' );
@@ -45,50 +40,29 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
     } );
   }
 
-  try {
-    if ( member.voice?.channel == null ) {
-      return await int.reply( {
-        content: 'User must be attached to a valid voice channel.',
-        flags: MessageFlags.Ephemeral
-      } );
-    }
-    else {
-      return await displayPlaying( LCARS47, int );
-    }
-  }
-  catch {
+  if ( member.voice?.channel == null ) {
     return await int.reply( {
-      content: 'Error retrieving valid voice channel. Process terminated.',
+      content: 'User must be attached to a valid voice channel.',
       flags: MessageFlags.Ephemeral
     } );
   }
-}
 
-async function displayPlaying ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<InteractionResponse> {
-  const player = LCARS47.MEDIA_QUEUE.get( PLDYNID );
-  let queueList: LCARSMediaSong[];
-
-  if ( player ) {
-    queueList = player.songs;
-
-    if ( queueList == null ) return await int.reply( { content: 'No media in queue.' } );
-  }
-  else {
-    return await int.reply( {
-      content: 'No media in queue.'
-    } );
+  const track = LCARS47.MEDIA_PLAYER.getNowPlaying();
+  if ( track == null ) {
+    return await int.reply( { content: 'No media in queue.' } );
   }
 
-  const songDetail = queueList[0];
-  const currentPlaytime = Math.floor( ( Date.now() - songDetail.playStart ) / 1000 );
-
-  const channelName = songDetail.title;
+  const currentPlaytime = Math.floor( ( Date.now() - track.playStart ) / 1000 );
+  const titleLine = track.source === 'youtube'
+    ? `__[${ track.title }](<${ track.url }>)__ ${ sourceAndDuration( track ) }`
+    : `__${ track.title }__ ${ sourceAndDuration( track ) }`;
 
   return await int.reply( {
-    content: `__[${songDetail.title}](<${songDetail.url}>)__\n` +
-            `YT Channel: *${ channelName }*\n` +
-            `Playtime: ${convertSecondsToHMS( currentPlaytime )} / ${songDetail.durationFriendly}\n` +
-            `Queued by: ${songDetail.member.displayName}`
+    content:
+      `${ titleLine }\n` +
+      `From: *${ track.channelOrAlbumLabel }*\n` +
+      `Playtime: ${ convertSecondsToHMS( currentPlaytime ) } / ${ track.durationFriendly }\n` +
+      `Queued by: ${ track.requestedBy.displayName }`
   } );
 }
 
@@ -96,7 +70,6 @@ function help (): string {
   return 'Displays details about the currently playing song.';
 }
 
-// Exports
 export default {
   name: 'Playing',
   data,

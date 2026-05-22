@@ -117,6 +117,16 @@
       "name": "API_AUTH_TOKEN",
       "description": "API authorization token (auto-generated if not set)",
       "feature": "RESTful API"
+    },
+    {
+      "name": "ADMIN_USER_IDS",
+      "description": "Comma-separated Discord user IDs allowed to run admin-only slash commands (/ytdlp-update etc.). Falls back to guild Administrator permission when unset.",
+      "feature": "Admin Commands"
+    },
+    {
+      "name": "JELLYFIN_PATH_MAP",
+      "description": "Optional comma-separated prefix map (from=>to) translating Jellyfin Item.Path values to container-visible paths. Example: /media/music=>/mnt/nas/music,/media/abk=>/mnt/nas/abk",
+      "feature": "Jellyfin Integration"
     }
   ]
 }

@@ -31,7 +31,14 @@ LABEL org.opencontainers.image.source="https://github.com/SkyeRangerDelta/LCARS4
 
 WORKDIR /LCARS47
 
-RUN apk --update add --no-cache ca-certificates ffmpeg curl
+RUN apk --update add --no-cache ca-certificates ffmpeg curl python3
+
+# Bake yt-dlp into the image. The binary is the thing YouTube changes break;
+# the npm wrapper (`ytdlp-nodejs`) is stable. /ytdlp-update refreshes this
+# file in-place at runtime, so it must be owned by the bot user.
+RUN curl -fL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+      -o /usr/local/bin/yt-dlp \
+    && chmod 755 /usr/local/bin/yt-dlp
 
 COPY --from=build /LCARS47/node_modules ./node_modules
 COPY --from=build /LCARS47/Deploy ./Deploy
@@ -39,7 +46,8 @@ COPY yt-dlp.conf /etc/yt-dlp.conf
 COPY package*.json ./
 
 RUN addgroup -S lcars47 && adduser -S lcars47 -G lcars47 \
-    && chown -R lcars47:lcars47 /LCARS47
+    && chown -R lcars47:lcars47 /LCARS47 \
+    && chown lcars47:lcars47 /usr/local/bin/yt-dlp
 USER lcars47
 
 ENV NODE_OPTIONS="--dns-result-order=ipv4first"

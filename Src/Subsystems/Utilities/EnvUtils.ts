@@ -221,7 +221,9 @@ export function getEnv(): LCARSEnv {
     JELLYFIN_PASS: process.env.JELLYFIN_PASS,
     API_HOST: process.env.API_HOST!,
     API_PORT: process.env.API_PORT!,
-    API_AUTH_TOKEN: process.env.API_AUTH_TOKEN!
+    API_AUTH_TOKEN: process.env.API_AUTH_TOKEN!,
+    ADMIN_USER_IDS: process.env.ADMIN_USER_IDS,
+    JELLYFIN_PATH_MAP: process.env.JELLYFIN_PATH_MAP
   };
 }
 

@@ -8,6 +8,8 @@ import Beszel from '../Subsystems/RemoteDS/Beszel_Connect.js';
 import BeszelUtils from '../Subsystems/RemoteDS/Beszel_Utilities.js';
 import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
 import { getEnv, isFeatureEnabled } from '../Subsystems/Utilities/EnvUtils.js';
+import { MediaPlayerService } from '../Subsystems/MediaPlayer/MediaPlayerService.js';
+import { JellyfinClient } from '../Subsystems/Jellyfin/JellyfinClient.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
 
@@ -25,7 +27,11 @@ export default {
 
     LCARS47.PLDYN = await LCARS47.guilds.fetch( env.PLDYNID );
     LCARS47.MEMBER = await LCARS47.PLDYN.members.fetch( env.LCARSID );
-    LCARS47.MEDIA_QUEUE = new Map();
+    LCARS47.MEDIA_PLAYER = new MediaPlayerService( LCARS47, {
+      guildId: env.PLDYNID,
+      reportChannelId: env.MEDIALOG,
+      pathMap: env.JELLYFIN_PATH_MAP
+    } );
     LCARS47.CLIENT_STATS = {
       CLIENT_MEM_USAGE: 0,
       CMD_QUERIES: 0,
@@ -60,6 +66,30 @@ export default {
     LCARS47.RDS_CONNECTION = await RDS.rds_connect();
 
     // Initialize Beszel client if feature is enabled
+    if ( isFeatureEnabled( 'jellyfin' ) ) {
+      try {
+        const jellyfin = new JellyfinClient( {
+          host: env.JELLYFIN_HOST!,
+          port: env.JELLYFIN_PORT,
+          apiKey: env.JELLYFIN_KEY,
+          username: env.JELLYFIN_USER!,
+          password: env.JELLYFIN_PASS!,
+          clientVersion: Utility.getVersion()
+        } );
+        jellyfin.connect();
+        await jellyfin.authenticate();
+        LCARS47.MEDIA_PLAYER.attachJellyfin( jellyfin );
+        Utility.log( 'proc', '[JELLYFIN] Provider registered with MediaPlayer.' );
+      }
+      catch ( jellyErr ) {
+        Utility.log( 'warn', `[JELLYFIN] Init failed: ${ ( jellyErr as Error ).message }` );
+        Utility.log( 'warn', '[JELLYFIN] Falling back to YouTube-only playback.' );
+      }
+    }
+    else {
+      Utility.log( 'info', '[JELLYFIN] Feature not enabled - skipping initialization.' );
+    }
+
     if ( isFeatureEnabled( 'beszel' ) ) {
       try {
         LCARS47.BESZEL_CLIENT = await Beszel.beszel_connect();

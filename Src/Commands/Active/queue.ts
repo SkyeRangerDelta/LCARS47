@@ -1,37 +1,30 @@
 // -- QUEUE --
-// Displays the list of songs currently playing
+// Displays the list of tracks currently queued.
 
-// Imports
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import {
   type AutocompleteInteraction,
   type ChatInputCommandInteraction,
-  type CommandInteraction, type GuildMember,
+  type GuildMember,
   type InteractionResponse,
   MessageFlags
 } from 'discord.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { convertSecondsToHMS } from '../../Subsystems/Utilities/MediaUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
-import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
-import type { LCARSMediaSong } from '../../Subsystems/Auxiliary/Interfaces/MediaInterfaces';
+import { queueLine } from '../../Subsystems/MediaPlayer/TrackFormat.js';
 
-const env = getEnv();
-const PLDYNID = env.PLDYNID;
-
-// Globals
 const data = new SlashCommandBuilder()
   .setName( 'queue' )
   .setDescription( 'Displays a list of the songs in the playlist.' );
 
-// Functions
-async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction | AutocompleteInteraction ): Promise<InteractionResponse | void> {
+async function execute (
+  LCARS47: LCARSClient,
+  int: ChatInputCommandInteraction | AutocompleteInteraction
+): Promise<InteractionResponse | void> {
   if ( int.isAutocomplete() ) return await int.respond([
-    {
-      name: 'This command does not support autocomplete.',
-      value: 'none'
-    }
+    { name: 'This command does not support autocomplete.', value: 'none' }
   ]);
 
   Utility.log( 'info', '[MEDIA-PLAYER] Received a queue request.' );
@@ -47,53 +40,27 @@ async function execute ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
     } );
   }
 
-  try {
-    if ( member.voice?.channel == null ) {
-      return await int.reply( {
-        content: 'User must be attached to a valid voice channel.',
-        flags: MessageFlags.Ephemeral
-      } );
-    }
-    else {
-      return await displayQueue( LCARS47, int );
-    }
-  }
-  catch {
+  if ( member.voice?.channel == null ) {
     return await int.reply( {
-      content: 'Error retrieving valid voice channel. Process terminated.',
+      content: 'User must be attached to a valid voice channel.',
       flags: MessageFlags.Ephemeral
     } );
   }
-}
 
-async function displayQueue ( LCARS47: LCARSClient, int: CommandInteraction ): Promise<InteractionResponse> {
-  const player = LCARS47.MEDIA_QUEUE.get( PLDYNID );
-  let queueList: LCARSMediaSong[];
+  const tracks = LCARS47.MEDIA_PLAYER.getQueue();
+  if ( tracks.length === 0 ) {
+    return await int.reply( { content: 'No media in queue.' } );
+  }
+
   let songList = '';
   let totalDuration = 0;
-
-  if ( player ) {
-    queueList = player.songs;
-
-    if ( queueList == null ) return await int.reply( { content: 'No media in queue.', flags: MessageFlags.SuppressEmbeds } );
-  }
-  else {
-    return await int.reply( {
-      content: 'No media in queue.'
-    } );
-  }
-
-  // `__[${songDetail.title}](<${songDetail.url}>)__\n`
-
-  for ( const song of queueList ) {
-    const channelName = song.info.channel ? song.info.channel.name : 'Unknown Channel';
-
-    songList += `**[${song.title}](${song.url})** - *${ channelName }* (${song.durationFriendly})\n`;
-    totalDuration += song.duration;
+  for ( const track of tracks ) {
+    songList += `${ queueLine( track ) }\n`;
+    totalDuration += track.duration;
   }
 
   return await int.reply( {
-    content: `**__Player Queue__** (${convertSecondsToHMS( totalDuration )})\n${songList}`,
+    content: `**__Player Queue__** (${ convertSecondsToHMS( totalDuration ) })\n${ songList }`,
     flags: MessageFlags.SuppressEmbeds
   } );
 }
@@ -102,7 +69,6 @@ function help (): string {
   return 'Displays the list of songs in the playlist.';
 }
 
-// Exports
 export default {
   name: 'Status',
   data,
