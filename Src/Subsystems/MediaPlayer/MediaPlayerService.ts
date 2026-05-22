@@ -184,8 +184,24 @@ export class MediaPlayerService {
     if ( state == null ) return false;
 
     this.clearEmptyTimer( state );
+
+    // Detach the Idle / error listeners BEFORE calling stop(true). The
+    // audio player emits Idle synchronously from stop(), and our Idle
+    // handler would otherwise shift the queue and call playNext — which
+    // captures the track reference before its `await` and ends up
+    // reporting "Now Playing" for the next track even though we just
+    // tore down the connection.
+    const player = state.audioPlayer;
+    state.audioPlayer = null;
+    state.isPlaying = false;
     state.currentStream?.cleanup?.();
-    state.audioPlayer?.stop( true );
+    state.currentStream = null;
+
+    if ( player != null ) {
+      player.removeAllListeners();
+      player.stop( true );
+    }
+
     getVoiceConnection( this.guildId )?.destroy();
     this.states.delete( this.guildId );
     return true;
