@@ -38,7 +38,11 @@ const EMPTY_CHANNEL_TIMEOUT_MS = 5 * 60 * 1000;
 
 export interface EnqueueResult {
   ok: true;
+  /** Head track — the first item queued in this call (becomes the now-playing
+   *  track if playback wasn't already running). */
   track: Track;
+  /** Total tracks added by this enqueue. >1 indicates a playlist/album. */
+  queuedCount: number;
   startedPlayback: boolean;
 }
 
@@ -134,7 +138,12 @@ export class MediaPlayerService {
       void this.playNext();
     }
 
-    return { ok: true, track: resolved.tracks[0], startedPlayback };
+    return {
+      ok: true,
+      track: resolved.tracks[0],
+      queuedCount: resolved.tracks.length,
+      startedPlayback
+    };
   }
 
   /**

@@ -14,7 +14,7 @@ import { SlashCommandBuilder } from '@discordjs/builders';
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { type Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
-import { sourceAndDuration } from '../../Subsystems/MediaPlayer/TrackFormat.js';
+import { sourceAndDuration, sourceLabel } from '../../Subsystems/MediaPlayer/TrackFormat.js';
 
 const data = new SlashCommandBuilder()
   .setName( 'play' )
@@ -63,11 +63,14 @@ async function execute (
 
   Utility.log(
     'info',
-    `[MEDIA-PLAYER] Queued - ${ result.track.title } (${ result.track.source } · ${ result.track.durationFriendly })`
+    `[MEDIA-PLAYER] Queued ${ result.queuedCount } track(s); head: ${ result.track.title } (${ result.track.source })`
   );
-  return await int.editReply(
-    `Queued **${ result.track.title }** ${ sourceAndDuration( result.track ) }`
-  );
+
+  const reply = result.queuedCount > 1
+    ? `Queued **${ result.track.title }** + ${ result.queuedCount - 1 } more (${ sourceLabel( result.track.source ) })`
+    : `Queued **${ result.track.title }** ${ sourceAndDuration( result.track ) }`;
+
+  return await int.editReply( reply );
 }
 
 function help (): string {
