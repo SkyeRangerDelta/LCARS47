@@ -39,11 +39,14 @@ export class YouTubeProvider implements MediaProvider {
   }
 
   async search( query: string, opts: SearchOptions ): Promise<ResolvedSearchResult> {
-    // Playlist URLs (either pure /playlist?list= or watch?v=...&list=)
-    // expand to up to MAX_PLAYLIST_TRACKS items. Pure /playlist URLs always
-    // route here; watch URLs that *also* carry a list= parameter prefer the
-    // playlist (matches how Jellyfin behaves with albums).
-    if ( YT_PURE_PLAYLIST_REGEX.test( query ) || ( YT_VIDEO_URL_REGEX.test( query ) && YT_PLAYLIST_URL_REGEX.test( query ) ) ) {
+    // Pure playlist URLs (/playlist?list=...) always expand — the URL is
+    // literally pointing at a playlist. Watch URLs that *also* carry a
+    // list= parameter are ambiguous (someone shared a video while it was
+    // playing in a playlist context); only expand those when the caller
+    // explicitly asked for container expansion via opts.expandContainers.
+    const isPurePlaylist = YT_PURE_PLAYLIST_REGEX.test( query );
+    const isWatchWithList = YT_VIDEO_URL_REGEX.test( query ) && YT_PLAYLIST_URL_REGEX.test( query );
+    if ( isPurePlaylist || ( isWatchWithList && opts.expandContainers === true ) ) {
       const playlistResult = await this.tryPlaylist( query, opts );
       if ( playlistResult != null ) return playlistResult;
       // If playlist fetch failed but the URL is also a video, fall through

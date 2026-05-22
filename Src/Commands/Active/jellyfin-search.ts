@@ -48,7 +48,13 @@ async function execute (
 
   let result;
   try {
-    result = await provider.search( query, { requestedBy: LCARS47.MEMBER, limit: 10 } );
+    result = await provider.search( query, {
+      requestedBy: LCARS47.MEMBER,
+      limit: 10,
+      // Discovery tool — show what's in the library, including albums and
+      // playlists. Users can then /play album:true <album name> to queue.
+      expandContainers: true
+    } );
   }
   catch ( err ) {
     Utility.log( 'warn', `[JELLYFIN-SEARCH] ${ String( err ) }` );

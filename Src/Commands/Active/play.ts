@@ -26,6 +26,12 @@ data.addStringOption( o => o
   .setRequired( true )
 );
 
+data.addBooleanOption( o => o
+  .setName( 'album' )
+  .setDescription( 'Queue the whole album / playlist when the query matches a container.' )
+  .setRequired( false )
+);
+
 async function execute (
   LCARS47: LCARSClient,
   int: ChatInputCommandInteraction | AutocompleteInteraction
@@ -52,7 +58,13 @@ async function execute (
   Utility.log( 'info', `[MEDIA-PLAYER] /play request for channel: ${ voiceChannel.name }` );
 
   const query = int.options.getString( 'video-query' ) ?? '';
-  const result = await LCARS47.MEDIA_PLAYER.enqueue( query, voiceChannel, member );
+  const expandContainers = int.options.getBoolean( 'album' ) === true;
+  const result = await LCARS47.MEDIA_PLAYER.enqueue(
+    query,
+    voiceChannel,
+    member,
+    { expandContainers }
+  );
 
   if ( !result.ok ) {
     if ( result.reason === 'no-results' ) {

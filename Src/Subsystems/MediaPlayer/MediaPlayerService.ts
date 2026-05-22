@@ -116,9 +116,10 @@ export class MediaPlayerService {
   async enqueue(
     query: string,
     voiceChannel: VoiceChannel,
-    requestedBy: GuildMember
+    requestedBy: GuildMember,
+    opts: { expandContainers?: boolean } = {}
   ): Promise<EnqueueResult | EnqueueFailure> {
-    const resolved = await this.resolver.resolve( query, requestedBy );
+    const resolved = await this.resolver.resolve( query, requestedBy, opts );
     if ( resolved.tracks.length === 0 || resolved.providerId == null ) {
       return { ok: false, reason: 'no-results' };
     }

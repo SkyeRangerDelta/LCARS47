@@ -47,8 +47,16 @@ export class JellyfinProvider implements MediaProvider {
       return { tracks: [], confidence: 'none' };
     }
 
-    Utility.log( 'info', `[JELLYFIN] Searching: "${ query }" (limit=${ opts.limit ?? 5 }).` );
-    const hits = await this.client.searchAudio( query, opts.limit ?? 5 );
+    const expandContainers = opts.expandContainers === true;
+    const kinds: ReadonlyArray<'audio' | 'album' | 'playlist'> = expandContainers
+      ? ['audio', 'album', 'playlist']
+      : ['audio'];
+
+    Utility.log(
+      'info',
+      `[JELLYFIN] Searching: "${ query }" (limit=${ opts.limit ?? 5 }, expandContainers=${ expandContainers }).`
+    );
+    const hits = await this.client.searchAudio( query, opts.limit ?? 5, kinds );
     Utility.log(
       'info',
       `[JELLYFIN] ${ hits.length } hit(s): ${
@@ -57,23 +65,20 @@ export class JellyfinProvider implements MediaProvider {
     );
     if ( hits.length === 0 ) return { tracks: [], confidence: 'none' };
 
-    // Prefer the first audio track. If the top hit is an album/playlist,
-    // expand it. (Album beats track for queries like "album name"; playlist
-    // beats single track for explicit playlist names — but the API ordering
-    // already reflects Jellyfin's relevance scoring.)
     const top = hits[0];
     let items: JellyfinItem[];
 
-    if ( top.kind === 'album' || top.kind === 'playlist' ) {
+    if ( expandContainers && ( top.kind === 'album' || top.kind === 'playlist' ) ) {
       Utility.log( 'info', `[JELLYFIN] Expanding ${ top.kind } "${ top.name }"...` );
       items = await this.client.expandContainer( top.id );
       Utility.log( 'info', `[JELLYFIN] Container yielded ${ items.length } track(s).` );
       if ( items.length === 0 ) {
-        // Container was empty — fall back to remaining track-shaped hits.
+        // Container was empty — fall back to track-shaped hits.
         items = hits.filter( h => h.kind === 'audio' );
       }
     }
     else {
+      // Either expansion is off, or the top hit is already a track.
       items = [top];
     }
 

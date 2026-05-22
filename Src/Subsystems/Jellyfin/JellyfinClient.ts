@@ -90,19 +90,28 @@ export class JellyfinClient {
     return this.api != null && this.accessToken != null && this.userId != null;
   }
 
-  /** Search for audio tracks / albums / playlists matching the query. */
-  async searchAudio( query: string, limit = 10 ): Promise<JellyfinItem[]> {
+  /** Search Jellyfin for items matching the query. Caller picks which item
+   *  kinds to include; default is audio + containers (albums, playlists). */
+  async searchAudio(
+    query: string,
+    limit = 10,
+    kinds: ReadonlyArray<'audio' | 'album' | 'playlist'> = ['audio', 'album', 'playlist']
+  ): Promise<JellyfinItem[]> {
     const api = this.requireApi();
     const userId = this.requireUserId();
+
+    const includeItemTypes = kinds.map( k => {
+      switch ( k ) {
+        case 'audio': return BaseItemKind.Audio;
+        case 'album': return BaseItemKind.MusicAlbum;
+        case 'playlist': return BaseItemKind.Playlist;
+      }
+    } );
 
     const res = await getItemsApi( api ).getItems( {
       userId,
       searchTerm: query,
-      includeItemTypes: [
-        BaseItemKind.Audio,
-        BaseItemKind.MusicAlbum,
-        BaseItemKind.Playlist
-      ],
+      includeItemTypes,
       limit,
       recursive: true,
       fields: ['Path']

@@ -79,10 +79,28 @@ describe('JellyfinProvider.search', () => {
     });
     const p = new JellyfinProvider(client, new LocalFileProvider());
 
-    const result = await p.search('best of', { requestedBy: requester });
+    const result = await p.search('best of', { requestedBy: requester, expandContainers: true });
     expect(expand).toHaveBeenCalledWith('album-1');
     expect(result.tracks.map(t => t.id)).toEqual(['t1', 't2']);
     expect(result.confidence).toBe('exact');
+  });
+
+  it('does NOT expand container hits when expandContainers is unset', async () => {
+    const albumHit: JellyfinItem = {
+      id: 'album-1', kind: 'album', name: 'Best of', artist: 'Band', duration: 0
+    };
+    const expand = vi.fn(() => Promise.resolve([]));
+    const searchAudio = vi.fn(() => Promise.resolve<JellyfinItem[]>([albumHit]));
+    const client = makeClient({ searchAudio, expandContainer: expand });
+    const p = new JellyfinProvider(client, new LocalFileProvider());
+
+    const result = await p.search('best of', { requestedBy: requester });
+    // searchAudio is called with audio-only kinds — but since our stub
+    // ignores that arg, we get the album hit back. The provider must NOT
+    // expand it.
+    expect(expand).not.toHaveBeenCalled();
+    expect(result.tracks).toEqual([]);
+    expect(result.confidence).toBe('none');
   });
 });
 

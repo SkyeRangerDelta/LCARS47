@@ -16,6 +16,12 @@ export interface ResolvedSearchResult {
 export interface SearchOptions {
   limit?: number;
   requestedBy: GuildMember;
+  /** When true, providers may return container items (albums, playlists)
+   *  and expand them into their constituent tracks. When false/undefined,
+   *  only individual audio tracks are returned. URL-shaped queries that
+   *  explicitly target a container (e.g. a YouTube /playlist?list=… URL)
+   *  bypass this flag and always expand. */
+  expandContainers?: boolean;
 }
 
 export interface MediaProvider {

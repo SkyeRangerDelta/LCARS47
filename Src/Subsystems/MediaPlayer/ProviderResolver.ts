@@ -42,18 +42,22 @@ export class ProviderResolver {
     return this.providers;
   }
 
-  async resolve( query: string, requestedBy: GuildMember ): Promise<ResolveResult> {
+  async resolve(
+    query: string,
+    requestedBy: GuildMember,
+    opts: { expandContainers?: boolean } = {}
+  ): Promise<ResolveResult> {
     const enabled = this.providers.filter( p => p.isEnabled() ).map( p => p.id );
     Utility.log(
       'info',
-      `[RESOLVER] Query "${ query }" — enabled providers: [${ enabled.join( ', ' ) || 'none' }]`
+      `[RESOLVER] Query "${ query }" — enabled providers: [${ enabled.join( ', ' ) || 'none' }], expand=${ opts.expandContainers === true }`
     );
 
     // URL routing first — deterministic, skips priority order.
     const urlOwner = this.providers.find( p => p.isEnabled() && p.canHandle( query ) );
     if ( urlOwner != null ) {
       Utility.log( 'info', `[RESOLVER] URL routing to ${ urlOwner.id }.` );
-      const result = await this.runSearch( urlOwner, query, requestedBy );
+      const result = await this.runSearch( urlOwner, query, requestedBy, opts );
       Utility.log(
         'info',
         `[RESOLVER] ${ urlOwner.id } returned ${ result.tracks.length } track(s) confidence=${ result.confidence }.`
@@ -65,7 +69,7 @@ export class ProviderResolver {
     let bestNone: ResolveResult | null = null;
     for ( const provider of this.providers ) {
       if ( !provider.isEnabled() ) continue;
-      const result = await this.runSearch( provider, query, requestedBy );
+      const result = await this.runSearch( provider, query, requestedBy, opts );
       Utility.log(
         'info',
         `[RESOLVER] ${ provider.id } returned ${ result.tracks.length } track(s) confidence=${ result.confidence }.`
@@ -84,10 +88,11 @@ export class ProviderResolver {
   private async runSearch (
     provider: MediaProvider,
     query: string,
-    requestedBy: GuildMember
+    requestedBy: GuildMember,
+    opts: { expandContainers?: boolean }
   ): Promise<{ tracks: ResolvedSearchResult['tracks']; confidence: SearchConfidence }> {
     try {
-      return await provider.search( query, { requestedBy } );
+      return await provider.search( query, { requestedBy, expandContainers: opts.expandContainers } );
     }
     catch ( err ) {
       Utility.log( 'warn', `[RESOLVER] ${ provider.id }.search threw: ${ String( err ) }` );
