@@ -27,8 +27,8 @@ data.addStringOption( o => o
 );
 
 data.addBooleanOption( o => o
-  .setName( 'album' )
-  .setDescription( 'Queue the whole album / playlist when the query matches a container.' )
+  .setName( 'expand' )
+  .setDescription( 'Queue every track of a matched album/playlist (or the videos of a YouTube playlist URL).' )
   .setRequired( false )
 );
 
@@ -58,7 +58,7 @@ async function execute (
   Utility.log( 'info', `[MEDIA-PLAYER] /play request for channel: ${ voiceChannel.name }` );
 
   const query = int.options.getString( 'video-query' ) ?? '';
-  const expandContainers = int.options.getBoolean( 'album' ) === true;
+  const expandContainers = int.options.getBoolean( 'expand' ) === true;
   const result = await LCARS47.MEDIA_PLAYER.enqueue(
     query,
     voiceChannel,
