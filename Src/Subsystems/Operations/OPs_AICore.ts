@@ -22,7 +22,7 @@ import {
 import { DateTime } from 'luxon';
 import { LCARS47 } from './OPs_CoreClient.js';
 import Utility from '../Utilities/SysUtils.js';
-import { parsePersona, type Persona } from './OPs_AIPersonas.js';
+import { parsePersona, personas, type Persona } from './OPs_AIPersonas.js';
 import { tools, dispatchTool, type ToolContext } from './OPs_AITools.js';
 
 const SONNET_MODEL = 'claude-sonnet-4-6';
@@ -39,6 +39,71 @@ const IMAGE_MIMES = new Set( ['image/png', 'image/jpeg', 'image/gif', 'image/web
 const TEXT_DOC_EXTS = new Set( ['.txt', '.log', '.md', '.json', '.csv', '.yaml', '.yml', '.xml', '.ini', '.conf'] );
 const PDF_MIMES = new Set( ['application/pdf'] );
 
+export type AIErrorKind = 'low_credits' | 'generic';
+
+export interface AIError {
+  kind: AIErrorKind;
+  reply: string;
+  raw: string;
+}
+
+export function classifyAIError ( err: unknown ): AIError {
+  const raw = ( err as Error )?.message ?? String( err );
+  if ( /credit balance is too low/i.test( raw ) ) {
+    return {
+      kind: 'low_credits',
+      reply: 'Dilithium reserves depleted. Cognitive subsystems offline pending resupply.',
+      raw
+    };
+  }
+  return { kind: 'generic', reply: 'No.', raw };
+}
+
+export function buildSystemBlocks ( persona: Persona, userDisplayName: string ): TextBlockParam[] {
+  const stardate = Utility.stardate();
+  return [
+    {
+      type: 'text',
+      text: persona.text,
+      cache_control: { type: 'ephemeral' }
+    },
+    {
+      type: 'text',
+      text: `Operational context: stardate ${stardate}. Active persona: ${persona.label}. Requesting user displayName: ${userDisplayName}.${persona.signoff != null ? ` Signoff convention: ${persona.signoff.trim()}` : ''}`
+    }
+  ];
+}
+
+export interface SingleShotArgs {
+  personaKey: string;
+  text: string;
+  userDisplayName: string;
+  guildId: string;
+  isAdv?: boolean;
+}
+
+/**
+ * Run the Claude model with no channel history and no attachments. Used by the
+ * /computer slash command. Throws on API failure — callers should wrap in
+ * try/catch and use classifyAIError to get a user-facing reply.
+ */
+export async function runSingleShot ( args: SingleShotArgs ): Promise<string> {
+  const persona = personas[args.personaKey] ?? personas.default;
+  const systemBlocks = buildSystemBlocks( persona, args.userDisplayName );
+
+  const messages: MessageParam[] = [
+    { role: 'user', content: [{ type: 'text', text: args.text }] }
+  ];
+
+  return await runWithTools( {
+    systemBlocks,
+    messages,
+    persona,
+    isAdv: args.isAdv ?? false,
+    toolCtx: { client: LCARS47, guildId: args.guildId }
+  } );
+}
+
 export default {
   async handleAIReq ( msg: Message, content: string, isAdv: boolean ): Promise<unknown> {
     Utility.log( 'proc', '[EVENT] [AI-CORE] Beginning new Claude request.' );
@@ -48,24 +113,13 @@ export default {
     await msg.channel.sendTyping();
 
     const { persona, content: cleaned } = parsePersona( content );
-    const stardate = Utility.stardate();
 
     try {
       const history = await buildHistory( msg );
       const finalUserBlocks = await buildUserContent( cleaned, msg.attachments.values() );
       const messages: MessageParam[] = [...history, { role: 'user', content: finalUserBlocks }];
 
-      const systemBlocks: TextBlockParam[] = [
-        {
-          type: 'text',
-          text: persona.text,
-          cache_control: { type: 'ephemeral' }
-        },
-        {
-          type: 'text',
-          text: `Operational context: stardate ${stardate}. Active persona: ${persona.label}. Requesting user displayName: ${msg.author.displayName}.${persona.signoff != null ? ` Signoff convention: ${persona.signoff.trim()}` : ''}`
-        }
-      ];
+      const systemBlocks = buildSystemBlocks( persona, msg.author.displayName );
 
       const reply = await runWithTools( {
         systemBlocks,
@@ -80,15 +134,10 @@ export default {
       await sendReply( msg, reply );
     }
     catch ( err ) {
-      const message = ( err as Error ).message ?? '';
-      Utility.log( 'err', `[AI-CORE] Request failed: ${message}` );
+      const classified = classifyAIError( err );
+      Utility.log( 'err', `[AI-CORE] Request failed: ${classified.raw}` );
       console.log( typeof err, err );
-
-      if ( /credit balance is too low/i.test( message ) ) {
-        return await msg.reply( 'Dilithium reserves depleted. Cognitive subsystems offline pending resupply.' );
-      }
-
-      return await msg.reply( 'No.' );
+      return await msg.reply( classified.reply );
     }
   }
 };
