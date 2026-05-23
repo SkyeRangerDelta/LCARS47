@@ -136,6 +136,16 @@ export class JellyfinProvider implements MediaProvider {
       ? item.albumId
       : item.id;
 
+    // Only surface albumArtist when it actually differs from the track
+    // artist — Jellyfin populates AlbumArtist on every audio item even
+    // when it matches the primary artist, and we don't want to render
+    // a redundant line on /playing.
+    const albumArtist = item.albumArtist != null
+      && item.albumArtist.trim() !== ''
+      && item.albumArtist !== item.artist
+      ? item.albumArtist
+      : undefined;
+
     return {
       id: item.id,
       source: 'jellyfin',
@@ -147,6 +157,7 @@ export class JellyfinProvider implements MediaProvider {
       duration: item.duration || 1,
       durationFriendly: convertSecondsToHMS( item.duration || 1 ),
       channelOrAlbumLabel: label,
+      albumArtist,
       requestedBy,
       playStart: 0,
       thumbnailUrl: this.client.buildImageUrl( imageItemId )

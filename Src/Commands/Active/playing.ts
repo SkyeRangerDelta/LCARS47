@@ -63,9 +63,14 @@ async function execute (
     ? `__[${ track.title }](<${ track.url }>)__ ${ sourceAndDuration( track ) }`
     : `__${ track.title }__ ${ sourceAndDuration( track ) }`;
 
+  const albumArtistLine = track.albumArtist != null
+    ? `Album Artist: *${ track.albumArtist }*\n`
+    : '';
+
   const content =
     `${ titleLine }\n` +
     `From: *${ track.channelOrAlbumLabel }*\n` +
+    `${ albumArtistLine }` +
     `Playtime: ${ convertSecondsToHMS( currentPlaytime ) } / ${ track.durationFriendly }\n` +
     `Queued by: ${ track.requestedBy.displayName }`;
 

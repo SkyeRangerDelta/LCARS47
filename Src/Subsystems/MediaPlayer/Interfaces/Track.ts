@@ -16,6 +16,10 @@ export interface Track {
   duration: number;
   durationFriendly: string;
   channelOrAlbumLabel: string;
+  /** Album-level artist when distinct from the track's primary artist
+   *  (compilations / mixtapes). Surfaced on /playing so the curator of
+   *  the album is visible alongside the track artist. */
+  albumArtist?: string;
   requestedBy: GuildMember;
   playStart: number;
   /** Public URL or signed URL pointing to a small (~256px) cover image.
