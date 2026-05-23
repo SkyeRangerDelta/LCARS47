@@ -39,7 +39,7 @@ export interface LCARSEnv {
   LCARSID: string;
 
   // Required
-  OPENAIKEY: string;
+  ANTHROPIC_API_KEY: string;
   MEDIALOG: string;
   ENGINEERING: string;
   SIMLAB: string;

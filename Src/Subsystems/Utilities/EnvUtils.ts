@@ -205,7 +205,7 @@ export function getEnv(): LCARSEnv {
     RDS: process.env.RDS!,
     PLDYNID: process.env.PLDYNID!,
     LCARSID: process.env.LCARSID!,
-    OPENAIKEY: process.env.OPENAIKEY!,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY!,
     MEDIALOG: process.env.MEDIALOG!,
     ENGINEERING: process.env.ENGINEERING!,
     SIMLAB: process.env.SIMLAB!,

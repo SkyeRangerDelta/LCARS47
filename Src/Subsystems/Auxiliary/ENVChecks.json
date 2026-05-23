@@ -23,9 +23,9 @@
   ],
   "required": [
     {
-      "name": "OPENAIKEY",
-      "description": "OpenAI API key for GPT/AI features",
-      "feature": "AI/GPT Integration"
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Anthropic API key for Claude AI features",
+      "feature": "AI/Claude Integration"
     },
     {
       "name": "MEDIALOG",
@@ -39,13 +39,13 @@
     },
     {
       "name": "SIMLAB",
-      "description": "Channel ID for simulation lab (GPT basic)",
-      "feature": "AI/GPT Integration"
+      "description": "Channel ID for simulation lab (Claude standard tier)",
+      "feature": "AI/Claude Integration"
     },
     {
       "name": "DEVLAB",
-      "description": "Channel ID for dev lab (GPT advanced)",
-      "feature": "AI/GPT Integration"
+      "description": "Channel ID for dev lab (Claude with extended thinking)",
+      "feature": "AI/Claude Integration"
     }
   ],
   "feature_groups": {
