@@ -14,7 +14,7 @@
 // clear failure if they skip the sequence.
 
 import { Jellyfin, type Api } from '@jellyfin/sdk';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client';
+import { BaseItemKind, ItemFields, ItemSortBy } from '@jellyfin/sdk/lib/generated-client';
 import { getItemsApi } from '@jellyfin/sdk/lib/utils/api/items-api';
 import { getSearchApi } from '@jellyfin/sdk/lib/utils/api/search-api';
 import Utility from '../Utilities/SysUtils.js';
@@ -151,7 +151,7 @@ export class JellyfinClient {
     const detail = await getItemsApi( api ).getItems( {
       userId,
       ids,
-      fields: ['Path']
+      fields: [ItemFields.Path]
     } );
 
     const byId = new Map<string, JellyfinItem & { _haystack: string }>();
@@ -196,22 +196,46 @@ export class JellyfinClient {
   }
 
   /** Expand an album or playlist container to its individual audio items. */
-  async expandContainer( parentId: string ): Promise<JellyfinItem[]> {
+  /** Expand a container (album or playlist) into its child audio tracks.
+   *  Different container kinds need different queries:
+   *    - MusicAlbum: `albumIds: [id]` — Jellyfin's intended way to fetch
+   *      tracks of an album. `parentId` returns 0 results on many setups
+   *      because the album's direct children may live under disc folders.
+   *    - Playlist: `parentId` — playlists store track membership as
+   *      parent-child relationships, and there's no `playlistIds` filter. */
+  async expandContainer( containerId: string, kind: 'album' | 'playlist' = 'album' ): Promise<JellyfinItem[]> {
     const api = this.requireApi();
     const userId = this.requireUserId();
 
-    const res = await getItemsApi( api ).getItems( {
+    const baseQuery = {
       userId,
-      parentId,
       recursive: true,
       includeItemTypes: [BaseItemKind.Audio],
-      sortBy: ['ParentIndexNumber', 'IndexNumber', 'SortName'],
-      fields: ['Path']
-    } );
+      sortBy: [ItemSortBy.ParentIndexNumber, ItemSortBy.IndexNumber, ItemSortBy.SortName],
+      fields: [ItemFields.Path]
+    };
+    const query = kind === 'album'
+      ? { ...baseQuery, albumIds: [containerId] }
+      : { ...baseQuery, parentId: containerId };
 
-    return ( res.data.Items ?? [] )
+    const res = await getItemsApi( api ).getItems( query );
+    let items = ( res.data.Items ?? [] )
       .map( item => this.toDto( item ) )
       .filter( ( item ): item is JellyfinItem => item != null );
+
+    // Defensive fallback: if albumIds returned nothing (very old Jellyfin
+    // installs, or unusual library configurations), retry with parentId.
+    if ( items.length === 0 && kind === 'album' ) {
+      const fallback = await getItemsApi( api ).getItems( {
+        ...baseQuery,
+        parentId: containerId
+      } );
+      items = ( fallback.data.Items ?? [] )
+        .map( item => this.toDto( item ) )
+        .filter( ( item ): item is JellyfinItem => item != null );
+    }
+
+    return items;
   }
 
   /** Build a server-side resized cover-art URL for an item. Jellyfin

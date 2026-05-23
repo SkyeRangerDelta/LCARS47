@@ -70,7 +70,7 @@ export class JellyfinProvider implements MediaProvider {
 
     if ( expandContainers && ( top.kind === 'album' || top.kind === 'playlist' ) ) {
       Utility.log( 'info', `[JELLYFIN] Expanding ${ top.kind } "${ top.name }"...` );
-      items = await this.client.expandContainer( top.id );
+      items = await this.client.expandContainer( top.id, top.kind );
       Utility.log( 'info', `[JELLYFIN] Container yielded ${ items.length } track(s).` );
       if ( items.length === 0 ) {
         // Container was empty — fall back to track-shaped hits.

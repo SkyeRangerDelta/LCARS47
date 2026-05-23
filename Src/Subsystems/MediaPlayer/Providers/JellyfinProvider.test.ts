@@ -80,7 +80,7 @@ describe('JellyfinProvider.search', () => {
     const p = new JellyfinProvider(client, new LocalFileProvider());
 
     const result = await p.search('best of', { requestedBy: requester, expandContainers: true });
-    expect(expand).toHaveBeenCalledWith('album-1');
+    expect(expand).toHaveBeenCalledWith('album-1', 'album');
     expect(result.tracks.map(t => t.id)).toEqual(['t1', 't2']);
     expect(result.confidence).toBe('exact');
   });
