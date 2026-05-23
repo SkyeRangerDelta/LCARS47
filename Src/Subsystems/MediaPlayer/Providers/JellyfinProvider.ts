@@ -127,6 +127,15 @@ export class JellyfinProvider implements MediaProvider {
       ? `${ item.artist } — ${ item.album }`
       : ( item.artist ?? item.album ?? 'Jellyfin Library' );
 
+    // Cover art: most individual audio tracks don't have their own Primary
+    // image — the album does. Prefer the album when the track has no own
+    // image and we know its AlbumId. Falls back to the item itself
+    // otherwise (covers the case of albums/playlists, where the container
+    // is the image owner).
+    const imageItemId = ( item.hasOwnPrimaryImage !== true && item.albumId != null )
+      ? item.albumId
+      : item.id;
+
     return {
       id: item.id,
       source: 'jellyfin',
@@ -140,7 +149,7 @@ export class JellyfinProvider implements MediaProvider {
       channelOrAlbumLabel: label,
       requestedBy,
       playStart: 0,
-      thumbnailUrl: this.client.buildImageUrl( item.id )
+      thumbnailUrl: this.client.buildImageUrl( imageItemId )
     };
   }
 

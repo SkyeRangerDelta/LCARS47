@@ -16,6 +16,7 @@
 import { Jellyfin, type Api } from '@jellyfin/sdk';
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client';
 import { getItemsApi } from '@jellyfin/sdk/lib/utils/api/items-api';
+import { getSearchApi } from '@jellyfin/sdk/lib/utils/api/search-api';
 import Utility from '../Utilities/SysUtils.js';
 import { type JellyfinItem, type JellyfinItemKind } from './Interfaces/JellyfinItem.js';
 
@@ -90,8 +91,20 @@ export class JellyfinClient {
     return this.api != null && this.accessToken != null && this.userId != null;
   }
 
-  /** Search Jellyfin for items matching the query. Caller picks which item
-   *  kinds to include; default is audio + containers (albums, playlists). */
+  /** Search Jellyfin for items matching the query.
+   *
+   *  Jellyfin's SearchHints endpoint treats `searchTerm` as a literal
+   *  substring — "patience demon hunter" looks for that exact phrase in
+   *  one field, which never matches because Patience is in the Name and
+   *  Demon Hunter is in the Artists field. To get cross-field AND-style
+   *  matching we:
+   *    1. Tokenize the query.
+   *    2. Send the most distinctive token (longest) as searchTerm with an
+   *       inflated limit (50) to grab a wider candidate pool.
+   *    3. Hydrate candidates with full DTOs (Path, AlbumId, Artists).
+   *    4. Locally filter to items where EVERY token appears in Name,
+   *       Album, Artist, or AlbumArtist (case-insensitive).
+   *    5. Trim to the caller's limit, preserving Jellyfin's relevance order. */
   async searchAudio(
     query: string,
     limit = 10,
@@ -108,18 +121,78 @@ export class JellyfinClient {
       }
     } );
 
-    const res = await getItemsApi( api ).getItems( {
+    const tokens = JellyfinClient.tokenize( query );
+    if ( tokens.length === 0 ) return [];
+
+    // Use the longest token as the server-side search anchor (most likely
+    // to be a distinctive title or artist word). If only one token, this
+    // is just the query itself.
+    const anchor = [...tokens].sort( ( a, b ) => b.length - a.length )[0];
+    const candidateCap = Math.max( limit, 50 );
+
+    const hintRes = await getSearchApi( api ).getSearchHints( {
+      searchTerm: anchor,
       userId,
-      searchTerm: query,
+      limit: candidateCap,
       includeItemTypes,
-      limit,
-      recursive: true,
+      includeMedia: true,
+      includeArtists: false,
+      includeGenres: false,
+      includeStudios: false,
+      includePeople: false
+    } );
+
+    const hints = hintRes.data.SearchHints ?? [];
+    if ( hints.length === 0 ) return [];
+
+    const ids = hints.map( h => h.Id ?? h.ItemId ).filter( ( id ): id is string => id != null );
+    if ( ids.length === 0 ) return [];
+
+    const detail = await getItemsApi( api ).getItems( {
+      userId,
+      ids,
       fields: ['Path']
     } );
 
-    return ( res.data.Items ?? [] )
-      .map( item => this.toDto( item ) )
-      .filter( ( item ): item is JellyfinItem => item != null );
+    const byId = new Map<string, JellyfinItem & { _haystack: string }>();
+    for ( const raw of detail.data.Items ?? [] ) {
+      const dto = this.toDto( raw );
+      if ( dto == null ) continue;
+      // Build a single case-folded haystack from every searchable field;
+      // we then require every token to be present in it.
+      const rawItem = raw as { AlbumArtist?: string; Artists?: string[] };
+      const haystack = [
+        dto.name,
+        dto.album,
+        dto.artist,
+        rawItem.AlbumArtist,
+        ...( rawItem.Artists ?? [] )
+      ].filter( ( s ): s is string => typeof s === 'string' ).join( ' ' ).toLowerCase();
+      byId.set( dto.id, { ...dto, _haystack: haystack } );
+    }
+
+    const lowerTokens = tokens.map( t => t.toLowerCase() );
+    const matches: JellyfinItem[] = [];
+    for ( const id of ids ) {
+      const entry = byId.get( id );
+      if ( entry == null ) continue;
+      if ( lowerTokens.every( t => entry._haystack.includes( t ) ) ) {
+        const { _haystack: _drop, ...item } = entry;
+        void _drop;
+        matches.push( item );
+        if ( matches.length >= limit ) break;
+      }
+    }
+    return matches;
+  }
+
+  /** Split a free-form query into tokens. Strips punctuation, drops 1-char
+   *  noise tokens, and lowercases for case-insensitive matching downstream. */
+  private static tokenize( query: string ): string[] {
+    return query
+      .split( /\s+/ )
+      .map( t => t.replace( /[^\p{L}\p{N}]+/gu, '' ) )
+      .filter( t => t.length >= 2 );
   }
 
   /** Expand an album or playlist container to its individual audio items. */
@@ -202,9 +275,12 @@ export class JellyfinClient {
       Type?: string;
       AlbumArtist?: string;
       Album?: string;
+      AlbumId?: string;
       Artists?: string[];
       RunTimeTicks?: number;
       Path?: string;
+      ImageTags?: Record<string, string>;
+      AlbumPrimaryImageTag?: string;
     };
     if ( item == null || item.Id == null || item.Name == null ) return null;
 
@@ -218,7 +294,10 @@ export class JellyfinClient {
       kind,
       name: item.Name,
       artist: item.Artists?.[0] ?? item.AlbumArtist,
+      albumArtist: item.AlbumArtist,
       album: item.Album,
+      albumId: item.AlbumId,
+      hasOwnPrimaryImage: item.ImageTags?.Primary != null,
       duration: durationSeconds,
       path: item.Path
     };
