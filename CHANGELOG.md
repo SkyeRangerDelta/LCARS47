@@ -1,3 +1,22 @@
+# [7.1.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.1...V47.7.1.0-E.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* Corrected album searches not queueing from JF ([15e5200](https://github.com/SkyeRangerDelta/LCARS47/commit/15e5200c043146b2a17540af6a473aaf73c9f61c))
+* Corrected extra playing message on player stop ([1998d4f](https://github.com/SkyeRangerDelta/LCARS47/commit/1998d4f788bbe6add01adf34b53148275e2a1b31))
+* Enhanced search function ([2675fe1](https://github.com/SkyeRangerDelta/LCARS47/commit/2675fe12c2f062c9a45d43a0c4d7b93ec54d0323))
+* Prevent auto-resolution of Jellyfin albums ([6511e1d](https://github.com/SkyeRangerDelta/LCARS47/commit/6511e1d4d77dd1bb5077dbc2d0b04e4e730a6534))
+* Removed extra V from status version ([fd689cb](https://github.com/SkyeRangerDelta/LCARS47/commit/fd689cb53bca95870475d96794736fca44dad0bc))
+
+
+### Features
+
+* Added Album artist if available to playing ([e0107a3](https://github.com/SkyeRangerDelta/LCARS47/commit/e0107a3a753a09ef35407a9ba2921703f6fa030c))
+* Added Jellyfin-NAS media playback ([dbc0861](https://github.com/SkyeRangerDelta/LCARS47/commit/dbc08613e4f05ee67e3937be00ae4a0fda336114)), closes [#35](https://github.com/SkyeRangerDelta/LCARS47/issues/35)
+* Added thumbnails to Playing ([562310e](https://github.com/SkyeRangerDelta/LCARS47/commit/562310ee92e2c518af092fb00c8f521ccd36fd5f))
+* Added YT playlist control ([7392de6](https://github.com/SkyeRangerDelta/LCARS47/commit/7392de6251d5c0c28a120d167ca1366ef49c2c96))
+
 ## [7.0.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0...V47.7.0.1) (2026-04-05)
 
 
