@@ -39,7 +39,7 @@ export interface LCARSEnv {
   LCARSID: string;
 
   // Required
-  OPENAIKEY: string;
+  ANTHROPIC_API_KEY: string;
   MEDIALOG: string;
   ENGINEERING: string;
   SIMLAB: string;
@@ -60,4 +60,5 @@ export interface LCARSEnv {
   API_AUTH_TOKEN: string; // Has default or auto-generated
   ADMIN_USER_IDS?: string;
   JELLYFIN_PATH_MAP?: string;
+  COMPUTER_CMD_COOLDOWN_SEC: string; // Has default
 }
