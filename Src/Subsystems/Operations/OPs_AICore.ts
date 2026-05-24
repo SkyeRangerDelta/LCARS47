@@ -200,7 +200,7 @@ async function runWithTools ( args: RunArgs ): Promise<string> {
 
     currentMessages = [
       ...currentMessages,
-      { role: 'assistant', content: response.content as ContentBlockParam[] },
+      { role: 'assistant', content: response.content },
       { role: 'user', content: toolResults }
     ];
   }
