@@ -1,3 +1,10 @@
+# [7.1.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.1...V47.7.1.0-E.2) (2026-05-24)
+
+
+### Features
+
+* Added Computer command ([50a122b](https://github.com/SkyeRangerDelta/LCARS47/commit/50a122b54a150d236ce1351965d0508cc14c36ff))
+
 # [7.1.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.1...V47.7.1.0-E.1) (2026-05-23)
 
 
