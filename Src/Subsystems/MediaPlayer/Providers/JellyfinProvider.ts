@@ -19,6 +19,7 @@ import { type StreamHandle, type Track } from '../Interfaces/Track.js';
 import { LocalFileProvider, LocalUnreachableError } from './LocalFileProvider.js';
 import { type JellyfinClient } from '../../Jellyfin/JellyfinClient.js';
 import { type JellyfinItem } from '../../Jellyfin/Interfaces/JellyfinItem.js';
+import { type LyricsResult } from '../../Jellyfin/Interfaces/LyricLine.js';
 import { convertSecondsToHMS } from '../../Utilities/MediaUtils.js';
 import Utility from '../../Utilities/SysUtils.js';
 
@@ -118,6 +119,14 @@ export class JellyfinProvider implements MediaProvider {
     //    as the Jellyfin item id (set in itemToTrack).
     const url = this.client.buildStreamUrl( track.id );
     return await this.openHttpStream( url );
+  }
+
+  /** Fetch library lyrics for a Jellyfin-sourced track. Returns null when the
+   *  provider is offline or the track has no lyrics in the library — the
+   *  /lyrics command then falls back to an external source. */
+  async getLyrics( track: Track ): Promise<LyricsResult | null> {
+    if ( !this.isEnabled() ) return null;
+    return await this.client.getLyrics( track.id );
   }
 
   // ---- Internals ----
