@@ -31,7 +31,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: true
@@ -70,7 +70,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
@@ -127,7 +127,7 @@ jobs:
     if: github.event_name == 'push' && github.ref_name == 'master' && !contains(github.event.head_commit.message, '[skip ci]')
     steps:
       - name: Checkout Experimental
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: Experimental
 
