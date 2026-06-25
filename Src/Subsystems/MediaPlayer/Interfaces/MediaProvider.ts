@@ -22,6 +22,11 @@ export interface SearchOptions {
    *  explicitly target a container (e.g. a YouTube /playlist?list=… URL)
    *  bypass this flag and always expand. */
   expandContainers?: boolean;
+  /** Explicit item kinds to search for. When set, providers should honour
+   *  this directly instead of deriving kinds from `expandContainers` — used
+   *  by /search's type filter (track / album / playlist). Jellyfin-specific;
+   *  other providers may ignore it. */
+  kinds?: ReadonlyArray<'audio' | 'album' | 'playlist'>;
 }
 
 export interface MediaProvider {

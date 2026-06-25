@@ -84,6 +84,19 @@ export class YouTubeProvider implements MediaProvider {
     };
   }
 
+  /** Text-search YouTube and return up to `limit` candidate tracks. The
+   *  standard search() only yields the single best hit (it feeds /play's
+   *  auto-pick); the /search selector needs several to choose from. */
+  async searchMany( query: string, opts: SearchOptions ): Promise<Track[]> {
+    const results = await YouTube.search( query, {
+      type: 'video',
+      limit: opts.limit ?? 5
+    } );
+    return results
+      .map( v => this.videoToTrack( v, opts ) )
+      .filter( ( t ): t is Track => t != null );
+  }
+
   private async tryPlaylist( query: string, opts: SearchOptions ): Promise<ResolvedSearchResult | null> {
     Utility.log( 'info', `[YT-PROVIDER] Expanding YouTube playlist URL.` );
     let playlist: Playlist;

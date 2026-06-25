@@ -9,6 +9,7 @@ import { request as httpRequest } from 'http';
 import { PassThrough } from 'stream';
 import { StreamType } from '@discordjs/voice';
 import { type IncomingMessage } from 'http';
+import { type GuildMember } from 'discord.js';
 
 import {
   type MediaProvider,
@@ -49,9 +50,11 @@ export class JellyfinProvider implements MediaProvider {
     }
 
     const expandContainers = opts.expandContainers === true;
-    const kinds: ReadonlyArray<'audio' | 'album' | 'playlist'> = expandContainers
-      ? ['audio', 'album', 'playlist']
-      : ['audio'];
+    // An explicit `kinds` filter (from /search's type option) wins; otherwise
+    // derive kinds from expandContainers as before.
+    const kinds: ReadonlyArray<'audio' | 'album' | 'playlist'> = opts.kinds != null
+      ? opts.kinds
+      : ( expandContainers ? ['audio', 'album', 'playlist'] : ['audio'] );
 
     Utility.log(
       'info',
@@ -127,6 +130,39 @@ export class JellyfinProvider implements MediaProvider {
   async getLyrics( track: Track ): Promise<LyricsResult | null> {
     if ( !this.isEnabled() ) return null;
     return await this.client.getLyrics( track.id );
+  }
+
+  /** Search the library and return raw matched items — tracks AND containers
+   *  (albums / playlists), un-expanded — for the interactive /search selector.
+   *  Unlike search(), this does NOT expand containers or filter to audio, so
+   *  an album can be presented as its own selectable entry. */
+  async searchSelectable(
+    query: string,
+    opts: { limit?: number; kinds?: ReadonlyArray<'audio' | 'album' | 'playlist'> } = {}
+  ): Promise<JellyfinItem[]> {
+    if ( !this.isEnabled() ) return [];
+    const kinds = opts.kinds ?? ['audio', 'album', 'playlist'];
+    return await this.client.searchAudio( query, opts.limit ?? 25, kinds );
+  }
+
+  /** Map a single audio item to a queueable Track. Public wrapper over the
+   *  internal itemToTrack so the /search selector can build a Track from a
+   *  selectable item without reaching into Jellyfin internals. */
+  toTrack( item: JellyfinItem, requestedBy: GuildMember ): Track {
+    return this.itemToTrack( item, requestedBy );
+  }
+
+  /** Expand an album / playlist container into its queueable audio Tracks. */
+  async resolveContainerTracks(
+    containerId: string,
+    kind: 'album' | 'playlist',
+    requestedBy: GuildMember
+  ): Promise<Track[]> {
+    if ( !this.isEnabled() ) return [];
+    const children = await this.client.expandContainer( containerId, kind );
+    return children
+      .filter( c => c.kind === 'audio' )
+      .map( c => this.itemToTrack( c, requestedBy ) );
   }
 
   // ---- Internals ----
