@@ -17,8 +17,10 @@ import { Jellyfin, type Api } from '@jellyfin/sdk';
 import { BaseItemKind, ItemFields, ItemSortBy } from '@jellyfin/sdk/lib/generated-client';
 import { getItemsApi } from '@jellyfin/sdk/lib/utils/api/items-api';
 import { getSearchApi } from '@jellyfin/sdk/lib/utils/api/search-api';
+import { getLyricsApi } from '@jellyfin/sdk/lib/utils/api/lyrics-api';
 import Utility from '../Utilities/SysUtils.js';
 import { type JellyfinItem, type JellyfinItemKind } from './Interfaces/JellyfinItem.js';
+import { type LyricsResult } from './Interfaces/LyricLine.js';
 
 const CLIENT_INFO = {
   name: 'LCARS47 JClient',
@@ -236,6 +238,34 @@ export class JellyfinClient {
     }
 
     return items;
+  }
+
+  /** Fetch an item's lyrics from Jellyfin's dedicated Lyrics endpoint.
+   *  Lyrics are NOT a field on the item DTO — they live behind
+   *  GET /Audio/{itemId}/Lyrics and are only present when the library has an
+   *  .lrc / embedded lyric for the track. Returns null when the track has no
+   *  lyrics (404) or any error occurs, so callers can fall back cleanly. */
+  async getLyrics( itemId: string ): Promise<LyricsResult | null> {
+    const api = this.requireApi();
+
+    try {
+      const res = await getLyricsApi( api ).getLyrics( { itemId } );
+      const lines = res.data.Lyrics ?? [];
+      if ( lines.length === 0 ) return null;
+
+      return {
+        synced: lines.some( l => l.Start != null ),
+        lines: lines.map( l => ( {
+          text: l.Text ?? '',
+          // Jellyfin reports start time in ticks (10,000,000 per second).
+          startSeconds: l.Start != null ? l.Start / 10_000_000 : undefined
+        } ) )
+      };
+    }
+    catch ( err ) {
+      Utility.log( 'info', `[JELLYFIN] No lyrics for ${ itemId }: ${ String( err ) }` );
+      return null;
+    }
   }
 
   /** Build a server-side resized cover-art URL for an item. Jellyfin

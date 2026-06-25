@@ -124,14 +124,44 @@ export class MediaPlayerService {
       return { ok: false, reason: 'no-results' };
     }
 
-    const state = this.getOrCreateState( voiceChannel );
-    this.clearEmptyTimer( state );
-    state.tracks.push( ...resolved.tracks );
-
     Utility.log(
       'info',
       `[MEDIA-PLAYER] Queued ${ resolved.tracks.length } track(s) from ${ resolved.providerId }; head: ${ resolved.tracks[0].title }`
     );
+
+    return this.pushAndMaybePlay( resolved.tracks, voiceChannel );
+  }
+
+  /**
+   * Enqueue already-resolved track(s) directly, skipping the resolver. Used
+   * when a track has already been produced by an earlier search (e.g. the
+   * /search selector) and we just want to queue it. Stamps `requestedBy` onto
+   * each track so now-playing/queue attribution reflects who picked it.
+   */
+  enqueueResolved(
+    tracks: Track[],
+    voiceChannel: VoiceChannel,
+    requestedBy: GuildMember
+  ): EnqueueResult | EnqueueFailure {
+    if ( tracks.length === 0 ) {
+      return { ok: false, reason: 'no-results' };
+    }
+
+    const stamped = tracks.map( t => ( { ...t, requestedBy } ) );
+    Utility.log(
+      'info',
+      `[MEDIA-PLAYER] Queued ${ stamped.length } pre-resolved track(s); head: ${ stamped[0].title }`
+    );
+
+    return this.pushAndMaybePlay( stamped, voiceChannel );
+  }
+
+  /** Shared tail of enqueue/enqueueResolved: append to the queue and start
+   *  playback if idle. */
+  private pushAndMaybePlay( tracks: Track[], voiceChannel: VoiceChannel ): EnqueueResult {
+    const state = this.getOrCreateState( voiceChannel );
+    this.clearEmptyTimer( state );
+    state.tracks.push( ...tracks );
 
     let startedPlayback = false;
     if ( !state.isPlaying ) {
@@ -141,8 +171,8 @@ export class MediaPlayerService {
 
     return {
       ok: true,
-      track: resolved.tracks[0],
-      queuedCount: resolved.tracks.length,
+      track: tracks[0],
+      queuedCount: tracks.length,
       startedPlayback
     };
   }

@@ -1,6 +1,7 @@
 {
   "name": "lcars47",
   "version": "7.1.0-E.2",
+  "private": true,
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
@@ -30,7 +31,7 @@
     "tag": "latest"
   },
   "author": "SkyeRangerDelta",
-  "license": "ISC",
+  "license": "SEE LICENSE IN README.md",
   "bugs": {
     "url": "https://github.com/SkyeRangerDelta/LCARS47/issues"
   },
