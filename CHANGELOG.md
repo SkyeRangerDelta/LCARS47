@@ -1,3 +1,11 @@
+# [7.1.0-E.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.2...V47.7.1.0-E.3) (2026-06-25)
+
+
+### Features
+
+* Added filterable search controls ([d543c2b](https://github.com/SkyeRangerDelta/LCARS47/commit/d543c2be38a7c08f410ee231c702eb7d81ae24f2))
+* Added Lyric search capability for active playing track ([883bee3](https://github.com/SkyeRangerDelta/LCARS47/commit/883bee32391ce92799da7dab9adc1558fb8b4b78))
+
 # [7.1.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.1...V47.7.1.0-E.2) (2026-05-24)
 
 
