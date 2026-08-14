@@ -53,9 +53,10 @@ storm.
 ![HOLODECK CONTROL](https://img.shields.io/badge/HOLODECK_CONTROL-66CC99?style=for-the-badge&labelColor=66CC99)
 
 Game server control through the Impulse Controller's management panel. List every instance,
-read live statistics off any one of them, and start or stop them without leaving Discord —
-with the bot following a starting server until it actually comes up rather than assuming it
-did. See [the technical notes](docs/technical/amp-api-integration.md).
+read live statistics off any one of them, and bring instances and the game servers inside
+them up or down without leaving Discord — the two are controlled separately, exactly as the
+panel treats them, and the bot follows a starting server until it actually comes up rather
+than assuming it did. See [the technical notes](docs/technical/amp-api-integration.md).
 
 ![STELLAR CARTOGRAPHY](https://img.shields.io/badge/STELLAR_CARTOGRAPHY-FFCC66?style=for-the-badge&labelColor=FFCC66)
 
