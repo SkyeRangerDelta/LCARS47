@@ -1,2 +1,8 @@
 node_modules
 .idea
+Deploy/
+.env
+.git/
+logs/
+.claude/
+.mcp/

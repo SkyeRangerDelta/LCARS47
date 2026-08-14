@@ -23,9 +23,9 @@
   ],
   "required": [
     {
-      "name": "OPENAIKEY",
-      "description": "OpenAI API key for GPT/AI features",
-      "feature": "AI/GPT Integration"
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Anthropic API key for Claude AI features",
+      "feature": "AI/Claude Integration"
     },
     {
       "name": "MEDIALOG",
@@ -39,13 +39,13 @@
     },
     {
       "name": "SIMLAB",
-      "description": "Channel ID for simulation lab (GPT basic)",
-      "feature": "AI/GPT Integration"
+      "description": "Channel ID for simulation lab (Claude standard tier)",
+      "feature": "AI/Claude Integration"
     },
     {
       "name": "DEVLAB",
-      "description": "Channel ID for dev lab (GPT advanced)",
-      "feature": "AI/GPT Integration"
+      "description": "Channel ID for dev lab (Claude with extended thinking)",
+      "feature": "AI/Claude Integration"
     }
   ],
   "feature_groups": {
@@ -117,6 +117,22 @@
       "name": "API_AUTH_TOKEN",
       "description": "API authorization token (auto-generated if not set)",
       "feature": "RESTful API"
+    },
+    {
+      "name": "ADMIN_USER_IDS",
+      "description": "Comma-separated Discord user IDs allowed to run admin-only slash commands (/ytdlp-update etc.). Falls back to guild Administrator permission when unset.",
+      "feature": "Admin Commands"
+    },
+    {
+      "name": "JELLYFIN_PATH_MAP",
+      "description": "Optional comma-separated prefix map (from=>to) translating Jellyfin Item.Path values to container-visible paths. Example: /media/music=>/mnt/nas/music,/media/abk=>/mnt/nas/abk",
+      "feature": "Jellyfin Integration"
+    },
+    {
+      "name": "COMPUTER_CMD_COOLDOWN_SEC",
+      "description": "Per-user cooldown (seconds) between /computer slash command invocations.",
+      "default": "60",
+      "feature": "AI/Claude Integration"
     }
   ]
 }

@@ -3,9 +3,6 @@ import type { LCARSClient } from '../../Auxiliary/LCARSClient';
 import Utility from '../../Utilities/SysUtils.js';
 import type { StatusInterface } from '../../Auxiliary/Interfaces/StatusInterface';
 import RDS_Utilities from '../../RemoteDS/RDS_Utilities';
-import { getEnv } from '../../Utilities/EnvUtils';
-
-const env = getEnv();
 
 function loadRoute( LCARS47: LCARSClient ) {
   const rtr = exp();
@@ -45,16 +42,23 @@ async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | n
     diff: timeDiff.toObject()
   };
 
-  const mediaQueue = LCARS47.MEDIA_QUEUE.get( env.PLDYNID );
-  botStats.MEDIA_PLAYER_STATE = !( mediaQueue == null );
+  botStats.MEDIA_PLAYER_STATE = LCARS47.MEDIA_PLAYER.isActive();
 
-  if ( ( mediaQueue?.isPlaying ) === true ) {
-    botStats.MEDIA_PLAYER_DATA = mediaQueue.songs[0];
+  const nowPlaying = LCARS47.MEDIA_PLAYER.getNowPlaying();
+  if ( nowPlaying != null ) {
+    botStats.MEDIA_PLAYER_DATA = {
+      title: nowPlaying.title,
+      url: nowPlaying.url,
+      source: nowPlaying.source,
+      duration: nowPlaying.duration,
+      durationFriendly: nowPlaying.durationFriendly,
+      channelOrAlbumLabel: nowPlaying.channelOrAlbumLabel,
+      requestedBy: nowPlaying.requestedBy.displayName,
+      playStart: nowPlaying.playStart
+    };
   }
   else {
-    botStats.MEDIA_PLAYER_DATA = {
-      info: 'Nothing playing.'
-    };
+    botStats.MEDIA_PLAYER_DATA = { info: 'Nothing playing.' };
   }
 
   return botStats;

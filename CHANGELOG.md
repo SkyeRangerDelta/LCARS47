@@ -1,3 +1,109 @@
+# [7.1.0-E.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.2...V47.7.1.0-E.3) (2026-06-25)
+
+
+### Features
+
+* Added filterable search controls ([d543c2b](https://github.com/SkyeRangerDelta/LCARS47/commit/d543c2be38a7c08f410ee231c702eb7d81ae24f2))
+* Added Lyric search capability for active playing track ([883bee3](https://github.com/SkyeRangerDelta/LCARS47/commit/883bee32391ce92799da7dab9adc1558fb8b4b78))
+
+# [7.1.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.1...V47.7.1.0-E.2) (2026-05-24)
+
+
+### Features
+
+* Added Computer command ([50a122b](https://github.com/SkyeRangerDelta/LCARS47/commit/50a122b54a150d236ce1351965d0508cc14c36ff))
+
+# [7.1.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.1...V47.7.1.0-E.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* Corrected album searches not queueing from JF ([15e5200](https://github.com/SkyeRangerDelta/LCARS47/commit/15e5200c043146b2a17540af6a473aaf73c9f61c))
+* Corrected extra playing message on player stop ([1998d4f](https://github.com/SkyeRangerDelta/LCARS47/commit/1998d4f788bbe6add01adf34b53148275e2a1b31))
+* Enhanced search function ([2675fe1](https://github.com/SkyeRangerDelta/LCARS47/commit/2675fe12c2f062c9a45d43a0c4d7b93ec54d0323))
+* Prevent auto-resolution of Jellyfin albums ([6511e1d](https://github.com/SkyeRangerDelta/LCARS47/commit/6511e1d4d77dd1bb5077dbc2d0b04e4e730a6534))
+* Removed extra V from status version ([fd689cb](https://github.com/SkyeRangerDelta/LCARS47/commit/fd689cb53bca95870475d96794736fca44dad0bc))
+
+
+### Features
+
+* Added Album artist if available to playing ([e0107a3](https://github.com/SkyeRangerDelta/LCARS47/commit/e0107a3a753a09ef35407a9ba2921703f6fa030c))
+* Added Jellyfin-NAS media playback ([dbc0861](https://github.com/SkyeRangerDelta/LCARS47/commit/dbc08613e4f05ee67e3937be00ae4a0fda336114)), closes [#35](https://github.com/SkyeRangerDelta/LCARS47/issues/35)
+* Added thumbnails to Playing ([562310e](https://github.com/SkyeRangerDelta/LCARS47/commit/562310ee92e2c518af092fb00c8f521ccd36fd5f))
+* Added YT playlist control ([7392de6](https://github.com/SkyeRangerDelta/LCARS47/commit/7392de6251d5c0c28a120d167ca1366ef49c2c96))
+
+## [7.0.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0...V47.7.0.1) (2026-04-05)
+
+
+### Bug Fixes
+
+* Corrected a crash in docker healthcheck ([c3546d0](https://github.com/SkyeRangerDelta/LCARS47/commit/c3546d006caa8dd3c2125edee8a49cff3afd30b6))
+
+## [7.0.1-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0...V47.7.0.1-E.1) (2026-04-04)
+
+
+### Bug Fixes
+
+* Corrected a crash in docker healthcheck ([c3546d0](https://github.com/SkyeRangerDelta/LCARS47/commit/c3546d006caa8dd3c2125edee8a49cff3afd30b6))
+
+# [7.0.0](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.0.3...V47.7.0.0) (2026-04-04)
+
+
+### Bug Fixes
+
+* Bro what's with these TypeScript fixes ([c901edf](https://github.com/SkyeRangerDelta/LCARS47/commit/c901edf54cd787cb2bbae7c968da0afd365e9fbe))
+* Changed module resolution ([ff18a55](https://github.com/SkyeRangerDelta/LCARS47/commit/ff18a55373222edcb5b77939d07b24ab7408a332))
+* Corrected a bug in conversion helper ([16a0224](https://github.com/SkyeRangerDelta/LCARS47/commit/16a022435e21c2fd268852e95c9561a76d3135d1))
+* Corrected a dependency issue ([44c6775](https://github.com/SkyeRangerDelta/LCARS47/commit/44c67757e1e3105500ec65ca57ae09cf918dc7eb))
+* Corrected a ytdlp stream issue ([9e04333](https://github.com/SkyeRangerDelta/LCARS47/commit/9e04333c6b1df20eb9de9142b1b570afa305cfc8))
+* Corrected an issue with ytStream pipes ([aabdcfc](https://github.com/SkyeRangerDelta/LCARS47/commit/aabdcfc6bbe6f13c4403204726baa6245a05fe63))
+* Corrected Autocomplete type evaluation ([b3f6ea9](https://github.com/SkyeRangerDelta/LCARS47/commit/b3f6ea9e02719b0a13b9b43a4d73cdf2266b94f0))
+* Corrected body parsing middleware ([9ff67e3](https://github.com/SkyeRangerDelta/LCARS47/commit/9ff67e3ac0dc8623b9c95c0c60faabda2302a347))
+* Corrected package version handling to use git ([dfceec8](https://github.com/SkyeRangerDelta/LCARS47/commit/dfceec87f80858edf9928c4ef2e29bfc2c1cd10e))
+* Prevent error from being consumed in play ([dfc7743](https://github.com/SkyeRangerDelta/LCARS47/commit/dfc77438d021da7aed7105f5ae33af47990890f9))
+* Reverted getVersion back to reading package in favor of environment agnostic limits ([a8f175e](https://github.com/SkyeRangerDelta/LCARS47/commit/a8f175e6bfa92006d3e7a90ab8ee3cf47ae41007))
+* Typescript version change fixes ([1deb2a4](https://github.com/SkyeRangerDelta/LCARS47/commit/1deb2a4a84e00e916148f12be1e136f1ac3bfd9f))
+
+
+### Features
+
+* Added API auth token ([0b1b568](https://github.com/SkyeRangerDelta/LCARS47/commit/0b1b568a155e7ce02c1c5f48d7613908ec30a064))
+* Added Beszel statistics logic ([670248d](https://github.com/SkyeRangerDelta/LCARS47/commit/670248dd81a8f1f3dbbd212f57d97bba8fb084ea))
+* Added dependabot config ([1a8b165](https://github.com/SkyeRangerDelta/LCARS47/commit/1a8b165d038ca409aa67f046d2f256c119cc0da0))
+* Added sendMessage endpoint ([536e88d](https://github.com/SkyeRangerDelta/LCARS47/commit/536e88dd85197c391797bee0629b438d88b70bc3))
+* Added sendMessage logic ([2ea1a29](https://github.com/SkyeRangerDelta/LCARS47/commit/2ea1a294a43f4717b9576f8f4420eb5bfb664039))
+* Added Stardate / Timestamp funcs ([a1fb29e](https://github.com/SkyeRangerDelta/LCARS47/commit/a1fb29eaae7152f474b9b52935c679aed7330ade))
+* Added stardate and shipboard time to status ([976fd68](https://github.com/SkyeRangerDelta/LCARS47/commit/976fd689e7c838666e137cfdb2863c8990b6da9c))
+* Adds the entirety of Dabo to LCARS ([3f32ff5](https://github.com/SkyeRangerDelta/LCARS47/commit/3f32ff5812ecd663ecae676a40cb06bf3e245b7d))
+* Implement proper env checks ([543cf48](https://github.com/SkyeRangerDelta/LCARS47/commit/543cf48a2912b5fc6aa75f559f15f7cffbd358f1)), closes [#29](https://github.com/SkyeRangerDelta/LCARS47/issues/29)
+
+
+### Performance Improvements
+
+* Added validation race check on envs ([1e64642](https://github.com/SkyeRangerDelta/LCARS47/commit/1e646423091f55cf3e2ac6e5ba812d5f20315e13))
+
+# [7.0.0-E.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0-E.2...V47.7.0.0-E.3) (2026-04-04)
+
+
+### Bug Fixes
+
+* Corrected an issue with ytStream pipes ([aabdcfc](https://github.com/SkyeRangerDelta/LCARS47/commit/aabdcfc6bbe6f13c4403204726baa6245a05fe63))
+
+# [7.0.0-E.2](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.0-E.1...V47.7.0.0-E.2) (2026-04-04)
+
+
+### Bug Fixes
+
+* Bro what's with these TypeScript fixes ([c901edf](https://github.com/SkyeRangerDelta/LCARS47/commit/c901edf54cd787cb2bbae7c968da0afd365e9fbe))
+* Changed module resolution ([ff18a55](https://github.com/SkyeRangerDelta/LCARS47/commit/ff18a55373222edcb5b77939d07b24ab7408a332))
+* Corrected a dependency issue ([44c6775](https://github.com/SkyeRangerDelta/LCARS47/commit/44c67757e1e3105500ec65ca57ae09cf918dc7eb))
+* Typescript version change fixes ([1deb2a4](https://github.com/SkyeRangerDelta/LCARS47/commit/1deb2a4a84e00e916148f12be1e136f1ac3bfd9f))
+
+
+### Features
+
+* Added dependabot config ([1a8b165](https://github.com/SkyeRangerDelta/LCARS47/commit/1a8b165d038ca409aa67f046d2f256c119cc0da0))
+
 # [7.0.0-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.6.1.0-E.2...V47.7.0.0-E.1) (2026-02-05)
 
 
