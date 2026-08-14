@@ -97,15 +97,12 @@ function loadRoute( LCARS47: LCARSClient ) {
           res.status( 200 ).send(
             { ERROR: false, MESSAGE: 'Message accepted for delivery.' }
           );
-
-          return;
         } )
         .catch( ( err: Error ) => {
           res.status( 500 ).send(
             { ERROR: true, MESSAGE: 'Internal Server Error: Failed to send message.\n' + err.message }
           );
         } );
-
     }
     catch ( e ) {
       res.status( 500 ).send(
@@ -113,10 +110,6 @@ function loadRoute( LCARS47: LCARSClient ) {
       );
       return;
     }
-
-    res.status(200).send(
-      { ERROR: false, MESSAGE: 'Message received successfully.' }
-    )
   })
 
   return rtr;
