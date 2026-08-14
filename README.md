@@ -57,6 +57,12 @@ clusters, and exoplanet observations on request.
 Self-serve role management plus a Ferengi Dabo wheel for wagering Gold-Pressed Latinum —
 balances, streaks, and leaderboards included.
 
+![LAN INTERFACE](https://img.shields.io/badge/LAN_INTERFACE-99CCFF?style=for-the-badge&labelColor=99CCFF)
+
+A LAN-only HTTP API for telemetry and outbound messaging, with a Swagger UI explorer at
+`/api/docs` and an OpenAPI 3.1 document at `/api/openapi.json` — both assembled from the
+routes themselves at boot. See [the technical notes](docs/technical/api-swagger.md).
+
 ---
 
 **Source-available.** Read it, study it, reference it, and open issues or pull requests —
