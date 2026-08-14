@@ -64,37 +64,71 @@ whatever metrics that instance's module publishes — CPU, memory and player cou
 for a Minecraft server, something different for another module. State is read
 live from AMP, never from the cache behind autocomplete.
 
-### `/amp start` / `/amp stop`
+### Two layers: instance vs server
 
-Start or stop an instance. **Admin only** — see [Permissions](#permissions).
+AMP controls two separate things, and `/amp` keeps them separate rather than
+guessing which one you meant:
+
+| | What it is | Command |
+| --- | --- | --- |
+| **Instance** | the AMP instance itself — the machine | `/amp instance start\|stop` |
+| **Server** | the game server running inside it — the service | `/amp server start\|stop` |
+
+**Starting an instance does not start its game server.** These instances are
+configured that way on purpose, so bringing one online leaves it idle and ready,
+and the reply tells you so and points at the next step. Putting a server into
+service is a separate, deliberate act.
+
+Typical sequence for bringing a game server up from cold:
 
 ```
-/amp start instance:<instance>
-/amp stop  instance:<instance>
+/amp instance start instance:PlDyn Valheim     ->  instance online, game server not started
+/amp server   start instance:PlDyn Valheim     ->  game server starting -> Ready
 ```
+
+And back down again, in reverse:
+
+```
+/amp server   stop instance:PlDyn Valheim      ->  world saves, server stops
+/amp instance stop instance:PlDyn Valheim      ->  instance offline
+```
+
+### `/amp instance start` / `/amp instance stop`
+
+Brings the AMP instance itself up or down. **Admin only.**
+
+`/amp instance stop` refuses while the game server is still running, and points
+you at `/amp server stop` first — pulling the machine out from under a live world
+risks an unclean save.
+
+### `/amp server start` / `/amp server stop`
+
+Starts or stops the game server inside an instance that is **already online**. If
+the instance is offline there is nothing to talk to, and the command says so and
+points at `/amp instance start`.
+
+### How control commands report back
 
 Replies are ephemeral so a refusal or a raw AMP error does not land in the
-channel.
-
-The reply proceeds in two phases, because AMP is asynchronous:
+channel. Each proceeds in two phases, because AMP is asynchronous:
 
 1. The command checks live state first and short-circuits the pointless cases —
    starting something already running just says so.
-2. Otherwise the action is issued, the reply becomes *"Start command accepted.
-   Standing by…"*, and the bot polls every 3 seconds for up to ~30 seconds until
-   the instance reaches a settled state, then edits in the final status embed.
+2. Otherwise the action is issued, the reply becomes *"…accepted. Standing by…"*,
+   and the bot polls every 3 seconds for up to ~30 seconds until things settle,
+   then edits in the final status.
 
-If the instance is still starting when the poll budget runs out, the reply says
-exactly that and suggests `/amp status` — a large world taking a while is not a
-failure, and is never reported as one. Equally, a server that fails to come up is
-never reported as success.
+If it is still starting when the poll budget runs out, the reply says exactly
+that and suggests `/amp status` — a large world taking a while is not a failure
+and is never reported as one. Equally, a server that fails to come up is never
+reported as success.
 
 ---
 
 ## Permissions
 
-`/amp list` and `/amp status` are available to every guild member. `/amp start`
-and `/amp stop` are restricted:
+`/amp list` and `/amp status` are available to every guild member. Everything
+under `/amp instance` and `/amp server` is restricted:
 
 - If `ADMIN_USER_IDS` is set, only those Discord user IDs may run them.
 - If it is unset, the invoker needs the guild **Administrator** permission.
@@ -138,10 +172,26 @@ Create a **dedicated API user** in the AMP panel:
 ## Behaviour Notes
 
 - **The controller is hidden.** AMP lists itself among its own instances; it is
-  filtered out, so `/amp stop` cannot take the whole panel offline.
+  filtered out, so `/amp instance stop` cannot take the whole panel offline.
+- **Offline instances read as "Offline", not "Undefined".** AMP reports an
+  application state of `-1` for every instance whose daemon is down — it has
+  nothing to say about an application that is not running. `/amp` checks whether
+  the instance is up before reading that field.
+- **States are read from the servers themselves, not from the panel's summary.**
+  AMP's controller keeps a cached view of its instances that can be tens of
+  seconds behind reality, which is why a freshly started instance would otherwise
+  linger on the old state. `/amp list` and `/amp status` ask each running
+  instance directly, and the start/stop commands watch the instance itself rather
+  than waiting for the panel's summary to catch up.
+- **"Initialising" is a real state you will see briefly.** It means the instance
+  is up but has not reported what its game server is doing yet. It settles within
+  a few seconds.
 - **Suspended instances are refused.** A suspended instance accepts a start
   command and then does nothing, so the command rejects it up front with an
   explanation.
+- **`/amp status` works on offline instances too.** There is no live daemon to
+  query, so it reports what the controller knows — state, module, disk usage —
+  rather than surfacing AMP's "Instance Unavailable" as an error.
 - **The instance list is cached for 60 seconds.** Autocomplete has a hard ~3
   second deadline that cannot be deferred, so that path is served from cache and
   never triggers a network round trip on the critical path. Live state is always

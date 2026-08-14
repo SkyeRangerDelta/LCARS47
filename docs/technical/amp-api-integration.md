@@ -34,6 +34,38 @@ application module (Minecraft, Generic, etc.) exposing its own metric set.
 The integration lives in `Src/Subsystems/AMP/` and is consumed by
 `Src/Commands/Active/amp.ts`.
 
+### The two control layers
+
+This is the thing to understand before anything else, because almost every other
+design decision follows from it. AMP has **two independently controlled layers**:
+
+| Layer | Field | What it is | Controlled by |
+| --- | --- | --- | --- |
+| Instance daemon | `Running` | the AMP instance process — "the machine" | the **controller**: `ADSModule/StartInstance` / `StopInstance` |
+| Application | `AppState` | the game server inside it — "the service" | the **proxy**: `Core/Start` / `Core/Stop` |
+
+They are not interchangeable, and the routes are not fallbacks for one another:
+
+- An instance with `Running: false` **cannot be reached through the proxy at
+  all**. Every proxied call — including the per-instance `Core/Login` — answers
+  `{"Title":"Instance Unavailable","Message":"The requested instance is not
+  available at this time."}`. So the only way to bring one up is via the
+  controller.
+- `ADSModule/StartInstance` starts the daemon and **does not start the
+  application** (on this deployment, by configuration and by preference). A
+  freshly started instance sits at `Running: true, AppState: 0`.
+
+> **`AppState` is `-1` whenever `Running` is `false`.** Verified across all 20
+> instances on the live controller. This is not a bug or a missing field: AMP
+> has nothing to say about an application that is not there to be asked, so it
+> reports Undefined. Reading `AppState` alone therefore makes every powered-off
+> game server display as "Undefined" — `Running` is the field that answers "is
+> this thing on". `instanceState()` in `AMPFormat.ts` checks it first.
+
+`/amp` mirrors the split rather than hiding it: `/amp instance start|stop` drives
+the daemon, `/amp server start|stop` drives the application, and neither silently
+does the other's job.
+
 ---
 
 ## Protocol
@@ -135,16 +167,75 @@ Per-instance fields consumed by LCARS: `InstanceID`, `InstanceName`,
 > panel, not a game server. `listInstances()` filters it out. Stopping it would
 > take the whole panel offline.
 
-### Caching
+### GetInstances is a stale snapshot — this matters everywhere
 
-The instance list is cached in the client with a **60 second TTL**.
+**`ADSModule/GetInstances` is not live data.** The controller keeps a cached view
+of its targets and refreshes it on its own slow schedule. Measured against
+`amp.pldyn.net`: polling both sources every 2 seconds for 30 seconds, the
+aggregate's `AppState`, `Running` and `Metrics` **did not change once** — memory
+pinned at exactly 2341 MB — while a direct `Core/GetStatus` on the same instance
+updated on every single sample.
 
-Discord autocomplete fires once per keystroke against a hard ~3 second deadline
-that **cannot be deferred**, so a live round trip per keystroke would hammer the
-controller and risk blowing that deadline. Nothing user-facing goes stale as a
-result: `status`, `start` and `stop` resolve the instance id from the cache but
-always read live state from `Core/GetStatus`. Start and stop invalidate the cache
-on completion.
+```
+t+ 0.0s  aggregate=[20,true,2341,0]   direct=[20,"0:10:59:42",2341,0]
+t+ 2.0s  aggregate=[20,true,2341,0]   direct=[20,"0:10:59:44",2341,0]
+...
+t+28.4s  aggregate=[20,true,2341,0]   direct=[20,"0:11:00:10",2341,0]
+
+aggregate changed at: 0.0
+direct    changed at: 0.0, 2.0, 4.1, 6.1, ... 28.4
+```
+
+Consequences, all of which the integration has to work around:
+
+- **`Running` lags reality by tens of seconds.** Polling it to decide whether a
+  freshly started instance is up produces exactly the symptom it is meant to
+  detect: a long window reporting the instance as still down.
+- **`AppState` lags too**, so straight after a start or stop the aggregate keeps
+  reporting the previous application state.
+- **There is a window where `Running: true` and `AppState: -1`** — the daemon is
+  up but the controller has not re-polled the application yet. `instanceState()`
+  renders this as *Initialising*, not *Undefined*.
+- **Invalidating the client cache does not help.** The staleness is server-side.
+  Refetching just fetches the same snapshot again.
+
+The rule that follows: **use the proxy wherever the answer matters.** The proxied
+`Core/GetStatus` is authoritative and immediate. The aggregate is only good
+enough for picker labels.
+
+| Consumer | Source | Why |
+| --- | --- | --- |
+| Autocomplete | aggregate, 60s client cache | 3s deadline, cannot defer; a label being a minute stale is survivable |
+| `/amp list` | aggregate for the roster, **direct probe per online instance** | roster must be complete, states must be true |
+| `/amp status` | direct | it is the whole point of the command |
+| Readiness polling | direct | see `probeInstance` below |
+
+### Readiness: probe the proxy, not the flag
+
+`probeInstance()` resolves to `null` when the daemon is down and to the live
+status when it is up. That single call is a better readiness signal than the
+`Running` flag, because the proxy either answers or it does not — there is no
+cache in front of it:
+
+```ts
+const status = await amp.probeInstance( instance );
+// null            -> daemon genuinely down
+// { state: 0 }    -> daemon genuinely up, application stopped
+// { state: -1 }   -> up but not settled; keep polling
+```
+
+`/amp instance start` polls this until it returns a status with a real state, and
+`/amp instance stop` polls it until it returns `null`. Neither consults
+`GetInstances` for readiness at all.
+
+### Client-side caching
+
+On top of all that, the client caches the instance list for **60 seconds**,
+purely to keep autocomplete off the network — it fires once per keystroke against
+a hard ~3 second deadline that cannot be deferred. `/amp list` bypasses the cache
+and then hydrates; control commands invalidate it on completion, and also drop
+any cached proxy session for a restarted instance, since a session from the
+instance's previous life is dead.
 
 ---
 
@@ -160,6 +251,12 @@ Whether the **controller session** authorises straight through that proxy varies
 by AMP configuration — the reference SDKs obtain a separate per-instance session
 via `ADSModule/Servers/{id}/API/Core/Login` first.
 
+> **On this controller it does not.** Verified against `amp.pldyn.net`: a
+> proxied `Core/GetStatus` carrying the controller session is refused with
+> `Unauthorized Access … requires the Session.Exists permission`, while a
+> per-instance `Core/Login` succeeds and its session works. So the per-instance
+> login is the live path here, not an edge case.
+
 `AMPClient.callInstance()` handles both and *learns which one applies*:
 
 1. Try the request with the controller session.
@@ -169,38 +266,62 @@ via `ADSModule/Servers/{id}/API/Core/Login` first.
    the resulting session as `mode: 'instance'`, and retry once.
 
 The `[AMP] Controller session did not proxy to <name>; using a per-instance
-login.` log line tells you which mode this controller actually uses.
+login.` log line tells you which mode is in play.
 
-### Actions
+### Routes by layer
 
-| Operation | Primary | Fallback |
+| Operation | Route | Layer |
 | --- | --- | --- |
-| Status | `Core/GetStatus` (proxied) | — |
-| Start | `Core/Start` (proxied) | `ADSModule/StartInstance { InstanceName }` |
-| Stop | `Core/Stop` (proxied) | `ADSModule/StopInstance { InstanceName }` |
+| List instances | `ADSModule/GetInstances` | controller |
+| Start instance | `ADSModule/StartInstance { InstanceName }` | controller |
+| Stop instance | `ADSModule/StopInstance { InstanceName }` | controller |
+| Status | `Core/GetStatus` (proxied) | application |
+| Start server | `Core/Start` (proxied) | application |
+| Stop server | `Core/Stop` (proxied) | application |
 
-The ADS-level fallback keys on `InstanceName` rather than the GUID, which is why
-`startInstance()` / `stopInstance()` take the whole `AMPInstance` DTO instead of
-a bare id.
+These are **not** fallbacks for one another — `startInstance()` and
+`startApplication()` are separate methods, and neither silently retries via the
+other. A conflated version would have quietly powered on a machine when the
+operator only asked to start a service, and vice versa.
+
+> **The instance methods key on `InstanceName`, not the GUID.** Verified: passing
+> a GUID answers `{"Status":false,"Reason":"No such instance with this name"}`.
+> `InstanceName` is AMP's internal short name (`PlDynEmpyrion01`), distinct from
+> `FriendlyName` (`PlDyn Empyrion`). This is why the control methods take the
+> whole `AMPInstance` DTO rather than a bare id.
 
 `Core/GetStatus` returns:
 
 ```jsonc
 { "State": 20,
-  "Uptime": "04:35:12",                         // .NET TimeSpan, `d.hh:mm:ss` when days are present
-  "Metrics": { "CPU Usage":    { "RawValue": 42,   "MaxValue": 100,  "Percent": 42, "Units": "%" },
-               "Memory Usage": { "RawValue": 3276, "MaxValue": 8192, "Percent": 40, "Units": "MB" },
-               "Active Users": { "RawValue": 3,    "MaxValue": 20,   "Percent": 15, "Units": "" } } }
+  "Uptime": "0:10:29:25",                       // see the uptime note below
+  "Metrics": { "CPU Usage":    { "RawValue": 0,    "MaxValue": 100,   "Percent": 0,  "Units": "%",   "ShortName": "CPU" },
+               "Memory Usage": { "RawValue": 2341, "MaxValue": 16384, "Percent": 14, "Units": "MB",  "ShortName": "RAM" },
+               "Active Users": { "RawValue": 0,    "MaxValue": 25,    "Percent": 0,  "Units": "",    "ShortName": "Users" },
+               "TPS":          { "RawValue": 20,   "MaxValue": 20,    "Percent": 0,  "Units": "TPS", "ShortName": null } } }
 ```
 
-The metric dictionary is **module-defined and arbitrary**. Rendering iterates the
-dictionary rather than reaching for known key names.
+The metric dictionary is **module-defined and arbitrary** — the `TPS` entry above
+comes from the Minecraft module and does not exist elsewhere. Rendering iterates
+the dictionary rather than reaching for known key names.
 
-> **Acceptance is not completion.** Start and stop return as soon as AMP accepts
-> the request. `Core/Stop` returning cleanly means *accepted*, not *stopped*. The
-> `/amp` command polls `Core/GetStatus` every 3s (10 attempts, ~30s) for a
-> terminal state, and reports "still starting" rather than claiming success when
-> the budget runs out.
+> **Uptime has more than one shape.** AMP emits `hh:mm:ss` for short uptimes but
+> `d:hh:mm:ss` once days are involved — the sample above is ten and a half hours,
+> not ten minutes. AMP's own SDKs document the .NET TimeSpan spelling
+> `d.hh:mm:ss` as well. `formatUptime()` normalises the day separator and
+> fractional seconds before parsing rather than pattern-matching each form, so
+> all three work.
+
+`GetInstances` also carries a `Metrics` dictionary per running instance with the
+same content, which is why `/amp list` can show state without a per-instance
+login.
+
+> **Acceptance is not completion.** Every control call returns as soon as AMP
+> accepts the request. `Core/Stop` returning cleanly means *accepted*, not
+> *stopped*. `/amp` polls every 3s (10 attempts, ~30s) for a settled state —
+> `GetInstances` for `Running` on instance actions, `Core/GetStatus` for
+> `AppState` on server actions — and reports "still starting" rather than
+> claiming success when the budget runs out.
 
 ---
 
@@ -222,6 +343,13 @@ Mapped in `Src/Subsystems/AMP/AMPFormat.ts` (`AMP_STATE_NAMES`), which also
 supplies `stateLabel`, `stateEmoji`, `stateColour` and `isTransitional`. An
 unrecognised value degrades to `Unknown (<n>)` rather than throwing.
 
+**Do not display `AppState` on its own.** Use `instanceState( running, appState )`
+instead — it reports `Offline` whenever the daemon is down, which is the case for
+the `-1` values AMP returns for every stopped instance. `stateLabel()` is only
+correct when you already know the daemon is up, which is why `buildStatusEmbed()`
+may use it directly: reaching that function means a `Core/GetStatus` succeeded,
+and that is itself proof the instance is running.
+
 ---
 
 ## TypeScript Surface
@@ -241,8 +369,16 @@ getPermissions(): readonly string[]
 listInstances( opts?: { force?: boolean } ): Promise<AMPInstance[]>
 findInstance( idOrName: string ): Promise<AMPInstance | null>
 getInstanceStatus( instance: AMPInstance ): Promise<AMPStatus>
+probeInstance( instance: AMPInstance ): Promise<AMPStatus | null>   // null = daemon down
+
+// instance layer — the daemon, via the controller
 startInstance( instance: AMPInstance ): Promise<AMPActionResult>
 stopInstance( instance: AMPInstance ): Promise<AMPActionResult>
+
+// application layer — the game server, via the proxy
+startApplication( instance: AMPInstance ): Promise<AMPActionResult>
+stopApplication( instance: AMPInstance ): Promise<AMPActionResult>
+
 instanceCacheAgeMs(): number | null
 invalidateInstanceCache(): void
 ```
@@ -268,10 +404,16 @@ Every failure mode is normalised into an `AMPError` carrying a `kind`:
 | `timeout` | AbortController fired (15s default) |
 | `http` | genuine non-2xx, in practice a reverse-proxy 502/504 |
 | `unauthorized` | session rejected, or the account lacks a permission node |
+| `unavailable` | the instance exists but its daemon is down, so the proxy cannot reach it |
 | `rejected` | AMP understood the request and refused it |
-| `not-found` | no such instance |
+| `not-found` | no such instance — both the proxy router's "No instance with ID …" and the controller's "No such instance with this name" |
 | `malformed` | body was not JSON — a proxy error page, a truncated response |
 | `auth-failed` | `Core/Login` itself failed |
+
+`unavailable` earns its own kind rather than being lumped in with `rejected`
+because it is not a refusal — it means "this instance's daemon is down, go
+through the controller instead". `/amp` turns it into a pointer at
+`/amp instance start` rather than an error.
 
 `/amp` maps the kind to a human-actionable message. AMP's raw `Message` can quote
 internal server paths, so it is only ever surfaced in an **ephemeral** reply.
