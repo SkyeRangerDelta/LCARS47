@@ -14,6 +14,8 @@ function loadRoute( LCARS47: LCARSClient ) {
       res.status( 200 ).send(
         { STATE: false }
       );
+
+      return;
     }
 
     Utility.log( 'info', '[API] Received a request for stats.' );
