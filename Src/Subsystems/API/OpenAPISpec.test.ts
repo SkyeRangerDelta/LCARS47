@@ -14,9 +14,11 @@ import {
   API_BASE_PATH,
   API_SECURITY_SCHEME,
   API_SPEC_PATH,
+  API_DOCS_PATH,
   API_V1_PREFIX,
   buildDocument,
-  envelopeResponse
+  envelopeResponse,
+  isDocsAsset
 } from './OpenAPISpec';
 
 // EnvUtils calls process.exit(1) when the environment is incomplete, and route
@@ -133,6 +135,41 @@ describe( 'buildDocument', () => {
       .toBe( '#/components/schemas/APIResponse' );
     expect( schema?.required ).toEqual( ['ERROR', 'MESSAGE'] );
     expect( Object.keys( schema?.properties ?? {} ) ).toEqual( ['ERROR', 'MESSAGE'] );
+  } );
+} );
+
+describe( 'isDocsAsset', () => {
+  it( 'treats the docs page itself as loggable traffic', () => {
+    expect( isDocsAsset( API_DOCS_PATH ) ).toBe( false );
+    expect( isDocsAsset( `${ API_DOCS_PATH }/` ) ).toBe( false );
+    expect( isDocsAsset( `${ API_DOCS_PATH }/?docExpansion=none` ) ).toBe( false );
+  } );
+
+  it( 'filters out the assets Swagger UI pulls in after load', () => {
+    const assets = [
+      'swagger-ui.css',
+      'swagger-ui-bundle.js',
+      'swagger-ui-standalone-preset.js',
+      'swagger-ui-init.js',
+      'favicon-32x32.png',
+      'favicon-16x16.png'
+    ];
+
+    for ( const asset of assets ) {
+      expect( isDocsAsset( `${ API_DOCS_PATH }/${ asset }` ), asset ).toBe( true );
+    }
+  } );
+
+  it( 'leaves real API traffic alone', () => {
+    expect( isDocsAsset( '/api' ) ).toBe( false );
+    expect( isDocsAsset( '/api/openapi.json' ) ).toBe( false );
+    expect( isDocsAsset( `${ API_V1_PREFIX }/stats` ) ).toBe( false );
+    expect( isDocsAsset( `${ API_V1_PREFIX }/sendMessage` ) ).toBe( false );
+  } );
+
+  it( 'does not filter paths that merely share the docs prefix', () => {
+    expect( isDocsAsset( `${ API_DOCS_PATH }-internal/asset.js` ) ).toBe( false );
+    expect( isDocsAsset( `${ API_DOCS_PATH }x` ) ).toBe( false );
   } );
 } );
 

@@ -13,7 +13,8 @@ import {
   API_DOCS_PATH,
   API_SPEC_PATH,
   API_V1_PREFIX,
-  buildDocument
+  buildDocument,
+  isDocsAsset
 } from './OpenAPISpec';
 import * as fs from 'node:fs';
 
@@ -118,9 +119,13 @@ export class API {
     // Body Parser
     this.app.use( exp.json() );
 
-    // Request logging
+    // Request logging. Swagger UI's own asset requests are skipped so a docs
+    // page view logs as one line rather than burying real traffic under six.
     this.app.use( ( req, res, next ) => {
-      Utility.log( 'info', `[API] ${ req.method } : ${ req.url }${ req.body ? ' (Has body)' : '' }` );
+      if ( !isDocsAsset( req.url ) ) {
+        Utility.log( 'info', `[API] ${ req.method } : ${ req.url }${ req.body ? ' (Has body)' : '' }` );
+      }
+
       next();
     });
   }

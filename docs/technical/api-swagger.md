@@ -14,8 +14,9 @@
 4. [Adding a Documented Route](#adding-a-documented-route)
 5. [Response Envelope](#response-envelope)
 6. [Authentication](#authentication)
-7. [Test Guarantees](#test-guarantees)
-8. [Known Lint Warnings](#known-lint-warnings)
+7. [Request Logging](#request-logging)
+8. [Test Guarantees](#test-guarantees)
+9. [Known Lint Warnings](#known-lint-warnings)
 
 ---
 
@@ -169,6 +170,25 @@ The API — including the docs — is LAN-only and is not exposed to the public 
 docs and index routes are deliberately unauthenticated; they publish no secrets, and the
 specification marks them with an explicit empty `security` array so that this is a stated
 decision rather than an omission.
+
+## Request Logging
+
+`APICore.loadMiddleware()` logs every incoming request. Swagger UI is a static bundle, so a
+single docs page view is really eight HTTP requests — the page, six assets, and the spec
+fetch that `swagger-ui-init.js` performs.
+
+The logger skips the assets via `isDocsAsset()` in `OpenAPISpec.ts`, leaving two lines per
+page view:
+
+```
+[API] GET : /api/docs/
+[API] GET : /api/openapi.json
+```
+
+Both are real events worth seeing — someone opened the docs, and something read the spec.
+The stylesheet, favicons and script bundles are not. The predicate matches only paths *below*
+`/api/docs/`, so the page itself (with or without a trailing slash, with or without a query
+string) still logs, and no other route is affected.
 
 ## Known Lint Warnings
 

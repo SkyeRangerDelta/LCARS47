@@ -41,6 +41,27 @@ export const API_SECURITY_SCHEME = 'LCARSAuth';
 export const NO_AUTH_REQUIRED: Record<string, string[]>[] = [];
 
 /**
+ * Whether a request is for one of Swagger UI's bundled static assets — the
+ * scripts, stylesheet and favicons the docs page pulls in after it loads.
+ *
+ * A single docs page view fans out into half a dozen of these. The page itself
+ * is worth a log line; its scaffolding is not.
+ *
+ * @param url - The request URL, with or without a query string
+ * @returns True for docs assets, false for the docs page itself and everything else
+ */
+export function isDocsAsset( url: string ): boolean {
+  const pathname = url.split( '?' )[0];
+
+  // The docs page, with or without its trailing slash, is not an asset.
+  if ( pathname === API_DOCS_PATH || pathname === `${ API_DOCS_PATH }/` ) {
+    return false;
+  }
+
+  return pathname.startsWith( `${ API_DOCS_PATH }/` );
+}
+
+/**
  * The standard LCARS47 response envelope. Every error — and every operation that
  * has no payload of its own — is delivered in this shape.
  */
