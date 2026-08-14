@@ -291,18 +291,38 @@ export class AMPClient {
 
     const fault = body as RawAMPFault;
     if ( typeof fault.Title === 'string' && typeof fault.Message === 'string' ) {
-      const kind: AMPErrorKind = /unauthori[sz]ed|permission|session/i.test( fault.Message )
-        ? 'unauthorized'
-        : 'rejected';
-      throw new AMPError( kind, `${ fault.Title }: ${ fault.Message }` );
+      throw new AMPError( AMPClient.classifyFault( fault ), `${ fault.Title }: ${ fault.Message }` );
     }
 
     const action = body as RawAMPActionResult;
     if ( action.Status === false ) {
       const reason = action.Reason ?? 'AMP rejected the request without giving a reason.';
-      const kind: AMPErrorKind = /no instance with id/i.test( reason ) ? 'not-found' : 'rejected';
+      // "No instance with ID … exists." from the proxy router;
+      // "No such instance with this name" from the ADS-level instance methods.
+      const kind: AMPErrorKind = /no (such )?instance with/i.test( reason ) ? 'not-found' : 'rejected';
       throw new AMPError( kind, reason );
     }
+  }
+
+  /**
+   * Sort AMP's fault envelopes into something callers can branch on.
+   *
+   * "Instance Unavailable" is its own case and must not be lumped in with a
+   * generic refusal: it is what every proxied call returns when the target
+   * instance's daemon is down, including the per-instance Core/Login. It means
+   * "go through the controller instead", not "you did something wrong".
+   */
+  private static classifyFault( fault: RawAMPFault ): AMPErrorKind {
+    const message = fault.Message ?? '';
+    const title = fault.Title ?? '';
+
+    if ( /instance (is )?unavailable|not available at this time/i.test( `${ title } ${ message }` ) ) {
+      return 'unavailable';
+    }
+    if ( /unauthori[sz]ed|permission|session/i.test( message ) ) {
+      return 'unauthorized';
+    }
+    return 'rejected';
   }
 
   /**
@@ -405,8 +425,19 @@ export class AMPClient {
    * Cached with a short TTL because Discord autocomplete fires once per
    * keystroke against a hard ~3s deadline that cannot be deferred — a live
    * round trip per keystroke would hammer the controller and risk blowing it.
-   * Nothing user-facing goes stale: status/start/stop resolve the id from this
-   * cache but always read live state from Core/GetStatus.
+   *
+   * **The data behind this is not live, and invalidating the cache does not
+   * make it live.** ADSModule/GetInstances is a snapshot the controller keeps
+   * of its targets, refreshed on its own slow schedule: measured against
+   * amp.pldyn.net, the `Running`, `AppState` and `Metrics` values did not change
+   * once across 30 seconds of polling, while a direct Core/GetStatus on the same
+   * instance updated on every 2-second sample. Treat `appState` and `running`
+   * here as "the controller's last known view", good enough for a picker label
+   * and nothing more.
+   *
+   * Anywhere the answer actually matters — status readouts, post-action
+   * confirmation, readiness polling — go to the proxied Core/GetStatus instead.
+   * That is the authoritative source.
    */
   async listInstances( opts: { force?: boolean } = {} ): Promise<AMPInstance[]> {
     const cache = this.instanceCache;
@@ -454,45 +485,88 @@ export class AMPClient {
     };
   }
 
+  // -- Instance control (the AMP daemon) ------------------------------------
+  //
+  // AMP has two independently controllable layers, and conflating them does not
+  // work: an instance whose daemon is down cannot be reached through the proxy
+  // at all, so the *only* way to bring it up is to ask the controller. These
+  // two methods operate on the daemon; startApplication/stopApplication below
+  // operate on the game server running inside it.
+  //
+  // Starting an instance deliberately does NOT start its application. That is
+  // how these instances are configured, and it is the intended behaviour —
+  // bringing a machine up is not the same as putting it into service.
+
   /**
-   * Ask AMP to start an instance. Acceptance is not completion — the caller
-   * has to poll getInstanceStatus() to find out whether it actually came up.
+   * Bring an instance's daemon up via the controller.
+   *
+   * Keyed on `InstanceName` (the internal short name, e.g. `PlDynEmpyrion01`),
+   * not the GUID — verified against the live controller, which answers
+   * "No such instance with this name" for a GUID. This is why the method takes
+   * the whole DTO rather than an id.
    */
   async startInstance( instance: AMPInstance ): Promise<AMPActionResult> {
     if ( instance.suspended ) {
       throw new AMPError( 'rejected',
         `${ instance.friendlyName } is suspended in AMP; it will accept a start command and do nothing.` );
     }
-    return await this.instanceAction( instance, 'Start', 'ADSModule/StartInstance' );
+
+    await this.call<unknown>( 'ADSModule/StartInstance', { InstanceName: instance.instanceName } );
+    this.invalidateInstanceCache();
+    // Any session we held for a previous life of this instance is dead.
+    this.instanceSessions.delete( instance.instanceId );
+    return { accepted: true };
   }
 
-  /** Ask AMP to stop an instance. Returning cleanly means accepted, not stopped. */
-  async stopInstance( instance: AMPInstance ): Promise<AMPActionResult> {
-    return await this.instanceAction( instance, 'Stop', 'ADSModule/StopInstance' );
-  }
-
-  private async instanceAction(
-    instance: AMPInstance,
-    method: 'Start' | 'Stop',
-    fallbackPath: string
-  ): Promise<AMPActionResult> {
+  /**
+   * Is the instance reachable through the proxy right now, and if so what is
+   * its application doing?
+   *
+   * This is the honest readiness signal. The controller's `Running` flag lags
+   * reality by tens of seconds, but the proxy either answers or it does not:
+   * `unavailable` means the daemon is genuinely down, and any successful
+   * response means it is genuinely up *and* carries the true application state.
+   */
+  async probeInstance( instance: AMPInstance ): Promise<AMPStatus | null> {
     try {
-      await this.callInstance<unknown>( instance, 'Core', method );
-      return { accepted: true };
+      return await this.getInstanceStatus( instance );
     }
     catch ( err ) {
-      if ( !( err instanceof AMPError ) || ( err.kind !== 'unauthorized' && err.kind !== 'not-found' ) ) {
-        throw err;
-      }
-
-      Utility.log( 'warn',
-        `[AMP] Proxied ${ method } for ${ instance.friendlyName } failed (${ err.kind }); trying the ADS-level fallback.` );
-
-      // The fallback keys on InstanceName rather than the GUID, which is why
-      // the action methods take the whole DTO instead of a bare id.
-      await this.call<unknown>( fallbackPath, { InstanceName: instance.instanceName } );
-      return { accepted: true, viaFallback: true };
+      if ( err instanceof AMPError && err.kind === 'unavailable' ) return null;
+      throw err;
     }
+  }
+
+  /** Take an instance's daemon down via the controller. */
+  async stopInstance( instance: AMPInstance ): Promise<AMPActionResult> {
+    await this.call<unknown>( 'ADSModule/StopInstance', { InstanceName: instance.instanceName } );
+    this.invalidateInstanceCache();
+    this.instanceSessions.delete( instance.instanceId );
+    return { accepted: true };
+  }
+
+  // -- Application control (the game server inside the instance) -------------
+
+  /**
+   * Start the application inside a running instance.
+   *
+   * Requires the daemon to be up; there is no proxy route to an instance that
+   * is not running, and AMP answers "Instance Unavailable" if you try.
+   */
+  async startApplication( instance: AMPInstance ): Promise<AMPActionResult> {
+    await this.callInstance<unknown>( instance, 'Core', 'Start' );
+    this.invalidateInstanceCache();
+    return { accepted: true };
+  }
+
+  /**
+   * Stop the application inside a running instance. Core/Stop returns Void, so
+   * the absence of an error means *accepted*, not stopped — poll for the rest.
+   */
+  async stopApplication( instance: AMPInstance ): Promise<AMPActionResult> {
+    await this.callInstance<unknown>( instance, 'Core', 'Stop' );
+    this.invalidateInstanceCache();
+    return { accepted: true };
   }
 
   // -- Mapping --------------------------------------------------------------

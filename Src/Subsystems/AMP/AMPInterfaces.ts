@@ -67,6 +67,7 @@ export type AMPErrorKind =
   | 'timeout'       // AbortController fired
   | 'http'          // genuine non-2xx, usually a reverse-proxy 502/504
   | 'unauthorized'  // AMP rejected the session or the account lacks a permission
+  | 'unavailable'   // the instance exists but its daemon is down, so the proxy cannot reach it
   | 'rejected'      // AMP understood the request and refused it
   | 'not-found'     // no such instance
   | 'malformed'     // body was not JSON (proxy error page, truncated response)

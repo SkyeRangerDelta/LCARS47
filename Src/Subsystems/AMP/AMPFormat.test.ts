@@ -5,6 +5,7 @@ import {
   stateEmoji,
   stateColour,
   isTransitional,
+  instanceState,
   formatMetric,
   formatUptime
 } from './AMPFormat.js';
@@ -74,6 +75,38 @@ describe( 'stateEmoji / stateColour', () => {
   } );
 } );
 
+describe( 'instanceState', () => {
+  it( 'reads a stopped instance as Offline rather than Undefined', () => {
+    // AMP reports AppState -1 for every instance whose daemon is down, because
+    // there is no application to have a state. Rendering that literally made
+    // every powered-off game server read as "Undefined".
+    expect( instanceState( false, -1 ) ).toEqual( { label: 'Offline', emoji: '⚫', colour: 0x808080 } );
+  } );
+
+  it( 'still reads Offline even if AppState looks meaningful', () => {
+    // Running is the authority on whether the instance is on at all.
+    expect( instanceState( false, 20 ).label ).toBe( 'Offline' );
+  } );
+
+  it( 'reports the application state once the daemon is up', () => {
+    expect( instanceState( true, 20 ) ).toEqual( { label: 'Ready', emoji: '🟢', colour: 0x00FF00 } );
+    expect( instanceState( true, 0 ).label ).toBe( 'Stopped' );
+    expect( instanceState( true, 10 ).label ).toBe( 'Starting' );
+  } );
+
+  it( 'reads an online instance with no application state yet as Initialising', () => {
+    // The window right after an instance comes up, before the controller's
+    // aggregate has re-polled it. Showing "Undefined" to an operator who just
+    // started the thing is worse than useless.
+    expect( instanceState( true, -1 ) ).toEqual( { label: 'Initialising', emoji: '🟡', colour: 0xFFA500 } );
+  } );
+
+  it( 'distinguishes a running instance with a stopped application from an offline one', () => {
+    expect( instanceState( true, 0 ).label ).toBe( 'Stopped' );
+    expect( instanceState( false, 0 ).label ).toBe( 'Offline' );
+  } );
+} );
+
 describe( 'formatMetric', () => {
   it( 'renders a percentage metric as a bare percentage', () => {
     expect( formatMetric( 'CPU Usage', metric( { rawValue: 42, maxValue: 100, percent: 42, units: '%' } ) ) )
@@ -120,8 +153,22 @@ describe( 'formatUptime', () => {
     expect( formatUptime( '04:35:12' ) ).toBe( '4h 35m' );
   } );
 
-  it( 'formats a TimeSpan carrying days', () => {
+  it( 'formats the colon-separated day form the live controller emits', () => {
+    // Captured verbatim from amp.pldyn.net: a server up ten and a half hours.
+    expect( formatUptime( '0:10:29:25' ) ).toBe( '10h 29m' );
+    expect( formatUptime( '3:04:05:06' ) ).toBe( '3d 4h 5m' );
+  } );
+
+  it( 'formats a .NET TimeSpan carrying days', () => {
     expect( formatUptime( '5.12:30:01' ) ).toBe( '5d 12h 30m' );
+  } );
+
+  it( 'ignores fractional seconds', () => {
+    expect( formatUptime( '04:35:12.847' ) ).toBe( '4h 35m' );
+  } );
+
+  it( 'treats an all-zero day form as no uptime', () => {
+    expect( formatUptime( '0:00:00:00' ) ).toBe( '—' );
   } );
 
   it( 'reports sub-minute uptime rather than an empty string', () => {

@@ -57,6 +57,47 @@ export function stateColour( state: AMPState ): number {
   return 0x5865F2;
 }
 
+/** How an instance should be presented in a list or a picker. */
+export interface AMPStateView {
+  label: string;
+  emoji: string;
+  colour: number;
+}
+
+/**
+ * Describe an instance from its `Running` flag and `AppState` together.
+ *
+ * These are two different things and only reading the second is misleading.
+ * `AppState` is the state of the *application inside* an instance; it is only
+ * meaningful while that instance's daemon is up. AMP reports `-1` (Undefined)
+ * for every instance with `Running: false`, because it genuinely has nothing to
+ * say about an application that is not there to be asked.
+ *
+ * Rendering that literally makes every powered-off game server read as
+ * "Undefined". `Running` is the field that actually answers "is this thing on",
+ * so it is checked first.
+ */
+export function instanceState( running: boolean, appState: AMPState ): AMPStateView {
+  if ( !running ) {
+    return { label: 'Offline', emoji: '⚫', colour: 0x808080 };
+  }
+
+  // Daemon up but no application state reported yet. This is the window right
+  // after an instance comes online, before the controller has re-polled it —
+  // and the controller's aggregate is slow (see the note on listInstances), so
+  // the window is tens of seconds wide, not milliseconds. "Undefined" is a
+  // terrible thing to show an operator who just started something.
+  if ( appState === -1 ) {
+    return { label: 'Initialising', emoji: '🟡', colour: 0xFFA500 };
+  }
+
+  return {
+    label: stateLabel( appState ),
+    emoji: stateEmoji( appState ),
+    colour: stateColour( appState )
+  };
+}
+
 /**
  * Render one metric for an embed field.
  *
@@ -87,28 +128,46 @@ export function formatMetric( name: string, metric: AMPMetric ): string {
 }
 
 /**
- * AMP reports uptime as a .NET TimeSpan string — `hh:mm:ss` or `d.hh:mm:ss`.
- * A stopped instance reports `00:00:00`, which is noise rather than data.
+ * Render AMP's uptime string.
+ *
+ * AMP is inconsistent about the format: `hh:mm:ss` for short uptimes, but
+ * `d:hh:mm:ss` once days are involved — confirmed against the live controller,
+ * which reported `0:10:29:25` for a server up ten and a half hours. The .NET
+ * TimeSpan spelling `d.hh:mm:ss` is handled too, since AMP's own SDKs document
+ * that one. All three are normalised before parsing rather than pattern-matched
+ * individually.
+ *
+ * A stopped instance reports all zeroes, which is noise rather than data.
  */
 export function formatUptime( raw: string | undefined ): string {
   if ( raw == null ) return '—';
 
   const trimmed = raw.trim();
-  if ( trimmed === '' || /^0+(\.0+)?:0+:0+(\.\d+)?$/.test( trimmed ) ) return '—';
+  if ( trimmed === '' ) return '—';
 
-  const match = /^(?:(\d+)\.)?(\d+):(\d+):(\d+)/.exec( trimmed );
-  if ( match == null ) return trimmed;
+  // Drop fractional seconds first so the day separator normalisation below
+  // cannot mistake them for a day component.
+  const parts = trimmed
+    .replace( /\.\d+$/, '' )
+    .replace( '.', ':' )
+    .split( ':' )
+    .map( Number );
 
-  const days = Number( match[1] ?? 0 );
-  const hours = Number( match[2] );
-  const minutes = Number( match[3] );
+  if ( parts.length < 3 || parts.length > 4 || parts.some( Number.isNaN ) ) return trimmed;
 
-  const parts: string[] = [];
-  if ( days > 0 ) parts.push( `${ days }d` );
-  if ( hours > 0 ) parts.push( `${ hours }h` );
-  if ( minutes > 0 ) parts.push( `${ minutes }m` );
+  const [days, hours, minutes] = parts.length === 4
+    ? [parts[0], parts[1], parts[2]]
+    : [0, parts[0], parts[1]];
+  const seconds = parts[parts.length - 1];
 
-  return parts.length > 0 ? parts.join( ' ' ) : '< 1m';
+  if ( days === 0 && hours === 0 && minutes === 0 && seconds === 0 ) return '—';
+
+  const out: string[] = [];
+  if ( days > 0 ) out.push( `${ days }d` );
+  if ( hours > 0 ) out.push( `${ hours }h` );
+  if ( minutes > 0 ) out.push( `${ minutes }m` );
+
+  return out.length > 0 ? out.join( ' ' ) : '< 1m';
 }
 
 export default {
@@ -117,6 +176,7 @@ export default {
   stateEmoji,
   stateColour,
   isTransitional,
+  instanceState,
   formatMetric,
   formatUptime
 };

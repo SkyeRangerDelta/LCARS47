@@ -152,6 +152,23 @@ describe( 'AMPClient error detection', () => {
       .rejects.toMatchObject( { kind: 'not-found' } );
   } );
 
+  it( 'classifies a stopped instance as unavailable, not a generic refusal', async () => {
+    // Captured verbatim from amp.pldyn.net for an instance whose daemon is down.
+    // Every proxied call answers this, including the per-instance Core/Login.
+    const unavailable = {
+      Title: 'Instance Unavailable',
+      Message: 'The requested instance is not available at this time.',
+      StackTrace: null
+    };
+
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( unavailable ) );
+
+    await expect( makeClient().getInstanceStatus( INSTANCE ) )
+      .rejects.toMatchObject( { kind: 'unavailable' } );
+  } );
+
   it( 'classifies a plain refusal as rejected', async () => {
     fetchMock
       .mockResolvedValueOnce( res( LOGIN_OK ) )
@@ -167,6 +184,17 @@ describe( 'AMPClient error detection', () => {
       .mockResolvedValueOnce( res( { Status: true } ) );
 
     await expect( makeClient().startInstance( INSTANCE ) ).resolves.toEqual( { accepted: true } );
+  } );
+
+  it( 'classifies the ADS-level "no such instance" wording as not-found', async () => {
+    // Captured verbatim from amp.pldyn.net. Different wording to the proxy
+    // router's "No instance with ID ... exists.", same meaning.
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( { Status: false, Reason: 'No such instance with this name' } ) );
+
+    await expect( makeClient().startInstance( INSTANCE ) )
+      .rejects.toMatchObject( { kind: 'not-found' } );
   } );
 
   it( 'classifies a non-JSON body as malformed', async () => {
@@ -228,7 +256,127 @@ describe( 'AMPClient empty-body handling', () => {
       .mockResolvedValueOnce( res( LOGIN_OK ) )
       .mockResolvedValueOnce( res( undefined ) ); // Void — empty body
 
-    await expect( makeClient().stopInstance( INSTANCE ) ).resolves.toEqual( { accepted: true } );
+    await expect( makeClient().stopApplication( INSTANCE ) ).resolves.toEqual( { accepted: true } );
+  } );
+} );
+
+describe( 'AMPClient control layers', () => {
+  // AMP's instance daemon and the application inside it are separately
+  // controlled, and the two use entirely different routes. Mixing them up is
+  // the difference between /amp working and not working for an offline server.
+
+  it( 'drives instance control through the controller, keyed on InstanceName', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( { Status: true } ) );
+
+    await makeClient().startInstance( INSTANCE );
+
+    expect( urlOf( 2 ) ).toBe( 'https://amp.test/API/ADSModule/StartInstance' );
+    // Verified against the live controller: a GUID here answers
+    // "No such instance with this name" — it resolves by the short name.
+    expect( bodyOf( 2 ) ).toMatchObject( { InstanceName: 'MC01' } );
+  } );
+
+  it( 'drives instance stop through the controller too', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( { Status: true } ) );
+
+    await makeClient().stopInstance( INSTANCE );
+
+    expect( urlOf( 2 ) ).toBe( 'https://amp.test/API/ADSModule/StopInstance' );
+  } );
+
+  it( 'drives application control through the instance proxy', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( { Status: true } ) );
+
+    await makeClient().startApplication( INSTANCE );
+
+    expect( urlOf( 2 ) ).toBe( 'https://amp.test/API/ADSModule/Servers/abc-123/API/Core/Start' );
+  } );
+
+  it( 'does not silently fall back from one layer to the other', async () => {
+    // An offline instance answers "Instance Unavailable" to proxied calls.
+    // Starting the application must surface that rather than quietly issuing an
+    // ADS-level instance start the operator did not ask for.
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( {
+        Title: 'Instance Unavailable',
+        Message: 'The requested instance is not available at this time.',
+        StackTrace: null
+      } ) );
+
+    await expect( makeClient().startApplication( INSTANCE ) )
+      .rejects.toMatchObject( { kind: 'unavailable' } );
+
+    expect( fetchMock ).toHaveBeenCalledTimes( 2 );
+    expect( fetchMock.mock.calls.some( c => String( c[0] ).includes( 'ADSModule/StartInstance' ) ) ).toBe( false );
+  } );
+
+  it( 'refuses to start a suspended instance', async () => {
+    const amp = makeClient();
+    await expect( amp.startInstance( { ...INSTANCE, suspended: true } ) ).rejects.toThrow( /suspended/i );
+    expect( fetchMock ).not.toHaveBeenCalled();
+  } );
+} );
+
+describe( 'AMPClient.probeInstance', () => {
+  // The controller's Running flag lags reality by tens of seconds, so readiness
+  // is decided by whether the proxy answers, not by what the aggregate claims.
+
+  it( 'returns null when the daemon is down rather than throwing', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( {
+        Title: 'Instance Unavailable',
+        Message: 'The requested instance is not available at this time.',
+        StackTrace: null
+      } ) );
+
+    await expect( makeClient().probeInstance( INSTANCE ) ).resolves.toBeNull();
+  } );
+
+  it( 'returns the live status when the daemon is up', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( { State: 0, Uptime: '00:00:00', Metrics: {} } ) );
+
+    await expect( makeClient().probeInstance( INSTANCE ) )
+      .resolves.toMatchObject( { state: 0 } );
+  } );
+
+  it( 'still surfaces genuine failures', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( {}, 504 ) );
+
+    await expect( makeClient().probeInstance( INSTANCE ) )
+      .rejects.toMatchObject( { kind: 'http' } );
+  } );
+
+  it( 'drops a cached proxy session when the instance is restarted', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( UNAUTHORIZED ) )                                    // ADS session refused
+      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )                               // per-instance login
+      .mockResolvedValueOnce( res( { State: 20, Uptime: '01:00:00', Metrics: {} } ) )  // status
+      .mockResolvedValueOnce( res( { Status: true } ) )                                // StartInstance
+      .mockResolvedValueOnce( res( UNAUTHORIZED ) )                                    // ADS session refused again
+      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )                               // fresh login, not the stale one
+      .mockResolvedValueOnce( res( { State: 0, Uptime: '00:00:00', Metrics: {} } ) );
+
+    const amp = makeClient();
+    await amp.getInstanceStatus( INSTANCE );
+    await amp.startInstance( INSTANCE );
+    await amp.getInstanceStatus( INSTANCE );
+
+    // A session cached from the instance's previous life would have skipped the
+    // re-login and been rejected.
+    expect( urlOf( 7 ) ).toBe( 'https://amp.test/API/ADSModule/Servers/abc-123/API/Core/Login' );
   } );
 } );
 
@@ -354,24 +502,6 @@ describe( 'AMPClient instance proxying', () => {
     } );
   } );
 
-  it( 'falls back to the ADS-level action when the proxied start is refused', async () => {
-    fetchMock
-      .mockResolvedValueOnce( res( LOGIN_OK ) )
-      .mockResolvedValueOnce( res( { Status: false, Reason: 'No instance with ID abc-123 exists.' } ) )
-      .mockResolvedValueOnce( res( { Status: true } ) );
-
-    const result = await makeClient().startInstance( INSTANCE );
-
-    expect( result ).toEqual( { accepted: true, viaFallback: true } );
-    expect( urlOf( 3 ) ).toBe( 'https://amp.test/API/ADSModule/StartInstance' );
-    expect( bodyOf( 3 ) ).toMatchObject( { InstanceName: 'MC01' } );
-  } );
-
-  it( 'refuses to start a suspended instance', async () => {
-    const amp = makeClient();
-    await expect( amp.startInstance( { ...INSTANCE, suspended: true } ) ).rejects.toThrow( /suspended/i );
-    expect( fetchMock ).not.toHaveBeenCalled();
-  } );
 } );
 
 describe( 'AMPClient.listInstances', () => {
