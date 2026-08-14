@@ -65,8 +65,6 @@ function loadRoute( LCARS47: LCARSClient ) {
     }
 
     try {
-      console.log( req.body );
-
       const reqBody = req.body as SendMessageBody;
       const channelId = reqBody.channelId ?? '';
       const content = reqBody.content ?? '';
@@ -93,28 +91,21 @@ function loadRoute( LCARS47: LCARSClient ) {
         return;
       }
 
-      if ( !channel.isTextBased ) {
-        res.status( 400 ).send(
-          { ERROR: true, MESSAGE: 'Bad Request: Specified channel is not text-based.' }
-        );
-        return;
-      }
-      else {
-        await channel.send( content )
-          .then( () => {
-            // Message sent successfully
-            res.status( 200 ).send(
-              { ERROR: false, MESSAGE: 'Message accepted for delivery.' }
-            );
+      await channel.send( content )
+        .then( () => {
+          // Message sent successfully
+          res.status( 200 ).send(
+            { ERROR: false, MESSAGE: 'Message accepted for delivery.' }
+          );
 
-            return;
-          } )
-          .catch( ( err: Error ) => {
-            res.status( 500 ).send(
-              { ERROR: true, MESSAGE: 'Internal Server Error: Failed to send message.\n' + err.message }
-            );
-          } );
-      }
+          return;
+        } )
+        .catch( ( err: Error ) => {
+          res.status( 500 ).send(
+            { ERROR: true, MESSAGE: 'Internal Server Error: Failed to send message.\n' + err.message }
+          );
+        } );
+
     }
     catch ( e ) {
       res.status( 500 ).send(
