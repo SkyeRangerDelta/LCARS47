@@ -100,9 +100,14 @@ function loadRoute( LCARS47: LCARSClient ) {
         return;
       }
       else {
-        channel.send( content )
+        await channel.send( content )
           .then( () => {
             // Message sent successfully
+            res.status( 200 ).send(
+              { ERROR: false, MESSAGE: 'Message accepted for delivery.' }
+            );
+
+            return;
           } )
           .catch( ( err: Error ) => {
             res.status( 500 ).send(
