@@ -45,7 +45,17 @@ into the bot's own systems so its answers reflect what's actually happening aboa
 ![OPERATIONS](https://img.shields.io/badge/OPERATIONS-9999FF?style=for-the-badge&labelColor=9999FF)
 
 Real-time health and status for the crew's infrastructure — load, memory, storage, and uptime
-across monitored hosts — alongside the bot's own vitals and a properly computed stardate.
+across monitored hosts — alongside the bot's own vitals and a properly computed stardate. It
+also keeps watch between requests, announcing to the bridge the moment a host drops off the
+network or comes back, with enough restraint that a flapping link doesn't become an alert
+storm.
+
+![HOLODECK CONTROL](https://img.shields.io/badge/HOLODECK_CONTROL-66CC99?style=for-the-badge&labelColor=66CC99)
+
+Game server control through the Impulse Controller's management panel. List every instance,
+read live statistics off any one of them, and start or stop them without leaving Discord —
+with the bot following a starting server until it actually comes up rather than assuming it
+did. See [the technical notes](docs/technical/amp-api-integration.md).
 
 ![STELLAR CARTOGRAPHY](https://img.shields.io/badge/STELLAR_CARTOGRAPHY-FFCC66?style=for-the-badge&labelColor=FFCC66)
 
