@@ -23,10 +23,10 @@ Developed for use in the Planetary Dynamics (PlDyn) Discord server by PlDyn memb
 
 ---
 
-> `LCARS47 ONLINE.` Library Computer Access/Retrieval System, unit 47. Standing by.
+> `LCARS47 ONLINE.` Library Computer Access/Retrieval System standing by.
 
-**LCARS47** is the resident ship's computer for the Planetary Dynamics Discord — a Star Trek
-/ Warhammer 40K–flavored bot, purpose-built and operated for PlDyn.
+**LCARS47** is the resident ship's computer for the Planetary Dynamics Discord — purpose built Star Trek themed Omnissiah worshipping 
+computer for PlDyn.
 
 ---
 
