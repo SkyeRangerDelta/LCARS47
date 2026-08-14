@@ -5,10 +5,10 @@
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "dev": "tsc && node Deploy/lcars47.js --test",
+    "dev": "tsc && node --experimental-eventsource Deploy/lcars47.js --test",
     "ndev": "nodemon --watch './src/*' dev",
     "lint": "eslint .",
-    "start": "node Deploy/lcars47.js",
+    "start": "node --experimental-eventsource Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
     "test": "vitest run 2>&1 | tee logs/tests/vitest-output.log",
