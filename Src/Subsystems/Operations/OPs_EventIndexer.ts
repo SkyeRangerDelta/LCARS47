@@ -18,7 +18,9 @@ export default EventsIndexer;
 // Functions
 async function indexEvents ( LCARS47: LCARSClient ): Promise<void> {
   const evPath = path.join( __dirname, '../..', 'Events' );
-  const eventsIndex = fs.readdirSync( evPath ).filter( f => f.endsWith( '.js' ) );
+  // Skip compiled *.test.ts - see the note in OPs_CmdHandler.
+  const eventsIndex = fs.readdirSync( evPath )
+    .filter( f => f.endsWith( '.js' ) && !f.endsWith( '.test.js' ) );
   for ( const event of eventsIndex ) {
     await import( `../../Events/${event}` ).then( ( e: { default: Event }) => {
       const ev: Event = e.default;

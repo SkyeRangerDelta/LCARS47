@@ -19,7 +19,9 @@ export async function loadRoutes( LCARS47: LCARSClient ): Promise<LoadedRoutes> 
   const paths: OpenAPIPaths = {};
 
   const routesDir = path.resolve(__dirname, 'v1');
-  const routeIndex = fs.readdirSync( routesDir ).filter( r => r.endsWith( '.js' ) );
+  // Skip compiled *.test.ts - see the note in OPs_CmdHandler.
+  const routeIndex = fs.readdirSync( routesDir )
+    .filter( r => r.endsWith( '.js' ) && !r.endsWith( '.test.js' ) );
 
   console.log( `[API] Found ${routeIndex.length} route modules to load.` );
 
