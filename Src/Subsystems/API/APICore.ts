@@ -16,7 +16,6 @@ import {
   buildDocument,
   isDocsAsset
 } from './OpenAPISpec';
-import * as fs from 'node:fs';
 
 const env = getEnv();
 
@@ -131,20 +130,17 @@ export class API {
   }
 
   /**
-   * Retrieves all expected API routes.
+   * Retrieves the versioned API routes currently mounted.
+   *
+   * Read from the assembled OpenAPI document rather than the filesystem. The
+   * document reflects what actually loaded, and it exists in the deployed
+   * image — the TypeScript sources do not, as only Deploy/ is copied into the
+   * runtime container.
    * @private
    */
-  private getAllRoutes() {
-    const routes: string[] = [];
-
-    const routesDir = './Src/Subsystems/API/v1/';
-    const routeIndex = fs.readdirSync( routesDir ).filter( r => r.endsWith( '.ts' ) || r.endsWith( '.js' ) );
-
-    for ( const route of routeIndex ) {
-      const routePath = route.replace( routesDir, '' ).replace( /\.ts$|\.js$/, '' );
-      routes.push( `/api/v1/${ routePath }` );
-    }
-
-    return routes;
+  private getAllRoutes(): string[] {
+    return Object.keys( this.openAPIDocument.paths )
+      .filter( route => route.startsWith( `${ API_V1_PREFIX }/` ) )
+      .sort();
   }
 }

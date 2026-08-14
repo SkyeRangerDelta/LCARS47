@@ -95,6 +95,16 @@ loader from the shared `API_V1_PREFIX` constant, which `APICore` also uses for t
 A route module that registers a router but declares no `spec` logs a warning at boot rather
 than failing silently.
 
+### The document as the route registry
+
+`GET /api` reports its `loadedRoutes` by filtering the assembled document for paths under
+`/api/v1/`, rather than scanning the source tree. Two reasons:
+
+- It reports what actually **loaded**, not what files happen to be on disk.
+- The runtime container has no source tree. `Dockerfile` copies only `Deploy/`,
+  `node_modules/` and `package*.json` from the build stage, so any request-time read of
+  `./Src/...` fails with `ENOENT` in production while working fine on a dev machine.
+
 ## Adding a Documented Route
 
 Add the `spec` property to the object the module already default-exports. Paths are declared
