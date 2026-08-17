@@ -31,11 +31,15 @@ function freshToken(): string {
   return `header.${ claims }.signature`;
 }
 
-function makeMonitor( getFullList: () => Promise<BeszelSystemRecord[]> ): BeszelMonitor {
+function makeMonitor(
+  getFullList: () => Promise<BeszelSystemRecord[]>,
+  realtime: { isConnected: boolean } = { isConnected: true }
+): BeszelMonitor {
   const pb = {
     // Every Beszel read now renews the session as a side effect, so the stub
     // needs a credible authStore or ensureAuth has nothing to inspect.
     authStore: { token: freshToken(), isValid: true },
+    realtime,
     collection: () => ( {
       getFullList,
       subscribe: vi.fn(),
@@ -110,11 +114,68 @@ describe( 'BeszelMonitor seeding', () => {
 
     // Node only exposes EventSource behind --experimental-eventsource, which
     // vitest does not set, so this is the fallback path by construction.
-    expect( monitor.isRealtime() ).toBe( typeof globalThis.EventSource === 'function' );
+    expect( monitor.isRealtime() ).toBe( false );
     expect( monitor.isRunning() ).toBe( true );
 
     await monitor.stop();
     expect( monitor.isRunning() ).toBe( false );
+  } );
+
+  it( 'does not claim realtime when the socket is not connected', async () => {
+    // Even having subscribed successfully, a dead socket must not read as live —
+    // the SDK reconnects on its own but gives up after a bounded number of tries.
+    const monitor = makeMonitor( async () => await Promise.resolve( [] ), { isConnected: false } );
+    await monitor.start();
+
+    expect( monitor.isRealtime() ).toBe( false );
+
+    await monitor.stop();
+  } );
+} );
+
+describe( 'BeszelMonitor freshness', () => {
+  it( 'treats data as ancient before the first sweep', () => {
+    const monitor = makeMonitor( async () => await Promise.resolve( [] ) );
+
+    expect( monitor.dataAgeMs() ).toBe( Number.POSITIVE_INFINITY );
+  } );
+
+  it( 'records when the state was last rebuilt', async () => {
+    const monitor = makeMonitor( async () => await Promise.resolve( [system( 'a', 'moros', 'up' )] ) );
+    await monitor.start();
+
+    expect( monitor.dataAgeMs() ).toBeLessThan( 1000 );
+
+    await monitor.stop();
+  } );
+
+  it( 'skips the refetch while the data is still fresh', async () => {
+    const getFullList = vi.fn().mockResolvedValue( [system( 'a', 'moros', 'up' )] );
+    const monitor = makeMonitor( getFullList );
+    await monitor.start();
+
+    const callsAfterStart = getFullList.mock.calls.length;
+    await monitor.ensureFresh( 5000 );
+
+    expect( getFullList.mock.calls.length ).toBe( callsAfterStart );
+
+    await monitor.stop();
+  } );
+
+  it( 'refetches once the data has aged past the target', async () => {
+    const getFullList = vi.fn().mockResolvedValue( [system( 'a', 'moros', 'up' )] );
+    const monitor = makeMonitor( getFullList );
+    await monitor.start();
+
+    const callsAfterStart = getFullList.mock.calls.length;
+    // A zero-tolerance read always refreshes — the read path must be able to
+    // guarantee currency, not just hope the background sweep was recent.
+    await monitor.ensureFresh( -1 );
+
+    expect( getFullList.mock.calls.length ).toBe( callsAfterStart + 1 );
+    expect( monitor.dataAgeMs() ).toBeLessThan( 1000 );
+
+    await monitor.stop();
   } );
 } );
 

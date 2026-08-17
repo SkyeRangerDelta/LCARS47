@@ -25,6 +25,16 @@ const DEFAULT_DEBOUNCE_MS = 30_000;
 const REALTIME_RECONCILE_MS = 5 * 60_000;
 const POLLING_RECONCILE_MS = 60_000;
 
+/**
+ * How stale the tracked state may be before a read refreshes it on demand.
+ *
+ * The background reconcile exists to catch missed *transitions*, and running it
+ * every few seconds would be wasteful. But a status report is read by a human
+ * who expects it to be current, so reads top the data up themselves rather than
+ * showing whatever the last sweep happened to leave behind.
+ */
+const FRESHNESS_TARGET_MS = 5_000;
+
 const STATUS_COLOUR: Readonly<Record<string, number>> = {
   up: 0x00FF00,
   down: 0xFF0000,
@@ -81,7 +91,9 @@ export class BeszelMonitor {
   private alertChannel: TextChannel | null = null;
   private reconcileTimer: NodeJS.Timeout | null = null;
   private started = false;
-  private realtime = false;
+  /** We successfully opened a subscription. Says nothing about it still being alive. */
+  private subscribed = false;
+  private lastReconcileAt = 0;
   private mutedUntil = 0;
 
   constructor( opts: BeszelMonitorOptions ) {
@@ -104,6 +116,7 @@ export class BeszelMonitor {
     const systems = await beszel_getSystems( this.pb );
     this.seed( systems );
     this.client.BESZEL_SYSTEMS = systems;
+    this.lastReconcileAt = Date.now();
 
     // pocketbase's realtime client needs a global EventSource. Node has one,
     // but only behind --experimental-eventsource; without the flag the
@@ -113,7 +126,7 @@ export class BeszelMonitor {
         await this.pb.collection( 'systems' ).subscribe( '*', event => {
           this.handleRecord( event.record as unknown as BeszelSystemRecord );
         } );
-        this.realtime = true;
+        this.subscribed = true;
         Utility.log( 'proc', `[BESZEL-MON] Realtime subscription active - tracking ${ systems.length } systems.` );
       }
       catch ( err ) {
@@ -126,7 +139,7 @@ export class BeszelMonitor {
     }
 
     const interval = this.configuredReconcileMs
-      ?? ( this.realtime ? REALTIME_RECONCILE_MS : POLLING_RECONCILE_MS );
+      ?? ( this.subscribed ? REALTIME_RECONCILE_MS : POLLING_RECONCILE_MS );
 
     this.reconcileTimer = setInterval( () => { void this.reconcile(); }, interval );
     this.reconcileTimer.unref();
@@ -144,21 +157,48 @@ export class BeszelMonitor {
     for ( const { timer } of this.pending.values() ) clearTimeout( timer );
     this.pending.clear();
 
-    if ( this.realtime ) {
+    if ( this.subscribed ) {
       try {
         await this.pb.collection( 'systems' ).unsubscribe( '*' );
       }
       catch ( err ) {
         Utility.log( 'warn', `[BESZEL-MON] Unsubscribe failed: ${ ( err as Error ).message }` );
       }
-      this.realtime = false;
+      this.subscribed = false;
     }
 
     this.started = false;
   }
 
+  /**
+   * Is the realtime feed alive *right now*?
+   *
+   * Deliberately not a stored flag. The PocketBase SDK reconnects a dropped
+   * socket on its own but gives up after a bounded number of attempts, so a
+   * boot-time "we subscribed successfully" would keep claiming realtime long
+   * after detection had quietly degraded to the reconcile sweep. Asking the SDK
+   * for its current connection state is the only answer that cannot go stale.
+   */
   isRealtime(): boolean {
-    return this.realtime;
+    return this.subscribed && ( this.pb.realtime?.isConnected ?? false );
+  }
+
+  /** How long ago the tracked state was last rebuilt from Beszel, in ms. */
+  dataAgeMs(): number {
+    return this.lastReconcileAt === 0 ? Number.POSITIVE_INFINITY : Date.now() - this.lastReconcileAt;
+  }
+
+  /**
+   * Top the tracked state up if it has aged past `maxAgeMs`.
+   *
+   * Reads call this so a report is never showing whatever the last background
+   * sweep left behind — which could be five minutes old when realtime is
+   * carrying the load. Cheap when data is already fresh, and it doubles as an
+   * extra chance to notice a transition the feed missed.
+   */
+  async ensureFresh( maxAgeMs: number = FRESHNESS_TARGET_MS ): Promise<void> {
+    if ( this.dataAgeMs() <= maxAgeMs ) return;
+    await this.reconcile();
   }
 
   isRunning(): boolean {
@@ -243,6 +283,7 @@ export class BeszelMonitor {
     try {
       const systems = await beszel_getSystems( this.pb );
       this.client.BESZEL_SYSTEMS = systems;
+      this.lastReconcileAt = Date.now();
 
       for ( const system of systems ) this.handleRecord( system );
 

@@ -82,7 +82,7 @@ async function execute (
 
   switch ( int.options.getSubcommand() ) {
     case 'status':
-      return await int.reply( { embeds: [buildMonitorEmbed( monitor )] } );
+      return await handleStatus( monitor, int );
 
     case 'mute':
       return await handleMute( monitor, int );
@@ -96,6 +96,23 @@ async function execute (
         flags: MessageFlags.Ephemeral
       } );
   }
+}
+
+async function handleStatus ( monitor: BeszelMonitor, int: ChatInputCommandInteraction ): Promise<unknown> {
+  // Refreshing hits Beszel, so ack first — the 3s interaction deadline is not
+  // worth gambling on someone else's network.
+  await int.deferReply();
+
+  try {
+    await monitor.ensureFresh();
+  }
+  catch ( err ) {
+    // A failed refresh is not a failed command; report the last known state and
+    // let the embed's age field show how old it is.
+    Utility.log( 'warn', `[BESZEL-MON] Status refresh failed: ${ ( err as Error ).message }` );
+  }
+
+  return await int.editReply( { embeds: [buildMonitorEmbed( monitor )] } );
 }
 
 async function handleMute ( monitor: BeszelMonitor, int: ChatInputCommandInteraction ): Promise<unknown> {
@@ -131,7 +148,6 @@ export function buildMonitorEmbed ( monitor: BeszelMonitor ): EmbedBuilder {
   const systems = [...states.values()].sort( ( a, b ) => a.name.localeCompare( b.name ) );
 
   const down = systems.filter( s => s.status !== 'up' ).length;
-  const feed = monitor.isRealtime() ? 'Realtime subscription' : 'Polling (EventSource unavailable)';
   const muted = monitor.isMuted()
     ? `Muted for another ${ Math.ceil( monitor.muteRemainingMs() / 60_000 ) }m`
     : 'Active';
@@ -140,11 +156,14 @@ export function buildMonitorEmbed ( monitor: BeszelMonitor ): EmbedBuilder {
     .setTitle( '📡 Beszel State Monitor' )
     .setColor( down > 0 ? 0xFF0000 : 0x00FF00 )
     .addFields(
-      { name: 'Feed', value: feed, inline: true },
+      { name: 'Feed', value: describeFeed( monitor ), inline: true },
       { name: 'Alerts', value: muted, inline: true },
       { name: 'Tracking', value: `${ systems.length } system${ systems.length === 1 ? '' : 's' }`, inline: true }
     )
-    .setFooter( { text: `Beszel Monitoring System • Stardate ${ Utility.stardate() }` } )
+    .setFooter( {
+      text: `Beszel Monitoring System • data ${ describeAge( monitor.dataAgeMs() ) }`
+        + ` • Stardate ${ Utility.stardate() }`
+    } )
     .setTimestamp();
 
   if ( systems.length > 0 ) {
@@ -155,6 +174,27 @@ export function buildMonitorEmbed ( monitor: BeszelMonitor ): EmbedBuilder {
   }
 
   return embed;
+}
+
+/**
+ * Report what is actually carrying detection right now.
+ *
+ * The distinction matters: with the socket alive a change surfaces in seconds,
+ * without it detection falls back to the reconcile sweep. Claiming realtime when
+ * the socket has died would hide that.
+ */
+function describeFeed ( monitor: BeszelMonitor ): string {
+  if ( monitor.isRealtime() ) return 'Realtime (live)';
+  return typeof globalThis.EventSource === 'function'
+    ? 'Polling — realtime socket down'
+    : 'Polling — EventSource unavailable';
+}
+
+function describeAge ( ms: number ): string {
+  if ( !Number.isFinite( ms ) ) return 'never refreshed';
+  if ( ms < 1000 ) return 'just now';
+  if ( ms < 60_000 ) return `${ Math.round( ms / 1000 ) }s old`;
+  return `${ Math.round( ms / 60_000 ) }m old`;
 }
 
 function describeSystem ( system: TrackedSystem ): string {
