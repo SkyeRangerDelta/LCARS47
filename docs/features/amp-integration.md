@@ -59,7 +59,7 @@ Live statistics for one instance. Open to all guild members.
 - `instance` (required, autocomplete) — pick from the instance list. Choices show
   the current state, so the picker doubles as a quick overview.
 
-The embed reports state, uptime, module, address and disk usage, followed by
+The embed reports state, uptime, module and disk usage, followed by
 whatever metrics that instance's module publishes — CPU, memory and player count
 for a Minecraft server, something different for another module. State is read
 live from AMP, never from the cache behind autocomplete.
@@ -192,6 +192,9 @@ Create a **dedicated API user** in the AMP panel:
 - **`/amp status` works on offline instances too.** There is no live daemon to
   query, so it reports what the controller knows — state, module, disk usage —
   rather than surfacing AMP's "Instance Unavailable" as an error.
+- **No connection details are ever shown.** `/amp status` is open to everyone,
+  and the address AMP reports is the listening socket rather than anything a
+  player connects to. Connect details stay something you hand out deliberately.
 - **The instance list is cached for 60 seconds.** Autocomplete has a hard ~3
   second deadline that cannot be deferred, so that path is served from cache and
   never triggers a network round trip on the critical path. Live state is always

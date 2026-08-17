@@ -17,13 +17,20 @@ export interface AMPMetric {
   shortName?: string;
 }
 
-/** A published application endpoint (e.g. the game server's connect address). */
-export interface AMPEndpoint {
-  displayName: string;
-  endpoint: string;
-}
-
-/** A game server instance managed by the AMP controller. */
+/**
+ * A game server instance managed by the AMP controller.
+ *
+ * Deliberately carries **no connection details** — no IP, port, published
+ * endpoint or scheme. AMP reports the listening socket (`0.0.0.0:61230`), which
+ * is not what anyone connects to, and the real connect details are handed out
+ * selectively rather than published. `/amp status` is open to every guild
+ * member, so the safe thing is for the data never to reach the DTO at all
+ * rather than relying on nobody rendering it.
+ *
+ * If a connection display is ever wanted, it needs a deliberate design with a
+ * public host mapping and an access decision — not a field quietly reinstated
+ * here.
+ */
 export interface AMPInstance {
   instanceId: string;
   instanceName: string;
@@ -35,12 +42,8 @@ export interface AMPInstance {
   running: boolean;
   appState: AMPState;
   suspended: boolean;
-  ip?: string;
-  port?: number;
-  isHttps: boolean;
   diskUsageMB?: number;
   metrics: Record<string, AMPMetric>;
-  endpoints: AMPEndpoint[];
   tags: string[];
 }
 
@@ -68,6 +71,8 @@ export type AMPErrorKind =
   | 'http'          // genuine non-2xx, usually a reverse-proxy 502/504
   | 'unauthorized'  // AMP rejected the session or the account lacks a permission
   | 'unavailable'   // the instance exists but its daemon is down, so the proxy cannot reach it
+  | 'busy'          // another operator already has a control action running on this instance
+  | 'rate-limited'  // AMP's brute-force protection is refusing logins for now
   | 'rejected'      // AMP understood the request and refused it
   | 'not-found'     // no such instance
   | 'malformed'     // body was not JSON (proxy error page, truncated response)
@@ -94,13 +99,12 @@ export interface RawAMPInstance {
   Running?: boolean;
   AppState?: number;
   Suspended?: boolean;
-  IsHTTPS?: boolean;
-  IP?: string;
-  Port?: number;
   DiskUsageMB?: number;
   Metrics?: Record<string, RawAMPMetric>;
-  ApplicationEndpoints?: { DisplayName?: string; Endpoint?: string }[];
   Tags?: string[];
+  // AMP also sends IP, Port, IsHTTPS and ApplicationEndpoints. They are
+  // intentionally not declared here so they cannot be mapped by accident —
+  // see the note on AMPInstance.
 }
 
 export interface RawAMPTarget {

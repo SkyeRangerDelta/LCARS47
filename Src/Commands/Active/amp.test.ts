@@ -11,11 +11,7 @@ const INSTANCE: AMPInstance = {
   running: true,
   appState: 20,
   suspended: false,
-  ip: '10.0.0.120',
-  port: 25565,
-  isHttps: false,
   metrics: {},
-  endpoints: [],
   tags: []
 };
 
@@ -31,13 +27,33 @@ const fieldValue = ( embed: ReturnType<typeof buildStatusEmbed>, name: string ):
   embed.data.fields?.find( f => f.name === name )?.value;
 
 describe( 'buildStatusEmbed', () => {
-  it( 'reports the state, uptime and address', () => {
+  it( 'reports the state and uptime', () => {
     const embed = buildStatusEmbed( INSTANCE, status() );
 
     expect( embed.data.title ).toBe( '🟢 Minecraft' );
     expect( fieldValue( embed, 'State' ) ).toBe( 'Ready' );
     expect( fieldValue( embed, 'Uptime' ) ).toBe( '4h 35m' );
-    expect( fieldValue( embed, 'Address' ) ).toBe( '`10.0.0.120:25565`' );
+  } );
+
+  it( 'never publishes connection details', () => {
+    // /amp status is open to every guild member, and AMP reports the listening
+    // socket rather than anything anyone actually connects to. Connect details
+    // are handed out selectively, so nothing here may leak them.
+    const embed = buildStatusEmbed( INSTANCE, status( {
+      metrics: { 'CPU Usage': metric( { rawValue: 5, maxValue: 100, percent: 5, units: '%' } ) }
+    } ) );
+
+    // Title, description and fields only — the embed's own timestamp contains
+    // colons and would otherwise trip the host:port check.
+    const rendered = [
+      embed.data.title ?? '',
+      embed.data.description ?? '',
+      ...( embed.data.fields ?? [] ).flatMap( f => [f.name, f.value] )
+    ].join( ' | ' );
+
+    expect( rendered ).not.toMatch( /address|endpoint/i );
+    expect( rendered ).not.toMatch( /\b\d{1,3}(\.\d{1,3}){3}\b/ );   // no IPv4
+    expect( rendered ).not.toMatch( /[\w.]+:\d{2,5}(?!\d)/ );        // no host:port pair
   } );
 
   it( 'colours a Ready instance green and a Failed one red', () => {

@@ -41,9 +41,18 @@ export function isTransitional( state: AMPState ): boolean {
   return TRANSITIONAL.has( state );
 }
 
+/**
+ * Icon for an *application* state.
+ *
+ * Stopped and Sleeping are blue rather than black: they describe a game server
+ * that is not running inside an instance that is. That is a different situation
+ * from the instance being switched off entirely, which instanceState() renders
+ * black, and the two must not look alike — one is a click away from serving
+ * players, the other needs the machine brought up first.
+ */
 export function stateEmoji( state: AMPState ): string {
   if ( state === 20 ) return '🟢';
-  if ( state === 0 || state === 50 ) return '⚫';
+  if ( state === 0 || state === 50 ) return '🔵';
   if ( state === 100 || state === 200 ) return '🔴';
   if ( isTransitional( state ) || state === 60 || state === 80 || state === 250 ) return '🟡';
   return '⚪';
@@ -51,7 +60,7 @@ export function stateEmoji( state: AMPState ): string {
 
 export function stateColour( state: AMPState ): number {
   if ( state === 20 ) return 0x00FF00;
-  if ( state === 0 || state === 50 ) return 0x808080;
+  if ( state === 0 || state === 50 ) return 0x3498DB;
   if ( state === 100 || state === 200 ) return 0xFF0000;
   if ( isTransitional( state ) || state === 60 || state === 80 || state === 250 ) return 0xFFA500;
   return 0x5865F2;

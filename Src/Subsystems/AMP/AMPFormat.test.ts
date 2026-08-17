@@ -54,9 +54,13 @@ describe( 'stateEmoji / stateColour', () => {
     expect( stateColour( 20 ) ).toBe( 0x00FF00 );
   } );
 
-  it( 'buckets Stopped and Sleeping as grey', () => {
-    expect( stateEmoji( 0 ) ).toBe( '⚫' );
-    expect( stateColour( 50 ) ).toBe( 0x808080 );
+  it( 'buckets a stopped application as blue, not black', () => {
+    // Black is reserved for an instance that is switched off entirely. A game
+    // server that is merely stopped inside a running instance is one command
+    // away from serving players, so the two must not look alike.
+    expect( stateEmoji( 0 ) ).toBe( '🔵' );
+    expect( stateEmoji( 50 ) ).toBe( '🔵' );
+    expect( stateColour( 0 ) ).toBe( 0x3498DB );
   } );
 
   it( 'buckets Failed and Suspended as red', () => {
@@ -102,8 +106,15 @@ describe( 'instanceState', () => {
   } );
 
   it( 'distinguishes a running instance with a stopped application from an offline one', () => {
-    expect( instanceState( true, 0 ).label ).toBe( 'Stopped' );
-    expect( instanceState( false, 0 ).label ).toBe( 'Offline' );
+    const idle = instanceState( true, 0 );
+    const off = instanceState( false, 0 );
+
+    expect( idle.label ).toBe( 'Stopped' );
+    expect( off.label ).toBe( 'Offline' );
+
+    // The whole point: they must be told apart at a glance in a list.
+    expect( idle.emoji ).not.toBe( off.emoji );
+    expect( idle.colour ).not.toBe( off.colour );
   } );
 } );
 

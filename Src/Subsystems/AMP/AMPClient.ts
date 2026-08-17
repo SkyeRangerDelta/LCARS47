@@ -29,7 +29,6 @@
 import Utility from '../Utilities/SysUtils.js';
 import type {
   AMPActionResult,
-  AMPEndpoint,
   AMPErrorKind,
   AMPInstance,
   AMPMetric,
@@ -50,6 +49,45 @@ const USER_AGENT = 'LCARS47 (https://pldyn.net)';
 
 /** AMP hands this back instead of a session id when authentication failed. */
 const NULL_SESSION = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * How long a control action may hold an instance before its lock is treated as
+ * abandoned. Generous next to the ~30s a command actually needs, so it only ever
+ * fires for something genuinely stuck.
+ */
+const ACTION_LOCK_TTL_MS = 5 * 60_000;
+
+/**
+ * How long a directly observed state overrides the controller's aggregate.
+ *
+ * Anything we learned by asking an instance itself is true; the aggregate is a
+ * snapshot that can be tens of seconds behind. Without this overlay a list read
+ * straight after a start would still show the instance offline, because the
+ * controller has not caught up yet. Two minutes is far longer than the lag has
+ * ever measured, and the overlay is refreshed by every probe anyway.
+ */
+const OBSERVED_TTL_MS = 2 * 60_000;
+
+/**
+ * How long a per-instance proxy session is assumed usable.
+ *
+ * Much longer than the controller session's five minutes, and deliberately so.
+ * On a controller where the ADS session does not proxy, every instance needs its
+ * own login — so a short TTL means re-logging in to *each* instance every few
+ * minutes, which is what tripped AMP's brute-force protection. Expiry is handled
+ * reactively instead: a rejected session costs one extra round trip, which is
+ * far cheaper than pre-emptively re-authenticating on a timer.
+ */
+const INSTANCE_SESSION_TTL_MS = 30 * 60_000;
+
+/**
+ * How long to stop attempting logins after AMP tells us to back off. Its own
+ * wording is "wait several minutes".
+ */
+const LOGIN_COOLDOWN_MS = 5 * 60_000;
+
+/** AMP's brute-force protection, which arrives as an ordinary failed login. */
+const RATE_LIMIT_PATTERN = /not accepting login requests|wait several minutes|too many/i;
 
 export interface AMPClientConfig {
   /** Controller base URL, e.g. https://amp.pldyn.net */
@@ -100,6 +138,18 @@ export class AMPClient {
 
   private readonly instanceSessions = new Map<string, InstanceSession>();
   private instanceCache: { at: number; items: AMPInstance[] } | null = null;
+
+  private readonly inFlight = new Map<string, { label: string; at: number; token: number }>();
+  private lockCounter = 0;
+
+  /** Directly observed states, which outrank the controller's stale aggregate. */
+  private readonly observed = new Map<string, { running: boolean; appState: number; at: number }>();
+
+  /** In-flight per-instance logins, so concurrent callers share one attempt. */
+  private readonly instanceLogins = new Map<string, Promise<string>>();
+  /** Serialises logins across instances so they never go out as a burst. */
+  private loginQueue: Promise<void> = Promise.resolve();
+  private loginCooldownUntil = 0;
 
   constructor( config: AMPClientConfig ) {
     this.config = config;
@@ -191,6 +241,10 @@ export class AMPClient {
       if ( /two.?factor|2fa|authenticator/i.test( reason ) ) {
         throw new AMPError( 'auth-failed',
           `AMP account requires two-factor authentication (${ reason }). Create a dedicated API user without 2FA.` );
+      }
+      if ( RATE_LIMIT_PATTERN.test( reason ) ) {
+        // Same throttle, same cooldown — the controller login is not exempt.
+        throw this.loginFailure( reason );
       }
       throw new AMPError( 'auth-failed', reason );
     }
@@ -362,7 +416,7 @@ export class AMPClient {
     const path = `ADSModule/Servers/${ instance.instanceId }/API/${ module }/${ method }`;
     const cached = this.instanceSessions.get( instance.instanceId );
 
-    if ( cached?.mode === 'instance' && Date.now() - cached.lastCallAt <= this.sessionTtlMs ) {
+    if ( cached?.mode === 'instance' && Date.now() - cached.lastCallAt <= INSTANCE_SESSION_TTL_MS ) {
       try {
         const out = await this.request<T>( path, params, cached.sessionId );
         cached.lastCallAt = Date.now();
@@ -391,30 +445,94 @@ export class AMPClient {
     return await this.request<T>( path, params, instanceSession );
   }
 
+  /**
+   * Log in to one instance through the proxy.
+   *
+   * Two layers of restraint, both learned the hard way. Concurrent callers for
+   * the *same* instance share one login rather than racing, and logins to
+   * *different* instances are serialised into a queue instead of going out as a
+   * burst — a fan-out like /amp list hydrating four servers at once otherwise
+   * fires four simultaneous logins, which AMP's brute-force protection quite
+   * reasonably treats as an attack.
+   */
   private async loginInstance( instanceId: string ): Promise<string> {
-    const result = await this.request<RawAMPLoginResult>(
-      `ADSModule/Servers/${ instanceId }/API/Core/Login`,
-      {
-        username: this.config.username,
-        password: this.config.password,
-        token: '',
-        rememberMe: false
-      },
-      ''
-    );
+    const inProgress = this.instanceLogins.get( instanceId );
+    if ( inProgress != null ) return await inProgress;
 
-    if ( result.success !== true || result.sessionID == null || result.sessionID === NULL_SESSION ) {
-      throw new AMPError( 'unauthorized',
-        result.resultReason ?? `AMP refused a per-instance login for ${ instanceId }.` );
-    }
+    const attempt = this.queueLogin( async () => {
+      // The queue may have been long; re-check before spending a request.
+      const fresh = this.instanceSessions.get( instanceId );
+      if ( fresh?.mode === 'instance' && Date.now() - fresh.lastCallAt <= INSTANCE_SESSION_TTL_MS ) {
+        return fresh.sessionId;
+      }
 
-    this.instanceSessions.set( instanceId, {
-      sessionId: result.sessionID,
-      lastCallAt: Date.now(),
-      mode: 'instance'
+      this.assertLoginAllowed();
+
+      const result = await this.request<RawAMPLoginResult>(
+        `ADSModule/Servers/${ instanceId }/API/Core/Login`,
+        {
+          username: this.config.username,
+          password: this.config.password,
+          token: '',
+          rememberMe: false
+        },
+        ''
+      );
+
+      if ( result.success !== true || result.sessionID == null || result.sessionID === NULL_SESSION ) {
+        throw this.loginFailure( result.resultReason
+          ?? `AMP refused a per-instance login for ${ instanceId }.` );
+      }
+
+      this.instanceSessions.set( instanceId, {
+        sessionId: result.sessionID,
+        lastCallAt: Date.now(),
+        mode: 'instance'
+      } );
+
+      return result.sessionID;
     } );
 
-    return result.sessionID;
+    this.instanceLogins.set( instanceId, attempt );
+
+    try {
+      return await attempt;
+    }
+    finally {
+      this.instanceLogins.delete( instanceId );
+    }
+  }
+
+  /** Run a login one at a time, whatever happened to the previous one. */
+  private async queueLogin<T>( fn: () => Promise<T> ): Promise<T> {
+    const run = this.loginQueue.then( fn, fn );
+    this.loginQueue = run.then( () => undefined, () => undefined );
+    return await run;
+  }
+
+  /** Refuse to make things worse while AMP has told us to back off. */
+  private assertLoginAllowed(): void {
+    const remaining = this.loginCooldownUntil - Date.now();
+    if ( remaining <= 0 ) return;
+
+    throw new AMPError( 'rate-limited',
+      `AMP is refusing logins for another ${ Math.ceil( remaining / 1000 ) }s.` );
+  }
+
+  /**
+   * Classify a rejected login, and start a cooldown if AMP is throttling us.
+   * Continuing to hammer an auth server that has already said no is how a
+   * temporary block becomes a long one.
+   */
+  private loginFailure( reason: string ): AMPError {
+    if ( RATE_LIMIT_PATTERN.test( reason ) ) {
+      this.loginCooldownUntil = Date.now() + LOGIN_COOLDOWN_MS;
+      Utility.log( 'warn',
+        `[AMP] Auth server is throttling us; pausing logins for ${ LOGIN_COOLDOWN_MS / 60_000 } minutes.` );
+      return new AMPError( 'rate-limited', reason );
+    }
+
+    return new AMPError( 'unauthorized', reason );
   }
 
   // -- Instances ------------------------------------------------------------
@@ -452,6 +570,8 @@ export class AMPClient {
       // The controller lists itself as an instance. Stopping it takes the whole panel offline.
       .filter( raw => raw.InstanceID != null && raw.Module !== 'ADS' )
       .map( raw => AMPClient.toInstance( raw ) )
+      // Anything we have seen first-hand beats the controller's snapshot.
+      .map( instance => this.applyObserved( instance ) )
       .sort( ( a, b ) => a.friendlyName.localeCompare( b.friendlyName ) );
 
     this.instanceCache = { at: Date.now(), items };
@@ -478,11 +598,96 @@ export class AMPClient {
   async getInstanceStatus( instance: AMPInstance ): Promise<AMPStatus> {
     const raw = await this.callInstance<RawAMPStatus>( instance, 'Core', 'GetStatus' );
 
-    return {
+    const status: AMPStatus = {
       state: raw.State ?? -1,
       uptime: raw.Uptime ?? '',
       metrics: AMPClient.toMetrics( raw.Metrics )
     };
+
+    // Getting an answer at all proves the daemon is up, and the state is live.
+    this.noteObserved( instance.instanceId, true, status.state );
+
+    return status;
+  }
+
+  /**
+   * Record something we learned by asking an instance directly.
+   *
+   * Every such observation outranks ADSModule/GetInstances until the aggregate
+   * catches up, so a list or picker read straight after a control action shows
+   * what actually happened rather than the controller's stale snapshot.
+   */
+  private noteObserved( instanceId: string, running: boolean, appState: number ): void {
+    this.observed.set( instanceId, { running, appState, at: Date.now() } );
+  }
+
+  private applyObserved( instance: AMPInstance ): AMPInstance {
+    const seen = this.observed.get( instance.instanceId );
+    if ( seen == null ) return instance;
+
+    if ( Date.now() - seen.at > OBSERVED_TTL_MS ) {
+      this.observed.delete( instance.instanceId );
+      return instance;
+    }
+
+    return { ...instance, running: seen.running, appState: seen.appState };
+  }
+
+  // -- Action locking -------------------------------------------------------
+
+  /**
+   * Run a control action with exclusive access to one instance.
+   *
+   * The lock has to cover the caller's *whole* operation, not just the API call
+   * that starts it. AMP accepts a start or stop immediately and works on it in
+   * the background, so the command that issued it then polls for up to thirty
+   * seconds — and that polling window is precisely when a second operator would
+   * otherwise be able to issue a contradictory action against a server that is
+   * mid-transition.
+   *
+   * Covering the pre-flight status read too closes the check-then-act gap: the
+   * state a command decides on cannot change under it.
+   *
+   * @param label - Human-readable description of who is doing what, used in the
+   *   refusal message for whoever arrives second.
+   */
+  async withInstanceLock<T>(
+    instance: AMPInstance,
+    label: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const held = this.inFlight.get( instance.instanceId );
+
+    if ( held != null ) {
+      if ( Date.now() - held.at < ACTION_LOCK_TTL_MS ) {
+        throw new AMPError( 'busy', `${ instance.friendlyName } is already ${ held.label }.` );
+      }
+      // Nothing should outlive the TTL, but a permanently stuck lock would be a
+      // worse failure than the race it prevents.
+      Utility.log( 'warn',
+        `[AMP] Clearing a stale action lock on ${ instance.friendlyName } (${ held.label }).` );
+    }
+
+    const token = ++this.lockCounter;
+    this.inFlight.set( instance.instanceId, { label, at: Date.now(), token } );
+
+    try {
+      return await fn();
+    }
+    finally {
+      // Only release our own lock. If this one was taken over after being
+      // declared stale, the newer holder must keep it.
+      if ( this.inFlight.get( instance.instanceId )?.token === token ) {
+        this.inFlight.delete( instance.instanceId );
+      }
+    }
+  }
+
+  /** What is currently running against this instance, if anything. */
+  busyWith( instance: AMPInstance ): string | null {
+    const held = this.inFlight.get( instance.instanceId );
+    if ( held == null || Date.now() - held.at >= ACTION_LOCK_TTL_MS ) return null;
+    return held.label;
   }
 
   // -- Instance control (the AMP daemon) ------------------------------------
@@ -532,7 +737,11 @@ export class AMPClient {
       return await this.getInstanceStatus( instance );
     }
     catch ( err ) {
-      if ( err instanceof AMPError && err.kind === 'unavailable' ) return null;
+      if ( err instanceof AMPError && err.kind === 'unavailable' ) {
+        // Equally authoritative: the proxy refusing means the daemon is down.
+        this.noteObserved( instance.instanceId, false, -1 );
+        return null;
+      }
       throw err;
     }
   }
@@ -599,12 +808,8 @@ export class AMPClient {
     return out;
   }
 
+  /** Connection details are deliberately not mapped — see the note on AMPInstance. */
   private static toInstance( raw: RawAMPInstance ): AMPInstance {
-    const endpoints: AMPEndpoint[] = ( raw.ApplicationEndpoints ?? [] ).map( e => ( {
-      displayName: e.DisplayName ?? '',
-      endpoint: e.Endpoint ?? ''
-    } ) );
-
     const instanceName = raw.InstanceName ?? '';
 
     return {
@@ -618,12 +823,8 @@ export class AMPClient {
       running: raw.Running ?? false,
       appState: raw.AppState ?? -1,
       suspended: raw.Suspended ?? false,
-      ip: raw.IP,
-      port: raw.Port,
-      isHttps: raw.IsHTTPS ?? false,
       diskUsageMB: raw.DiskUsageMB,
       metrics: AMPClient.toMetrics( raw.Metrics ),
-      endpoints,
       tags: raw.Tags ?? []
     };
   }

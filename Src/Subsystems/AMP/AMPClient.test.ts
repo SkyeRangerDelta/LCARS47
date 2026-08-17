@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi, type Mock } from 'vitest';
 import { AMPClient, type AMPClientConfig } from './AMPClient.js';
 import type { AMPInstance } from './AMPInterfaces.js';
 
@@ -35,13 +35,14 @@ const INSTANCE: AMPInstance = {
   running: true,
   appState: 20,
   suspended: false,
-  isHttps: false,
   metrics: {},
-  endpoints: [],
   tags: []
 };
 
-let fetchMock: ReturnType<typeof vi.fn>;
+/** Typed so mockImplementation can legitimately return a promise. */
+type FetchStub = ( url: string, init: unknown ) => Promise<Response>;
+
+let fetchMock: Mock<FetchStub>;
 
 function makeClient( over: Partial<AMPClientConfig> = {} ): AMPClient {
   return new AMPClient( {
@@ -77,7 +78,7 @@ afterAll( () => {
 } );
 
 beforeEach( () => {
-  fetchMock = vi.fn();
+  fetchMock = vi.fn<FetchStub>();
 } );
 
 // -- Tests ------------------------------------------------------------------
@@ -324,6 +325,275 @@ describe( 'AMPClient control layers', () => {
   } );
 } );
 
+describe( 'AMPClient action locking', () => {
+  // AMP accepts a control action immediately and works on it in the background,
+  // so the command that issued it polls for ~30s afterwards. The lock has to
+  // cover that whole window, not just the API call.
+
+  const never = async (): Promise<never> => await new Promise( () => { /* held open */ } );
+
+  it( 'refuses a second action while one is running', async () => {
+    const amp = makeClient();
+
+    void amp.withInstanceLock( INSTANCE, 'being started by Skye', never );
+    await Promise.resolve();
+
+    await expect( amp.withInstanceLock( INSTANCE, 'being stopped by Someone', never ) )
+      .rejects.toMatchObject( { kind: 'busy' } );
+  } );
+
+  it( 'names the instance and the holder in the refusal', async () => {
+    const amp = makeClient();
+
+    void amp.withInstanceLock( INSTANCE, 'being started by Skye', never );
+    await Promise.resolve();
+
+    await expect( amp.withInstanceLock( INSTANCE, 'x', never ) )
+      .rejects.toThrow( 'Minecraft is already being started by Skye.' );
+  } );
+
+  it( 'holds across the whole operation, not just the first call', async () => {
+    const amp = makeClient();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>( r => { release = r; } );
+
+    const running = amp.withInstanceLock( INSTANCE, 'being started by Skye', async () => await gate );
+    await Promise.resolve();
+
+    // Mid-poll: still locked.
+    await expect( amp.withInstanceLock( INSTANCE, 'x', never ) ).rejects.toMatchObject( { kind: 'busy' } );
+
+    release();
+    await running;
+
+    // Released once the operation finishes.
+    await expect( amp.withInstanceLock( INSTANCE, 'y', () => Promise.resolve( 'ok' ) ) ).resolves.toBe( 'ok' );
+  } );
+
+  it( 'releases the lock even when the operation throws', async () => {
+    const amp = makeClient();
+
+    await expect( amp.withInstanceLock( INSTANCE, 'x', async () => {
+      await Promise.resolve();
+      throw new Error( 'boom' );
+    } ) ).rejects.toThrow( 'boom' );
+
+    expect( amp.busyWith( INSTANCE ) ).toBeNull();
+    await expect( amp.withInstanceLock( INSTANCE, 'y', () => Promise.resolve( 'ok' ) ) ).resolves.toBe( 'ok' );
+  } );
+
+  it( 'locks per instance, not globally', async () => {
+    const amp = makeClient();
+    const other = { ...INSTANCE, instanceId: 'def-456', friendlyName: 'Valheim' };
+
+    void amp.withInstanceLock( INSTANCE, 'being started by Skye', never );
+    await Promise.resolve();
+
+    await expect( amp.withInstanceLock( other, 'being started by Skye', () => Promise.resolve( 'ok' ) ) )
+      .resolves.toBe( 'ok' );
+  } );
+
+  it( 'reports what is holding an instance', async () => {
+    const amp = makeClient();
+
+    expect( amp.busyWith( INSTANCE ) ).toBeNull();
+
+    void amp.withInstanceLock( INSTANCE, 'being stopped by Skye', never );
+    await Promise.resolve();
+
+    expect( amp.busyWith( INSTANCE ) ).toBe( 'being stopped by Skye' );
+  } );
+} );
+
+describe( 'AMPClient login restraint', () => {
+  // On a controller where the ADS session does not proxy, every instance needs
+  // its own login. A fan-out like /amp list hydrating several servers at once
+  // therefore fires several simultaneous logins, which AMP's brute-force
+  // protection treats as an attack.
+
+  const RATE_LIMITED = {
+    success: false,
+    resultReason: 'The auth server at https://amp.pldyn.net/ is not accepting login requests from you at this time. Please wait several minutes before trying again.'
+  };
+
+  const statusOk = { State: 20, Uptime: '01:00:00', Metrics: {} };
+
+  function instance( id: string ): AMPInstance {
+    return { ...INSTANCE, instanceId: id, instanceName: id.toUpperCase(), friendlyName: id };
+  }
+
+  // The controller login and a per-instance login both end in /API/Core/Login;
+  // only the /Servers/ segment tells them apart.
+  const isAdsLogin = ( u: string ): boolean => u === 'https://amp.test/API/Core/Login';
+  const isInstanceLogin = ( u: string ): boolean => u.includes( '/Servers/' ) && u.endsWith( '/Core/Login' );
+  const sessionOf = ( init: unknown ): string =>
+    ( JSON.parse( ( init as { body: string } ).body ) as { SESSIONID: string } ).SESSIONID;
+
+  const countInstanceLogins = (): number =>
+    fetchMock.mock.calls.filter( c => isInstanceLogin( String( c[0] ) ) ).length;
+
+  it( 'shares one login between concurrent probes of the same instance', async () => {
+    fetchMock.mockImplementation( async ( url: string, init: unknown ): Promise<Response> => {
+      await Promise.resolve();
+      if ( isAdsLogin( url ) ) return res( LOGIN_OK );
+      if ( isInstanceLogin( url ) ) return res( INSTANCE_LOGIN_OK );
+      // Only the per-instance session is accepted through the proxy.
+      return res( sessionOf( init ) === 'inst-1' ? statusOk : UNAUTHORIZED );
+    } );
+
+    const amp = makeClient();
+
+    await Promise.all( [
+      amp.probeInstance( INSTANCE ),
+      amp.probeInstance( INSTANCE )
+    ] );
+
+    expect( countInstanceLogins() ).toBe( 1 );
+  } );
+
+  it( 'does not fire logins for different instances simultaneously', async () => {
+    let concurrent = 0;
+    let peak = 0;
+
+    fetchMock.mockImplementation( async ( url: string, init: unknown ): Promise<Response> => {
+      if ( isAdsLogin( url ) ) return res( LOGIN_OK );
+
+      if ( isInstanceLogin( url ) ) {
+        concurrent++;
+        peak = Math.max( peak, concurrent );
+        await new Promise( r => setTimeout( r, 5 ) );
+        concurrent--;
+        return res( INSTANCE_LOGIN_OK );
+      }
+
+      return res( sessionOf( init ) === 'inst-1' ? statusOk : UNAUTHORIZED );
+    } );
+
+    const amp = makeClient();
+    await amp.authenticate();
+
+    await Promise.all( ['a', 'b', 'c', 'd'].map( async id => await amp.probeInstance( instance( id ) ) ) );
+
+    // Four instances, four logins — but never two at once. The simultaneous
+    // burst is what AMP's brute-force protection reacted to.
+    expect( countInstanceLogins() ).toBe( 4 );
+    expect( peak ).toBe( 1 );
+  } );
+
+  it( 'classifies AMP throttling as rate-limited rather than a bad password', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( UNAUTHORIZED ) )
+      .mockResolvedValueOnce( res( RATE_LIMITED ) );
+
+    await expect( makeClient().getInstanceStatus( INSTANCE ) )
+      .rejects.toMatchObject( { kind: 'rate-limited' } );
+  } );
+
+  it( 'stops attempting logins once throttled, instead of making it worse', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( UNAUTHORIZED ) )
+      .mockResolvedValueOnce( res( RATE_LIMITED ) );
+
+    const amp = makeClient();
+    await expect( amp.getInstanceStatus( INSTANCE ) ).rejects.toMatchObject( { kind: 'rate-limited' } );
+
+    const callsAfterThrottle = fetchMock.mock.calls.length;
+    fetchMock.mockResolvedValue( res( UNAUTHORIZED ) );
+
+    // A second attempt should fail from the cooldown without another login.
+    await expect( amp.getInstanceStatus( instance( 'other' ) ) )
+      .rejects.toMatchObject( { kind: 'rate-limited' } );
+
+    const logins = fetchMock.mock.calls
+      .slice( callsAfterThrottle )
+      .filter( c => String( c[0] ).endsWith( '/Core/Login' ) );
+
+    expect( logins ).toHaveLength( 0 );
+  } );
+
+  it( 'reuses a per-instance session well past the controller session TTL', async () => {
+    // Short instance TTLs meant re-logging in to every instance every few
+    // minutes, which is what caused the throttle in the first place.
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( UNAUTHORIZED ) )
+      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )
+      .mockResolvedValue( res( statusOk ) );
+
+    const amp = makeClient( { sessionTtlMs: 0 } );
+    await amp.getInstanceStatus( INSTANCE );
+
+    const before = fetchMock.mock.calls.length;
+    await amp.getInstanceStatus( INSTANCE );
+
+    const logins = fetchMock.mock.calls
+      .slice( before )
+      .filter( c => String( c[0] ).endsWith( '/Core/Login' ) );
+
+    expect( logins ).toHaveLength( 0 );
+  } );
+} );
+
+describe( 'AMPClient observed-state overlay', () => {
+  // The controller's aggregate lags by tens of seconds, so anything learned by
+  // asking an instance directly has to outrank it — otherwise a list read
+  // straight after a control action still shows the pre-action state.
+
+  const targets = [ { AvailableInstances: [
+    { InstanceID: 'abc-123', InstanceName: 'MC01', FriendlyName: 'Minecraft',
+      Module: 'MinecraftModule', Running: false, AppState: -1 }
+  ] } ];
+
+  it( 'lets a direct observation override a stale aggregate', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( { State: 20, Uptime: '01:00:00', Metrics: {} } ) )  // probe says up
+      .mockResolvedValue( res( targets ) );                                            // aggregate says down
+
+    const amp = makeClient();
+    await amp.probeInstance( INSTANCE );
+
+    const [listed] = await amp.listInstances( { force: true } );
+
+    expect( listed.running ).toBe( true );
+    expect( listed.appState ).toBe( 20 );
+  } );
+
+  it( 'records an unreachable instance as offline', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValueOnce( res( {
+        Title: 'Instance Unavailable',
+        Message: 'The requested instance is not available at this time.',
+        StackTrace: null
+      } ) )
+      .mockResolvedValue( res( [ { AvailableInstances: [
+        { InstanceID: 'abc-123', InstanceName: 'MC01', FriendlyName: 'Minecraft',
+          Module: 'MinecraftModule', Running: true, AppState: 20 }
+      ] } ] ) );
+
+    const amp = makeClient();
+    await amp.probeInstance( INSTANCE );
+
+    const [listed] = await amp.listInstances( { force: true } );
+
+    expect( listed.running ).toBe( false );
+  } );
+
+  it( 'leaves instances it has never probed alone', async () => {
+    fetchMock
+      .mockResolvedValueOnce( res( LOGIN_OK ) )
+      .mockResolvedValue( res( targets ) );
+
+    const [listed] = await makeClient().listInstances();
+
+    expect( listed.running ).toBe( false );
+    expect( listed.appState ).toBe( -1 );
+  } );
+} );
+
 describe( 'AMPClient.probeInstance', () => {
   // The controller's Running flag lags reality by tens of seconds, so readiness
   // is decided by whether the proxy answers, not by what the aggregate claims.
@@ -528,8 +798,11 @@ describe( 'AMPClient.listInstances', () => {
 
     expect( instances.map( i => i.friendlyName ) ).toEqual( ['Minecraft', 'Vintage Story'] );
     expect( instances[0] ).toMatchObject( {
-      instanceId: 'm-1', instanceName: 'MC01', appState: 20, running: true, port: 25565, ip: '10.0.0.120'
+      instanceId: 'm-1', instanceName: 'MC01', appState: 20, running: true
     } );
+
+    // Connection details must not survive the mapping — see AMPInstance.
+    expect( JSON.stringify( instances ) ).not.toMatch( /10\.0\.0\.120|25565/ );
   } );
 
   it( 'accepts the { result: [...] } envelope as well as a bare array', async () => {

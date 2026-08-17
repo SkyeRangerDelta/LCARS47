@@ -160,8 +160,19 @@ both.
 
 Per-instance fields consumed by LCARS: `InstanceID`, `InstanceName`,
 `FriendlyName`, `Description`, `Module`, `ModuleDisplayName`, `Running`,
-`AppState`, `Suspended`, `IP`, `Port`, `IsHTTPS`, `DiskUsageMB`, `Metrics`,
-`ApplicationEndpoints`, `Tags`.
+`AppState`, `Suspended`, `DiskUsageMB`, `Metrics`, `Tags`.
+
+> **Connection details are deliberately not consumed.** AMP also sends `IP`,
+> `Port`, `IsHTTPS` and a fully populated `ApplicationEndpoints` array. None of
+> them are declared on `RawAMPInstance` or mapped onto `AMPInstance`, so they
+> cannot reach an embed by accident.
+>
+> Two reasons. The address AMP reports is the listening socket
+> (`Minecraft Server Address=0.0.0.0:61230`), which is not what anyone connects
+> to and would simply be wrong. And `/amp status` is open to every guild member,
+> while real connect details are handed out selectively. Reinstating any of this
+> needs a deliberate design — a public host mapping and an access decision — not
+> a field quietly added back to the DTO.
 
 > **The controller lists itself.** One entry has `Module === "ADS"` — that is the
 > panel, not a game server. `listInstances()` filters it out. Stopping it would

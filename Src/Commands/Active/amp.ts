@@ -288,12 +288,22 @@ async function hydrateStates (
     return live;
   }
 
+  let throttled = false;
+
   await Promise.all( online.map( async i => {
+    // Once AMP has told us to back off, stop asking. Continuing to fan out is
+    // how a short throttle turns into a long one.
+    if ( throttled ) {
+      live.set( i.instanceId, i.appState );
+      return;
+    }
+
     try {
       const status = await amp.probeInstance( i );
       live.set( i.instanceId, status?.state ?? i.appState );
     }
     catch ( err ) {
+      if ( err instanceof AMPError && err.kind === 'rate-limited' ) throttled = true;
       Utility.log( 'warn', `[AMP] State probe failed for ${ i.friendlyName }: ${ ( err as Error ).message }` );
       live.set( i.instanceId, i.appState );
     }
@@ -311,15 +321,14 @@ async function handleStatus ( amp: AMPClient, int: ChatInputCommandInteraction )
       return await int.editReply( `No AMP instance matches \`${ selector }\`.` );
     }
 
-    // An offline instance has no daemon to proxy to, so there is no live status
-    // to fetch — AMP answers "Instance Unavailable" for every call. Report what
-    // we do know instead of surfacing that as an error.
-    if ( !instance.running ) {
-      return await int.editReply( { embeds: [buildOfflineEmbed( instance )] } );
-    }
+    // Ask the instance itself rather than trusting the cached flag. An offline
+    // instance has no daemon to proxy to and probeInstance reports that as
+    // null, so this both answers the question and settles whether it is up.
+    const status = await amp.probeInstance( instance );
 
-    const status = await amp.getInstanceStatus( instance );
-    return await int.editReply( { embeds: [buildStatusEmbed( instance, status )] } );
+    return status == null
+      ? await int.editReply( { embeds: [buildOfflineEmbed( { ...instance, running: false, appState: -1 } )] } )
+      : await int.editReply( { embeds: [buildStatusEmbed( instance, status )] } );
   }
   catch ( err ) {
     // The cached list can be a minute stale; the instance may have gone down
@@ -346,65 +355,87 @@ async function handleInstanceAction (
       return await int.editReply( `No AMP instance matches \`${ selector }\`.` );
     }
 
-    const wantRunning = action === 'start';
-
-    if ( instance.running === wantRunning ) {
-      return await int.editReply(
-        `**${ instance.friendlyName }** is already ${ wantRunning ? 'online' : 'offline' }.`
-      );
-    }
-
-    // Taking an instance down while its game server is still up risks an
-    // unclean shutdown — world corruption on some modules. Make the operator
-    // stop the service before switching off the machine.
-    if ( action === 'stop' && APP_LIVE.has( instance.appState ) ) {
-      return await int.editReply(
-        `**${ instance.friendlyName }** still has its game server running`
-        + ` (*${ stateLabel( instance.appState ) }*).\n`
-        + 'Stop it first with `/amp server stop` so the world saves cleanly, then take the instance offline.'
-      );
-    }
-
-    Utility.log( 'info', `[AMP] instance ${ action } requested for ${ instance.friendlyName } by ${ int.user.id }.` );
-
-    if ( action === 'start' ) {
-      await amp.startInstance( instance );
-    }
-    else {
-      await amp.stopInstance( instance );
-    }
-
-    await int.editReply(
-      `Instance ${ action } accepted for **${ instance.friendlyName }**. Standing by…`
+    // The lock spans the poll as well as the call — see withInstanceLock.
+    return await amp.withInstanceLock(
+      instance,
+      `being ${ action === 'start' ? 'started' : 'stopped' } by ${ int.user.displayName }`,
+      async () => await runInstanceAction( amp, int, instance, action )
     );
-
-    if ( !wantRunning ) {
-      const down = await pollForInstanceDown( amp, instance );
-      return await int.editReply( down
-        ? `**${ instance.friendlyName }** is now offline.`
-        : `**${ instance.friendlyName }** is still shutting down. Run \`/amp status\` to check on it.` );
-    }
-
-    const settled = await pollForInstanceUp( amp, instance );
-
-    if ( settled == null ) {
-      return await int.editReply(
-        `**${ instance.friendlyName }** has not come online yet. Run \`/amp status\` to check on it.`
-      );
-    }
-
-    // Deliberately not chained: these instances are configured not to autostart
-    // their application, and that is the desired behaviour. Say so plainly
-    // rather than starting the game server on the operator's behalf.
-    return await int.editReply( {
-      content: `**${ instance.friendlyName }** is now online, game server *${ stateLabel( settled.state ) }*.`
-        + ' It was **not** started — run `/amp server start` when you want it in service.',
-      embeds: [buildStatusEmbed( instance, settled )]
-    } );
   }
   catch ( err ) {
     return await int.editReply( describeError( err, `${ action } that instance` ) );
   }
+}
+
+/** Body of an instance action. Runs holding the instance's action lock. */
+async function runInstanceAction (
+  amp: AMPClient,
+  int: ChatInputCommandInteraction,
+  instance: AMPInstance,
+  action: 'start' | 'stop'
+): Promise<unknown> {
+  const wantRunning = action === 'start';
+
+  // Decide on live state, never on the cached instance flags. Those come from
+  // the controller's aggregate, which lags by tens of seconds — long enough
+  // that a second command issued right after the first would read the old
+  // value and happily repeat an action that has already happened.
+  const live = await amp.probeInstance( instance );
+  const isOnline = live != null;
+
+  if ( isOnline === wantRunning ) {
+    return await int.editReply(
+      `**${ instance.friendlyName }** is already ${ wantRunning ? 'online' : 'offline' }.`
+    );
+  }
+
+  // Taking an instance down while its game server is still up risks an unclean
+  // shutdown — world corruption on some modules. Make the operator stop the
+  // service before switching off the machine.
+  if ( action === 'stop' && live != null && APP_LIVE.has( live.state ) ) {
+    return await int.editReply(
+      `**${ instance.friendlyName }** still has its game server running`
+      + ` (*${ stateLabel( live.state ) }*).\n`
+      + 'Stop it first with `/amp server stop` so the world saves cleanly, then take the instance offline.'
+    );
+  }
+
+  Utility.log( 'info', `[AMP] instance ${ action } requested for ${ instance.friendlyName } by ${ int.user.id }.` );
+
+  if ( action === 'start' ) {
+    await amp.startInstance( instance );
+  }
+  else {
+    await amp.stopInstance( instance );
+  }
+
+  await int.editReply(
+    `Instance ${ action } accepted for **${ instance.friendlyName }**. Standing by…`
+  );
+
+  if ( !wantRunning ) {
+    const down = await pollForInstanceDown( amp, instance );
+    return await int.editReply( down
+      ? `**${ instance.friendlyName }** is now offline.`
+      : `**${ instance.friendlyName }** is still shutting down. Run \`/amp status\` to check on it.` );
+  }
+
+  const settled = await pollForInstanceUp( amp, instance );
+
+  if ( settled == null ) {
+    return await int.editReply(
+      `**${ instance.friendlyName }** has not come online yet. Run \`/amp status\` to check on it.`
+    );
+  }
+
+  // Deliberately not chained: these instances are configured not to autostart
+  // their application, and that is the desired behaviour. Say so plainly rather
+  // than starting the game server on the operator's behalf.
+  return await int.editReply( {
+    content: `**${ instance.friendlyName }** is now online, game server *${ stateLabel( settled.state ) }*.`
+      + ' It was **not** started — run `/amp server start` when you want it in service.',
+    embeds: [buildStatusEmbed( instance, settled )]
+  } );
 }
 
 /** `/amp server start|stop` — the application inside a running instance. */
@@ -421,66 +452,16 @@ async function handleServerAction (
       return await int.editReply( `No AMP instance matches \`${ selector }\`.` );
     }
 
-    // There is no proxy route into an instance that is not running.
-    if ( !instance.running ) {
-      return await int.editReply(
-        `**${ instance.friendlyName }** is offline, so there is no game server to ${ action }.\n`
-        + 'Bring the instance up first with `/amp instance start`.'
-      );
-    }
-
-    const before = await amp.getInstanceStatus( instance );
-
-    // Skip the pointless cases rather than issuing a no-op and polling for 30s.
-    if ( action === 'start' && APP_LIVE.has( before.state ) ) {
-      return await int.editReply( {
-        content: `The game server on **${ instance.friendlyName }** is already ${ stateLabel( before.state ).toLowerCase() }.`,
-        embeds: [buildStatusEmbed( instance, before )]
-      } );
-    }
-    if ( action === 'stop' && ( before.state === 0 || before.state === 50 ) ) {
-      return await int.editReply( {
-        content: `The game server on **${ instance.friendlyName }** is already ${ stateLabel( before.state ).toLowerCase() }.`,
-        embeds: [buildStatusEmbed( instance, before )]
-      } );
-    }
-
-    Utility.log( 'info', `[AMP] server ${ action } requested for ${ instance.friendlyName } by ${ int.user.id }.` );
-
-    if ( action === 'start' ) {
-      await amp.startApplication( instance );
-    }
-    else {
-      await amp.stopApplication( instance );
-    }
-
-    await int.editReply(
-      `Game server ${ action } accepted for **${ instance.friendlyName }**. Standing by…`
+    // The offline check lives inside the lock, on live state — see
+    // runServerAction. Deciding it out here on the cached flag would reject an
+    // instance that came up moments ago.
+    //
+    // The lock spans the poll as well as the call — see withInstanceLock.
+    return await amp.withInstanceLock(
+      instance,
+      `having its game server ${ action === 'start' ? 'started' : 'stopped' } by ${ int.user.displayName }`,
+      async () => await runServerAction( amp, int, instance, action )
     );
-
-    const terminal = action === 'start' ? START_TERMINAL : STOP_TERMINAL;
-    const final = await pollForState( amp, instance, terminal );
-
-    if ( final == null ) {
-      return await int.editReply(
-        `**${ instance.friendlyName }** did not report back in time. Run \`/amp status\` to check on it.`
-      );
-    }
-
-    if ( !terminal.has( final.state ) ) {
-      // Poll budget ran out mid-transition. That is not a failure — say so.
-      return await int.editReply( {
-        content: `The game server on **${ instance.friendlyName }** is still *${ stateLabel( final.state ) }*.`
-          + ' Large worlds take a while — run `/amp status` to check on it.',
-        embeds: [buildStatusEmbed( instance, final )]
-      } );
-    }
-
-    const verdict = final.state === 100
-      ? `The game server on **${ instance.friendlyName }** failed to ${ action }.`
-      : `The game server on **${ instance.friendlyName }** is now *${ stateLabel( final.state ) }*.`;
-
-    return await int.editReply( { content: verdict, embeds: [buildStatusEmbed( instance, final )] } );
   }
   catch ( err ) {
     if ( err instanceof AMPError && err.kind === 'unavailable' ) {
@@ -491,6 +472,74 @@ async function handleServerAction (
     }
     return await int.editReply( describeError( err, `${ action } that game server` ) );
   }
+}
+
+/** Body of a game server action. Runs holding the instance's action lock. */
+async function runServerAction (
+  amp: AMPClient,
+  int: ChatInputCommandInteraction,
+  instance: AMPInstance,
+  action: 'start' | 'stop'
+): Promise<unknown> {
+  // Live, not cached — see the note in runInstanceAction.
+  const before = await amp.probeInstance( instance );
+
+  // There is no proxy route into an instance that is not running.
+  if ( before == null ) {
+    return await int.editReply(
+      `**${ instance.friendlyName }** is offline, so there is no game server to ${ action }.\n`
+      + 'Bring the instance up first with `/amp instance start`.'
+    );
+  }
+
+  // Skip the pointless cases rather than issuing a no-op and polling for 30s.
+  const alreadyThere = action === 'start'
+    ? APP_LIVE.has( before.state )
+    : before.state === 0 || before.state === 50;
+
+  if ( alreadyThere ) {
+    return await int.editReply( {
+      content: `The game server on **${ instance.friendlyName }** is already ${ stateLabel( before.state ).toLowerCase() }.`,
+      embeds: [buildStatusEmbed( instance, before )]
+    } );
+  }
+
+  Utility.log( 'info', `[AMP] server ${ action } requested for ${ instance.friendlyName } by ${ int.user.id }.` );
+
+  if ( action === 'start' ) {
+    await amp.startApplication( instance );
+  }
+  else {
+    await amp.stopApplication( instance );
+  }
+
+  await int.editReply(
+    `Game server ${ action } accepted for **${ instance.friendlyName }**. Standing by…`
+  );
+
+  const terminal = action === 'start' ? START_TERMINAL : STOP_TERMINAL;
+  const final = await pollForState( amp, instance, terminal );
+
+  if ( final == null ) {
+    return await int.editReply(
+      `**${ instance.friendlyName }** did not report back in time. Run \`/amp status\` to check on it.`
+    );
+  }
+
+  if ( !terminal.has( final.state ) ) {
+    // Poll budget ran out mid-transition. That is not a failure — say so.
+    return await int.editReply( {
+      content: `The game server on **${ instance.friendlyName }** is still *${ stateLabel( final.state ) }*.`
+        + ' Large worlds take a while — run `/amp status` to check on it.',
+      embeds: [buildStatusEmbed( instance, final )]
+    } );
+  }
+
+  const verdict = final.state === 100
+    ? `The game server on **${ instance.friendlyName }** failed to ${ action }.`
+    : `The game server on **${ instance.friendlyName }** is now *${ stateLabel( final.state ) }*.`;
+
+  return await int.editReply( { content: verdict, embeds: [buildStatusEmbed( instance, final )] } );
 }
 
 /**
@@ -636,9 +685,7 @@ export function buildStatusEmbed ( instance: AMPInstance, status: AMPStatus ): E
     { name: 'Module', value: instance.moduleDisplayName === '' ? '—' : instance.moduleDisplayName, inline: true }
   );
 
-  if ( instance.ip != null && instance.port != null ) {
-    embed.addFields( { name: 'Address', value: `\`${ instance.ip }:${ instance.port }\``, inline: true } );
-  }
+  // No connect address here by design — see the note on AMPInstance.
 
   if ( instance.diskUsageMB != null ) {
     embed.addFields( { name: 'Disk', value: `${ instance.diskUsageMB } MB`, inline: true } );
@@ -662,6 +709,12 @@ function describeError ( err: unknown, attempted: string ): string {
         return `The AMP service account is not permitted to ${ attempted }.\n\`${ err.message }\``;
       case 'unavailable':
         return 'That instance is offline — bring it up with `/amp instance start` first.';
+      case 'busy':
+        // Already names the instance and who holds it.
+        return `${ err.message }\nWait for that to finish before trying again.`;
+      case 'rate-limited':
+        return 'AMP is temporarily refusing logins after too many in a short window.'
+          + ' Give it a few minutes and try again.';
       case 'not-found':
         return 'That instance no longer exists on the controller. The cached list has been refreshed.';
       case 'timeout':
