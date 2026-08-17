@@ -2,6 +2,7 @@
 
 import type PocketBase from 'pocketbase';
 import Utility from '../Utilities/SysUtils.js';
+import { beszel_ensureAuth } from './Beszel_Connect.js';
 import type {
   BeszelSystemRecord,
   BeszelSystemMetrics,
@@ -19,6 +20,8 @@ export async function beszel_getSystems(
   filter?: string
 ): Promise<BeszelSystemRecord[]> {
   try {
+    await beszel_ensureAuth( client );
+
     const systems = await client.collection('systems').getFullList<BeszelSystemRecord>({
       sort: 'name',
       filter: filter
@@ -43,6 +46,8 @@ export async function beszel_getSystem(
   systemId: string
 ): Promise<BeszelSystemRecord> {
   try {
+    await beszel_ensureAuth( client );
+
     const system = await client.collection('systems').getOne<BeszelSystemRecord>(systemId);
 
     Utility.log('info', `[BESZEL] Retrieved system: ${system.name}`);
@@ -64,6 +69,8 @@ export async function beszel_getSystemStats(
   systemId: string
 ): Promise<BeszelSystemStats | null> {
   try {
+    await beszel_ensureAuth( client );
+
     // Query stats collection for the most recent stat for this system
     const stats = await client.collection('system_stats').getList<{stats: BeszelSystemStats}>(1, 1, {
       filter: `system = "${systemId}"`,

@@ -22,12 +22,26 @@ const system = ( id: string, name: string, status: string ): BeszelSystemRecord 
 let sendFn: ReturnType<typeof vi.fn>;
 let client: LCARSClient;
 
+/** A token with plenty of life left, so beszel_ensureAuth short-circuits. */
+function freshToken(): string {
+  const claims = Buffer.from( JSON.stringify( {
+    id: 'stub', exp: Math.floor( ( Date.now() + 24 * 3_600_000 ) / 1000 )
+  } ) ).toString( 'base64url' );
+
+  return `header.${ claims }.signature`;
+}
+
 function makeMonitor( getFullList: () => Promise<BeszelSystemRecord[]> ): BeszelMonitor {
   const pb = {
+    // Every Beszel read now renews the session as a side effect, so the stub
+    // needs a credible authStore or ensureAuth has nothing to inspect.
+    authStore: { token: freshToken(), isValid: true },
     collection: () => ( {
       getFullList,
       subscribe: vi.fn(),
-      unsubscribe: vi.fn()
+      unsubscribe: vi.fn(),
+      authRefresh: vi.fn(),
+      authWithPassword: vi.fn()
     } )
   } as unknown as PocketBase;
 
