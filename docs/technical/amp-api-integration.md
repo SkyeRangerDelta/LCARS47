@@ -446,8 +446,10 @@ Feature group `amp` in `Src/Subsystems/Auxiliary/ENVChecks.json`
 | `AMP_USERNAME` | AMP API user |
 | `AMP_PASSWORD` | Password for that user |
 
-Optional gating: `ADMIN_USER_IDS` controls who may run `/amp start` and
-`/amp stop`, falling back to the guild Administrator permission when unset.
+Optional: `AMP_AUDIT_CHANNEL` chooses where the control-action audit trail is
+posted, falling back to `ENGINEERING` when unset. `ADMIN_USER_IDS` controls who
+may run the control subcommands, falling back to the guild Administrator
+permission when unset.
 
 > **None of the three may carry a `default`.** `isFeatureEnabled()` only requires
 > vars *without* a default, so giving `AMP_URL` one would permanently enable the

@@ -144,6 +144,30 @@ silently.
 
 ---
 
+## Audit trail
+
+Every control action is recorded to a channel, not just the container console —
+on a shared server *"who stopped Valheim?"* is a real question, and console logs
+aren't somewhere the people asking it can look.
+
+Each record carries the layer and action, the target, who did it (name and ID),
+and what became of it. Recorded outcomes:
+
+| Outcome | Meaning |
+| --- | --- |
+| **Completed** | reached the state it was asked to reach |
+| **Failed** | AMP reported a failure, or the command errored |
+| **Still in progress** | hadn't settled when the wait elapsed — neither success nor failure |
+| **Denied** | someone without permission tried |
+
+*Still in progress* is deliberately its own outcome rather than being folded into
+one of the others; a large world that's simply slow to load has not failed, and
+recording it as either would make the trail dishonest.
+
+Records go to `AMP_AUDIT_CHANNEL`, falling back to `ENGINEERING`. A failure to
+post is swallowed with a warning — an audit trail that can take a command down
+with it is worse than none.
+
 ## Configuration
 
 Add to `.env`:
@@ -152,6 +176,9 @@ Add to `.env`:
 AMP_URL=https://amp.pldyn.net
 AMP_USERNAME=lcars47
 AMP_PASSWORD=your_amp_api_user_password
+
+# Optional — where control actions are recorded. Defaults to ENGINEERING.
+AMP_AUDIT_CHANNEL=channel_id_for_amp_audit
 ```
 
 All three are required together — set none of them and the feature is simply

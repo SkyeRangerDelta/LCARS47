@@ -48,6 +48,7 @@ import {
   stateEmoji,
   stateLabel
 } from '../../Subsystems/AMP/AMPFormat.js';
+import { recordAMPAction, type AMPAuditOutcome } from '../../Subsystems/AMP/AMPAudit.js';
 import type { AMPInstance, AMPStatus } from '../../Subsystems/AMP/AMPInterfaces.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface.js';
 
@@ -181,13 +182,40 @@ async function execute (
   // in the channel.
   await int.deferReply( { flags: MessageFlags.Ephemeral } );
 
+  const action = sub as 'start' | 'stop';
+  const layer = group === 'instance' ? 'instance' : 'server';
+
   if ( !isAdminUser( int.user.id, int.memberPermissions ) ) {
+    // Worth recording: an attempt to control a game server by someone without
+    // permission is exactly the kind of thing an audit trail exists for.
+    await audit( LCARS47, int, layer, action, int.options.getString( 'instance', true ), 'denied' );
     return await int.editReply( 'Not authorised. Starting and stopping game servers is restricted.' );
   }
 
-  return group === 'instance'
-    ? await handleInstanceAction( amp, int, sub as 'start' | 'stop' )
-    : await handleServerAction( amp, int, sub as 'start' | 'stop' );
+  return layer === 'instance'
+    ? await handleInstanceAction( LCARS47, amp, int, action )
+    : await handleServerAction( LCARS47, amp, int, action );
+}
+
+/** Post a control-action record. Never throws. */
+async function audit (
+  LCARS47: LCARSClient,
+  int: ChatInputCommandInteraction,
+  layer: 'instance' | 'server',
+  action: 'start' | 'stop',
+  target: string,
+  outcome: AMPAuditOutcome,
+  detail?: string
+): Promise<void> {
+  await recordAMPAction( LCARS47, {
+    layer,
+    action,
+    target,
+    operator: int.user.displayName,
+    operatorId: int.user.id,
+    outcome,
+    detail
+  } );
 }
 
 /**
@@ -357,6 +385,7 @@ async function handleStatus ( amp: AMPClient, int: ChatInputCommandInteraction )
 
 /** `/amp instance start|stop` — the AMP daemon, via the controller. */
 async function handleInstanceAction (
+  LCARS47: LCARSClient,
   amp: AMPClient,
   int: ChatInputCommandInteraction,
   action: 'start' | 'stop'
@@ -373,16 +402,18 @@ async function handleInstanceAction (
     return await amp.withInstanceLock(
       instance,
       `being ${ action === 'start' ? 'started' : 'stopped' } by ${ int.user.displayName }`,
-      async () => await runInstanceAction( amp, int, instance, action )
+      async () => await runInstanceAction( LCARS47, amp, int, instance, action )
     );
   }
   catch ( err ) {
+    await audit( LCARS47, int, 'instance', action, selector, 'failed', errorDetail( err ) );
     return await int.editReply( describeError( err, `${ action } that instance` ) );
   }
 }
 
 /** Body of an instance action. Runs holding the instance's action lock. */
 async function runInstanceAction (
+  LCARS47: LCARSClient,
   amp: AMPClient,
   int: ChatInputCommandInteraction,
   instance: AMPInstance,
@@ -429,6 +460,10 @@ async function runInstanceAction (
 
   if ( !wantRunning ) {
     const down = await pollForInstanceDown( amp, instance );
+
+    await audit( LCARS47, int, 'instance', action, instance.friendlyName,
+      down ? 'completed' : 'pending', down ? 'Instance is offline.' : 'Still shutting down when the wait elapsed.' );
+
     return await int.editReply( down
       ? `**${ instance.friendlyName }** is now offline.`
       : `**${ instance.friendlyName }** is still shutting down. Run \`/amp status\` to check on it.` );
@@ -437,10 +472,16 @@ async function runInstanceAction (
   const settled = await pollForInstanceUp( amp, instance );
 
   if ( settled == null ) {
+    await audit( LCARS47, int, 'instance', action, instance.friendlyName,
+      'pending', 'Had not come online when the wait elapsed.' );
+
     return await int.editReply(
       `**${ instance.friendlyName }** has not come online yet. Run \`/amp status\` to check on it.`
     );
   }
+
+  await audit( LCARS47, int, 'instance', action, instance.friendlyName,
+    'completed', `Instance online, game server ${ stateLabel( settled.state ) }. Not started.` );
 
   // Deliberately not chained: these instances are configured not to autostart
   // their application, and that is the desired behaviour. Say so plainly rather
@@ -454,6 +495,7 @@ async function runInstanceAction (
 
 /** `/amp server start|stop` — the application inside a running instance. */
 async function handleServerAction (
+  LCARS47: LCARSClient,
   amp: AMPClient,
   int: ChatInputCommandInteraction,
   action: 'start' | 'stop'
@@ -474,10 +516,12 @@ async function handleServerAction (
     return await amp.withInstanceLock(
       instance,
       `having its game server ${ action === 'start' ? 'started' : 'stopped' } by ${ int.user.displayName }`,
-      async () => await runServerAction( amp, int, instance, action )
+      async () => await runServerAction( LCARS47, amp, int, instance, action )
     );
   }
   catch ( err ) {
+    await audit( LCARS47, int, 'server', action, selector, 'failed', errorDetail( err ) );
+
     if ( err instanceof AMPError && err.kind === 'unavailable' ) {
       amp.invalidateInstanceCache();
       return await int.editReply(
@@ -490,6 +534,7 @@ async function handleServerAction (
 
 /** Body of a game server action. Runs holding the instance's action lock. */
 async function runServerAction (
+  LCARS47: LCARSClient,
   amp: AMPClient,
   int: ChatInputCommandInteraction,
   instance: AMPInstance,
@@ -535,6 +580,9 @@ async function runServerAction (
   const final = await pollForState( amp, instance, terminal );
 
   if ( final == null ) {
+    await audit( LCARS47, int, 'server', action, instance.friendlyName,
+      'pending', 'No status returned before the wait elapsed.' );
+
     return await int.editReply(
       `**${ instance.friendlyName }** did not report back in time. Run \`/amp status\` to check on it.`
     );
@@ -542,6 +590,9 @@ async function runServerAction (
 
   if ( !terminal.has( final.state ) ) {
     // Poll budget ran out mid-transition. That is not a failure — say so.
+    await audit( LCARS47, int, 'server', action, instance.friendlyName,
+      'pending', `Still ${ stateLabel( final.state ) } when the wait elapsed.` );
+
     return await int.editReply( {
       content: `The game server on **${ instance.friendlyName }** is still *${ stateLabel( final.state ) }*.`
         + ' Large worlds take a while — run `/amp status` to check on it.',
@@ -549,7 +600,12 @@ async function runServerAction (
     } );
   }
 
-  const verdict = final.state === 100
+  const failed = final.state === 100;
+
+  await audit( LCARS47, int, 'server', action, instance.friendlyName,
+    failed ? 'failed' : 'completed', `Game server is ${ stateLabel( final.state ) }.` );
+
+  const verdict = failed
     ? `The game server on **${ instance.friendlyName }** failed to ${ action }.`
     : `The game server on **${ instance.friendlyName }** is now *${ stateLabel( final.state ) }*.`;
 
@@ -743,6 +799,11 @@ function describeError ( err: unknown, attempted: string ): string {
 
   Utility.log( 'err', `[AMP] Unexpected failure while trying to ${ attempted }: ${ String( err ) }` );
   return `Failed to ${ attempted }.`;
+}
+
+/** Short, non-leaky description of a failure for the audit record. */
+function errorDetail ( err: unknown ): string {
+  return err instanceof AMPError ? `${ err.kind }: ${ err.message }` : String( err );
 }
 
 function truncate ( text: string, max: number ): string {
