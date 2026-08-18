@@ -50,7 +50,10 @@ RUN addgroup -S lcars47 && adduser -S lcars47 -G lcars47 \
     && chown lcars47:lcars47 /usr/local/bin/yt-dlp
 USER lcars47
 
-ENV NODE_OPTIONS="--dns-result-order=ipv4first"
+# --experimental-eventsource: pocketbase's realtime client needs a global
+# EventSource, which Node 24 only exposes behind this flag. Without it the
+# Beszel state-change monitor silently degrades to polling.
+ENV NODE_OPTIONS="--dns-result-order=ipv4first --experimental-eventsource"
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD curl -f http://localhost:9121/api/v1/stats || exit 1
 

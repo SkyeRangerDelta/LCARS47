@@ -25,7 +25,11 @@ async function indexCommands ( LCARS47: LCARSClient ): Promise<void> {
   const cmdJSON: object[] = [];
 
   const cmdPath = path.join( __dirname, '../..', 'Commands/Active' );
-  const commandIndex = fs.readdirSync( cmdPath ).filter( f => f.endsWith( '.js' ) );
+  // tsc emits colocated *.test.ts into Deploy alongside the commands. Loading
+  // one would blow up the indexer - it has no default export, and importing it
+  // runs vitest globals outside a test runner.
+  const commandIndex = fs.readdirSync( cmdPath )
+    .filter( f => f.endsWith( '.js' ) && !f.endsWith( '.test.js' ) );
   for ( const command of commandIndex ) {
     const cPath = `../../Commands/Active/${command}`;
     await import ( cPath ).then( (c: { default: Command }) => {

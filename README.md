@@ -23,10 +23,10 @@ Developed for use in the Planetary Dynamics (PlDyn) Discord server by PlDyn memb
 
 ---
 
-> `LCARS47 ONLINE.` Library Computer Access/Retrieval System, unit 47. Standing by.
+> `LCARS47 ONLINE.` Library Computer Access/Retrieval System standing by.
 
-**LCARS47** is the resident ship's computer for the Planetary Dynamics Discord — a Star Trek
-/ Warhammer 40K–flavored bot, purpose-built and operated for PlDyn.
+**LCARS47** is the resident ship's computer for the Planetary Dynamics Discord — purpose built Star Trek themed Omnissiah worshipping 
+computer for PlDyn.
 
 ---
 
@@ -45,7 +45,18 @@ into the bot's own systems so its answers reflect what's actually happening aboa
 ![OPERATIONS](https://img.shields.io/badge/OPERATIONS-9999FF?style=for-the-badge&labelColor=9999FF)
 
 Real-time health and status for the crew's infrastructure — load, memory, storage, and uptime
-across monitored hosts — alongside the bot's own vitals and a properly computed stardate.
+across monitored hosts — alongside the bot's own vitals and a properly computed stardate. It
+also keeps watch between requests, announcing to the bridge the moment a host drops off the
+network or comes back, with enough restraint that a flapping link doesn't become an alert
+storm.
+
+![HOLODECK CONTROL](https://img.shields.io/badge/HOLODECK_CONTROL-66CC99?style=for-the-badge&labelColor=66CC99)
+
+Game server control through the Impulse Controller's management panel. List every instance,
+read live statistics off any one of them, and bring instances and the game servers inside
+them up or down without leaving Discord — the two are controlled separately, exactly as the
+panel treats them, and the bot follows a starting server until it actually comes up rather
+than assuming it did. See [the technical notes](docs/technical/amp-api-integration.md).
 
 ![STELLAR CARTOGRAPHY](https://img.shields.io/badge/STELLAR_CARTOGRAPHY-FFCC66?style=for-the-badge&labelColor=FFCC66)
 
@@ -56,6 +67,12 @@ clusters, and exoplanet observations on request.
 
 Self-serve role management plus a Ferengi Dabo wheel for wagering Gold-Pressed Latinum —
 balances, streaks, and leaderboards included.
+
+![LAN INTERFACE](https://img.shields.io/badge/LAN_INTERFACE-99CCFF?style=for-the-badge&labelColor=99CCFF)
+
+A LAN-only HTTP API for telemetry and outbound messaging, with a Swagger UI explorer at
+`/api/docs` and an OpenAPI 3.1 document at `/api/openapi.json` — both assembled from the
+routes themselves at boot. See [the technical notes](docs/technical/api-swagger.md).
 
 ---
 

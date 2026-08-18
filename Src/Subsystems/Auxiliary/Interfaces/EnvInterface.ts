@@ -49,6 +49,12 @@ export interface LCARSEnv {
   BESZEL_URL?: string;
   BESZEL_EMAIL?: string;
   BESZEL_PASSWORD?: string;
+  BESZEL_ALERT_CHANNEL?: string;
+  AMP_URL?: string;
+  AMP_USERNAME?: string;
+  AMP_PASSWORD?: string;
+  AMP_AUDIT_CHANNEL?: string;
+  AMP_ALERT_CHANNEL?: string;
   JWST?: string;
   JELLYFIN_HOST?: string;
   JELLYFIN_PORT?: string;

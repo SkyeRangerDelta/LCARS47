@@ -5,10 +5,10 @@
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "dev": "tsc && node Deploy/lcars47.js --test",
+    "dev": "tsc && node --experimental-eventsource Deploy/lcars47.js --test",
     "ndev": "nodemon --watch './src/*' dev",
     "lint": "eslint .",
-    "start": "node Deploy/lcars47.js",
+    "start": "node --experimental-eventsource Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
     "test": "vitest run 2>&1 | tee logs/tests/vitest-output.log",
@@ -54,6 +54,7 @@
     "mongodb": "^7.5.0",
     "opusscript": "^0.1.1",
     "pocketbase": "^0.27.0",
+    "swagger-ui-express": "^5.0.1",
     "youtube-sr": "^4.3.12",
     "ytdlp-nodejs": "^3.4.4"
   },
@@ -63,6 +64,7 @@
     "@semantic-release/git": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/luxon": "^3.7.2",
+    "@types/swagger-ui-express": "^4.1.8",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.7.0",
     "jsdoc": "^4.0.5",

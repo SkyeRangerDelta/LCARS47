@@ -67,6 +67,24 @@
         }
       ]
     },
+    "amp": {
+      "description": "CubeCoders AMP game server control integration",
+      "required_together": true,
+      "vars": [
+        {
+          "name": "AMP_URL",
+          "description": "AMP controller base URL (e.g. https://amp.pldyn.net)"
+        },
+        {
+          "name": "AMP_USERNAME",
+          "description": "AMP API user with instance start/stop permissions"
+        },
+        {
+          "name": "AMP_PASSWORD",
+          "description": "Password for the AMP API user"
+        }
+      ]
+    },
     "jellyfin": {
       "description": "Jellyfin media server integration",
       "required_together": true,
@@ -120,13 +138,28 @@
     },
     {
       "name": "ADMIN_USER_IDS",
-      "description": "Comma-separated Discord user IDs allowed to run admin-only slash commands (/ytdlp-update etc.). Falls back to guild Administrator permission when unset.",
+      "description": "Comma-separated Discord user IDs allowed to run admin-only slash commands (/ytdlp-update, /amp start|stop etc.). Falls back to guild Administrator permission when unset.",
       "feature": "Admin Commands"
     },
     {
       "name": "JELLYFIN_PATH_MAP",
       "description": "Optional comma-separated prefix map (from=>to) translating Jellyfin Item.Path values to container-visible paths. Example: /media/music=>/mnt/nas/music,/media/abk=>/mnt/nas/abk",
       "feature": "Jellyfin Integration"
+    },
+    {
+      "name": "AMP_AUDIT_CHANNEL",
+      "description": "Channel ID for the AMP control-action audit trail. Falls back to ENGINEERING when unset.",
+      "feature": "AMP Integration"
+    },
+    {
+      "name": "AMP_ALERT_CHANNEL",
+      "description": "Channel ID for AMP game server crash alerts. Falls back to ENGINEERING when unset.",
+      "feature": "AMP Integration"
+    },
+    {
+      "name": "BESZEL_ALERT_CHANNEL",
+      "description": "Channel ID for Beszel system state-change alerts. Falls back to ENGINEERING when unset.",
+      "feature": "Beszel Monitoring"
     },
     {
       "name": "COMPUTER_CMD_COOLDOWN_SEC",

@@ -15,25 +15,13 @@ import {
 import { type LCARSClient } from '../../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface';
-import { getEnv } from '../../Subsystems/Utilities/EnvUtils.js';
+import { isAdminUser } from '../../Subsystems/Utilities/AuthUtils.js';
 import { getYtDlpManager } from '../../Subsystems/MediaPlayer/YtDlpManager.js';
-
-const env = getEnv();
 
 const data = new SlashCommandBuilder()
   .setName( 'ytdlp-update' )
   .setDescription( 'Refresh the yt-dlp binary used for YouTube playback.' )
   .setDefaultMemberPermissions( PermissionFlagsBits.Administrator );
-
-function isAuthorized( userId: string ): boolean {
-  const allow = env.ADMIN_USER_IDS;
-  if ( allow == null || allow.trim() === '' ) return true; // fall through to guild permission
-  return allow
-    .split( ',' )
-    .map( s => s.trim() )
-    .filter( s => s.length > 0 )
-    .includes( userId );
-}
 
 async function execute (
   LCARS47: LCARSClient,
@@ -43,7 +31,7 @@ async function execute (
     { name: 'This command does not support autocomplete.', value: 'none' }
   ]);
 
-  if ( !isAuthorized( int.user.id ) ) {
+  if ( !isAdminUser( int.user.id, int.memberPermissions ) ) {
     return await int.reply( {
       content: 'Not authorised.',
       flags: MessageFlags.Ephemeral

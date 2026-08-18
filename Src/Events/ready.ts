@@ -10,6 +10,9 @@ import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusI
 import { getEnv, isFeatureEnabled } from '../Subsystems/Utilities/EnvUtils.js';
 import { MediaPlayerService } from '../Subsystems/MediaPlayer/MediaPlayerService.js';
 import { JellyfinClient } from '../Subsystems/Jellyfin/JellyfinClient.js';
+import { AMPClient } from '../Subsystems/AMP/AMPClient.js';
+import { BeszelMonitor } from '../Subsystems/Monitors/BeszelMonitor.js';
+import { AMPMonitor } from '../Subsystems/Monitors/AMPMonitor.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
 
@@ -97,6 +100,17 @@ export default {
         // Fetch initial systems list
         LCARS47.BESZEL_SYSTEMS = await BeszelUtils.beszel_getSystems(LCARS47.BESZEL_CLIENT);
         Utility.log('proc', `[BESZEL] Loaded ${LCARS47.BESZEL_SYSTEMS.length} systems for autocomplete cache`);
+
+        // Push half of the integration: alert on host state changes rather
+        // than waiting to be asked. Also keeps BESZEL_SYSTEMS fresh, which
+        // /server-status autocomplete otherwise only ever saw at boot.
+        const monitor = new BeszelMonitor( {
+          client: LCARS47,
+          pb: LCARS47.BESZEL_CLIENT,
+          alertChannelId: env.BESZEL_ALERT_CHANNEL ?? env.ENGINEERING
+        } );
+        await monitor.start();
+        LCARS47.BESZEL_MONITOR = monitor;
       } catch (beszelErr) {
         Utility.log('warn', `[BESZEL] Failed to initialize Beszel client: ${(beszelErr as Error).message}`);
         Utility.log('warn', '[BESZEL] Server monitoring features will be unavailable.');
@@ -106,6 +120,43 @@ export default {
     else {
       Utility.log( 'info', '[BESZEL] Feature not enabled - skipping initialization.' );
       LCARS47.BESZEL_SYSTEMS = [];
+    }
+
+    if ( isFeatureEnabled( 'amp' ) ) {
+      try {
+        const amp = new AMPClient( {
+          baseUrl: env.AMP_URL!,
+          username: env.AMP_USERNAME!,
+          password: env.AMP_PASSWORD!
+        } );
+
+        await amp.authenticate();
+
+        // Warm the cache the /amp autocomplete reads from — that path cannot
+        // afford a login or a cold fetch inside Discord's 3s deadline.
+        const instances = await amp.listInstances( { force: true } );
+
+        LCARS47.AMP_CLIENT = amp;
+        Utility.log( 'proc', `[AMP] Connected to ${ amp.baseUrl } - ${ instances.length } instances cached.` );
+
+        // Watches running game servers for crashes. Its sweep doubles as the
+        // keep-alive for the per-instance proxy sessions, so nothing else has
+        // to hold those open.
+        const ampMonitor = new AMPMonitor( {
+          client: LCARS47,
+          amp,
+          alertChannelId: env.AMP_ALERT_CHANNEL ?? env.ENGINEERING
+        } );
+        await ampMonitor.start();
+        LCARS47.AMP_MONITOR = ampMonitor;
+      }
+      catch ( ampErr ) {
+        Utility.log( 'warn', `[AMP] Init failed: ${ ( ampErr as Error ).message }` );
+        Utility.log( 'warn', '[AMP] Game server control will be unavailable.' );
+      }
+    }
+    else {
+      Utility.log( 'info', '[AMP] Feature not enabled - skipping initialization.' );
     }
 
     Utility.log( 'info', '[CLIENT] Getting old stats page.' );

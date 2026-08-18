@@ -853,6 +853,103 @@ async function beszel_connect(): Promise<BeszelClient> {
 
 ---
 
+## State-Change Monitor
+
+`Src/Subsystems/Monitors/BeszelMonitor.ts` is the **push** half of the
+integration. Everything above answers when asked; the monitor says something
+without being asked, when a host changes state.
+
+### Realtime subscription
+
+Because Beszel is PocketBase, the primary feed is a realtime subscription:
+
+```ts
+await pb.collection( 'systems' ).subscribe( '*', event => {
+  this.handleRecord( event.record as unknown as BeszelSystemRecord );
+} );
+```
+
+> **EventSource is required, and Node hides it behind a flag.**
+> The PocketBase SDK's realtime client calls `new EventSource(...)` and expects a
+> global. Node 24 ships one but only under `--experimental-eventsource`;
+> without the flag `typeof EventSource === 'undefined'`, the subscription throws,
+> and the monitor would silently never fire.
+>
+> The flag is set in two places — `NODE_OPTIONS` in the `Dockerfile` and the
+> `start`/`dev` scripts in `package.json`. The monitor also checks for the global
+> at startup and logs
+> `[BESZEL-MON] EventSource unavailable - falling back to polling.` if it is
+> missing, so a lost flag degrades loudly instead of quietly.
+
+### One transition path
+
+Both feeds — realtime events and the reconcile sweep — funnel through
+`handleRecord()`. There is exactly one place that decides "this is a change" and
+one place that emits, which is what makes the polling fallback nearly free.
+
+```
+realtime event ─┐
+                ├─> handleRecord() ─> debounce ─> commit() ─> alert embed
+reconcile ──────┘
+```
+
+### Reconcile timer
+
+Runs regardless of whether realtime is live — every 5 minutes when it is, every
+60 seconds when it is not. It serves three purposes:
+
+1. Safety net if the realtime socket drops.
+2. The whole feed when EventSource is unavailable.
+3. **Refreshes `LCARS47.BESZEL_SYSTEMS`**, which `/server-status` autocomplete
+   reads. Before the monitor existed that cache was populated once at boot, so a
+   host added in Beszel did not appear in autocomplete until the bot restarted.
+
+It also forgets hosts that have been removed from Beszel entirely.
+
+### Debounce
+
+A state change is held for **30 seconds** before it is committed. If the host
+flaps back inside that window the pending alert is cancelled and nothing is
+posted. If it moves on to a third state, the alert reports where it actually
+settled — not the state it passed through.
+
+### What is *not* claimed
+
+`TrackedSystem.since` is `number | null`. Beszel's `systems.updated` field churns
+on every agent report, so it is **not** a usable proxy for "in this state since" —
+using it produced alerts claiming a host that had been up for days had "held UP
+for 42 seconds".
+
+Seeded and newly-discovered systems therefore carry `null`, and the hold duration
+is simply omitted from the alert until the monitor has watched a transition
+happen itself. A timestamp we observed is trustworthy; one we inferred is not.
+
+Seeding emits nothing at all — a bot restart is not a state change — and
+discovering a new host is tracked silently for the same reason.
+
+### Alert format
+
+| Landing state | Headline | Colour |
+| --- | --- | --- |
+| `up` | ✅ SYSTEM RESTORED | `0x00FF00` |
+| `down` | ⚠️ SYSTEM OFFLINE | `0xFF0000` |
+| `paused` | ⏸️ SYSTEM PAUSED | `0x808080` |
+| `pending` | 🔄 SYSTEM PENDING | `0xFFA500` |
+| anything else | 🔄 SYSTEM STATE CHANGE | `0x5865F2` |
+
+Alerts post to `BESZEL_ALERT_CHANNEL`, falling back to `ENGINEERING` when unset.
+The channel is fetched lazily and memoised, and send failures are swallowed with
+a warning — a monitor must never take the bot down.
+
+### Muting
+
+`/server-monitor mute [minutes]` suppresses alerts while continuing to track
+state, so nothing is lost — the transition is still recorded and logged, just not
+announced. Mute state lives in memory and resets on restart, which is documented
+in the command's `help()` rather than persisted to Mongo.
+
+---
+
 ## Related Documentation
 
 - [Feature Documentation](../features/beszel-integration.md)
@@ -861,7 +958,7 @@ async function beszel_connect(): Promise<BeszelClient> {
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2025-11-15
+**Document Version:** 1.1
+**Last Updated:** 2026-08-14
 **API Version:** Beszel v0.x (PocketBase-based)
 **Maintained By:** LCARS47 Development Team
