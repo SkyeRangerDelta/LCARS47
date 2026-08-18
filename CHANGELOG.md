@@ -1,3 +1,34 @@
+# [7.1.0-E.4](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.3...V47.7.1.0-E.4) (2026-08-18)
+
+
+### Bug Fixes
+
+* Corrected early return ([b63b53b](https://github.com/SkyeRangerDelta/LCARS47/commit/b63b53bd37eeb635d6532170b920ece7a2d89922))
+* Corrected interval delays with instance states ([348de90](https://github.com/SkyeRangerDelta/LCARS47/commit/348de9036cef4d85052219533968056aaa22aace))
+* Corrected OpenAPI doc looking at bad path ([97c3e13](https://github.com/SkyeRangerDelta/LCARS47/commit/97c3e13deddcc524470975a941621839c999592b))
+* Patched unawaited message send and response ([f463b7b](https://github.com/SkyeRangerDelta/LCARS47/commit/f463b7b05bbb194a4f845b5419ba95665b692616))
+* Prevent crash on unready bot status check ([06839f4](https://github.com/SkyeRangerDelta/LCARS47/commit/06839f41f40d42f428334efed7145161226bf27a))
+* Reduce log noise on API doc navigation ([7c603bf](https://github.com/SkyeRangerDelta/LCARS47/commit/7c603bf6ad718709ecf0188881f2e186f6c19361))
+* Set Beszel to boot on start ([a2d1e50](https://github.com/SkyeRangerDelta/LCARS47/commit/a2d1e50421bdf84227e15a993317c1423a55249e))
+
+
+### Features
+
+* Added AMP audit log to Engineering ([39643f5](https://github.com/SkyeRangerDelta/LCARS47/commit/39643f51e750ab9a172a47dcb5299dfa63f0282b))
+* Added AMP crash alerts ([90dce0e](https://github.com/SkyeRangerDelta/LCARS47/commit/90dce0eba7b17a80b1bfbf2cc774b0ba3d589fd1))
+* Added to-the-second age data on server status ([b8f5059](https://github.com/SkyeRangerDelta/LCARS47/commit/b8f5059e689536344a8140be813651d216c9cf36))
+* Implemented AMP command ([adc0501](https://github.com/SkyeRangerDelta/LCARS47/commit/adc050158a21c2189912169238f1dc2d71d20b08))
+* Implemented Beszel realtime monitoring ([8c09ca3](https://github.com/SkyeRangerDelta/LCARS47/commit/8c09ca320daebfe295b9bbe5ad6e829f311732bf))
+* Implemented eventsource to support Pocketbase realtime ([1ee758a](https://github.com/SkyeRangerDelta/LCARS47/commit/1ee758ae62bd0dcb551bc4fd138938e9614021d2))
+* Introduced swagger docs ([a97ea44](https://github.com/SkyeRangerDelta/LCARS47/commit/a97ea4491a6f998775a1c159bffc0585f7d6aa4b)), closes [#127](https://github.com/SkyeRangerDelta/LCARS47/issues/127)
+
+
+### Performance Improvements
+
+* Improved command and event loader ([8bc0785](https://github.com/SkyeRangerDelta/LCARS47/commit/8bc078594cb47887c22adf1a0411dc44814b1b9d))
+* Renew token pre-expiry ([5f339dd](https://github.com/SkyeRangerDelta/LCARS47/commit/5f339ddeeb9f8ea8b95cfd59b8659c309b6f8351))
+* Reoptimized AMP login control ([6f8dfeb](https://github.com/SkyeRangerDelta/LCARS47/commit/6f8dfeb13b1bce601577a2eecc5de32d39d62769))
+
 # [7.1.0-E.3](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.2...V47.7.1.0-E.3) (2026-06-25)
 
 
