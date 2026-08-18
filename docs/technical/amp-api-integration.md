@@ -239,6 +239,12 @@ const status = await amp.probeInstance( instance );
 `/amp instance stop` polls it until it returns `null`. Neither consults
 `GetInstances` for readiness at all.
 
+`AMPMonitor` samples the same call once a minute for every running instance,
+which is what detects crashes — and, incidentally, what keeps the per-instance
+proxy sessions alive. AMP's session idle timeout measured comfortably over ten
+minutes, so a sweep well inside that means sessions effectively never lapse and
+no separate keep-alive is needed.
+
 ### Client-side caching
 
 On top of all that, the client caches the instance list for **60 seconds**,
@@ -447,7 +453,8 @@ Feature group `amp` in `Src/Subsystems/Auxiliary/ENVChecks.json`
 | `AMP_PASSWORD` | Password for that user |
 
 Optional: `AMP_AUDIT_CHANNEL` chooses where the control-action audit trail is
-posted, falling back to `ENGINEERING` when unset. `ADMIN_USER_IDS` controls who
+posted and `AMP_ALERT_CHANNEL` where crash alerts go, both falling back to
+`ENGINEERING` when unset. `ADMIN_USER_IDS` controls who
 may run the control subcommands, falling back to the guild Administrator
 permission when unset.
 

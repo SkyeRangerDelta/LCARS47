@@ -50,6 +50,7 @@ import {
 } from '../../Subsystems/AMP/AMPFormat.js';
 import { recordAMPAction, type AMPAuditOutcome } from '../../Subsystems/AMP/AMPAudit.js';
 import type { AMPInstance, AMPStatus } from '../../Subsystems/AMP/AMPInterfaces.js';
+import { describeState, type AMPMonitor } from '../../Subsystems/Monitors/AMPMonitor.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface.js';
 
 // AMP accepts control commands immediately and works on them in the background,
@@ -147,6 +148,31 @@ data.addSubcommandGroup( g => g
   )
 );
 
+// Group: monitor — the crash watcher
+data.addSubcommandGroup( g => g
+  .setName( 'monitor' )
+  .setDescription( 'Inspect the game server crash monitor' )
+  .addSubcommand( s => s
+    .setName( 'status' )
+    .setDescription( 'Show what the crash monitor is watching' )
+  )
+  .addSubcommand( s => s
+    .setName( 'mute' )
+    .setDescription( 'Suppress crash alerts for a while (admin only)' )
+    .addIntegerOption( o => o
+      .setName( 'minutes' )
+      .setDescription( 'How long to stay quiet (default 60)' )
+      .setMinValue( 1 )
+      .setMaxValue( 1440 )
+      .setRequired( false )
+    )
+  )
+  .addSubcommand( s => s
+    .setName( 'unmute' )
+    .setDescription( 'Resume crash alerts (admin only)' )
+  )
+);
+
 // Main execute function
 async function execute (
   LCARS47: LCARSClient,
@@ -182,6 +208,10 @@ async function execute (
   // in the channel.
   await int.deferReply( { flags: MessageFlags.Ephemeral } );
 
+  if ( group === 'monitor' ) {
+    return await handleMonitor( LCARS47, int, sub );
+  }
+
   const action = sub as 'start' | 'stop';
   const layer = group === 'instance' ? 'instance' : 'server';
 
@@ -195,6 +225,83 @@ async function execute (
   return layer === 'instance'
     ? await handleInstanceAction( LCARS47, amp, int, action )
     : await handleServerAction( LCARS47, amp, int, action );
+}
+
+/** `/amp monitor status|mute|unmute` — the crash watcher. */
+async function handleMonitor (
+  LCARS47: LCARSClient,
+  int: ChatInputCommandInteraction,
+  sub: string
+): Promise<unknown> {
+  const monitor = LCARS47.AMP_MONITOR;
+  if ( monitor == null ) {
+    return await int.editReply( 'The AMP crash monitor is not running. Check the engineering log.' );
+  }
+
+  if ( sub === 'status' ) {
+    return await int.editReply( { embeds: [buildMonitorEmbed( monitor )] } );
+  }
+
+  if ( !isAdminUser( int.user.id, int.memberPermissions ) ) {
+    return await int.editReply( 'Not authorised.' );
+  }
+
+  if ( sub === 'unmute' ) {
+    monitor.unmute();
+    Utility.log( 'info', `[AMP-MON] Alerts unmuted by ${ int.user.id }.` );
+    return await int.editReply( 'Game server crash alerts resumed.' );
+  }
+
+  const minutes = int.options.getInteger( 'minutes' ) ?? 60;
+  monitor.mute( minutes * 60_000 );
+  Utility.log( 'info', `[AMP-MON] Alerts muted for ${ minutes }m by ${ int.user.id }.` );
+
+  return await int.editReply(
+    `Game server crash alerts muted for ${ minutes } minute${ minutes === 1 ? '' : 's' }.`
+    + ' State is still tracked, just not announced.'
+  );
+}
+
+/** Build the crash-monitor status embed. Exported so the layout can be tested. */
+export function buildMonitorEmbed ( monitor: AMPMonitor ): EmbedBuilder {
+  const tracked = [...monitor.getTracked().values()].sort( ( a, b ) => a.name.localeCompare( b.name ) );
+  const unhealthy = tracked.filter( t => t.state !== 20 ).length;
+
+  const embed = new EmbedBuilder()
+    .setTitle( '📟 Game Server Crash Monitor' )
+    .setColor( unhealthy > 0 ? 0xFFA500 : 0x00FF00 )
+    .addFields(
+      {
+        name: 'Alerts',
+        value: monitor.isMuted()
+          ? `Muted for another ${ Math.ceil( monitor.muteRemainingMs() / 60_000 ) }m`
+          : 'Active',
+        inline: true
+      },
+      {
+        name: 'Watching',
+        value: `${ tracked.length } server${ tracked.length === 1 ? '' : 's' }`,
+        inline: true
+      },
+      { name: 'Last sweep', value: describeAge( monitor.dataAgeMs() ), inline: true }
+    )
+    .setFooter( { text: `AMP Server Monitor • Stardate ${ Utility.stardate() }` } )
+    .setTimestamp();
+
+  embed.setDescription( tracked.length === 0
+    ? 'No running game servers are being watched.'
+    : truncate( tracked
+      .map( t => `${ t.state === 20 ? '🟢' : '🟡' } **${ t.name }** — ${ describeState( t.state ) }` )
+      .join( '\n' ), MAX_DESCRIPTION ) );
+
+  return embed;
+}
+
+function describeAge ( ms: number ): string {
+  if ( !Number.isFinite( ms ) ) return 'never';
+  if ( ms < 1000 ) return 'just now';
+  if ( ms < 60_000 ) return `${ Math.round( ms / 1000 ) }s ago`;
+  return `${ Math.round( ms / 60_000 ) }m ago`;
 }
 
 /** Post a control-action record. Never throws. */
@@ -822,7 +929,8 @@ function help (): string {
     + '`/amp status <instance>` — live state, uptime and metrics.\n'
     + '`/amp instance start|stop <instance>` — admin only. Brings the AMP instance itself up or down.\n'
     + '`/amp server start|stop <instance>` — admin only. Starts or stops the game server inside an '
-    + 'instance that is already online.';
+    + 'instance that is already online.\n'
+    + '`/amp monitor status` — what the crash watcher is seeing. `mute`/`unmute` are admin only.';
 }
 
 export default {

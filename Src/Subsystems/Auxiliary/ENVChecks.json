@@ -152,6 +152,11 @@
       "feature": "AMP Integration"
     },
     {
+      "name": "AMP_ALERT_CHANNEL",
+      "description": "Channel ID for AMP game server crash alerts. Falls back to ENGINEERING when unset.",
+      "feature": "AMP Integration"
+    },
+    {
       "name": "BESZEL_ALERT_CHANNEL",
       "description": "Channel ID for Beszel system state-change alerts. Falls back to ENGINEERING when unset.",
       "feature": "Beszel Monitoring"

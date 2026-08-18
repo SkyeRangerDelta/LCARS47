@@ -140,6 +140,8 @@ export class AMPClient {
   private instanceCache: { at: number; items: AMPInstance[] } | null = null;
 
   private readonly inFlight = new Map<string, { label: string; at: number; token: number }>();
+  /** When an operator action last finished, per instance. */
+  private readonly lastActionAt = new Map<string, number>();
   private lockCounter = 0;
 
   /** Directly observed states, which outrank the controller's stale aggregate. */
@@ -699,7 +701,25 @@ export class AMPClient {
       if ( this.inFlight.get( instance.instanceId )?.token === token ) {
         this.inFlight.delete( instance.instanceId );
       }
+      // Remembered past the lock so a monitor can tell a deliberate stop from a
+      // crash — the state often settles a moment after the command lets go.
+      this.lastActionAt.set( instance.instanceId, Date.now() );
     }
+  }
+
+  /**
+   * Was this instance deliberately acted on recently, or is it still being
+   * acted on now?
+   *
+   * A monitor watching for crashes needs this: a server going from Ready to
+   * Stopped is alarming when it happens on its own and completely routine when
+   * an operator just asked for it.
+   */
+  recentlyActedOn( instance: AMPInstance, withinMs: number ): boolean {
+    if ( this.inFlight.has( instance.instanceId ) ) return true;
+
+    const last = this.lastActionAt.get( instance.instanceId );
+    return last != null && Date.now() - last < withinMs;
   }
 
   /** What is currently running against this instance, if anything. */

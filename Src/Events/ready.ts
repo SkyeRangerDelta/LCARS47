@@ -12,6 +12,7 @@ import { MediaPlayerService } from '../Subsystems/MediaPlayer/MediaPlayerService
 import { JellyfinClient } from '../Subsystems/Jellyfin/JellyfinClient.js';
 import { AMPClient } from '../Subsystems/AMP/AMPClient.js';
 import { BeszelMonitor } from '../Subsystems/Monitors/BeszelMonitor.js';
+import { AMPMonitor } from '../Subsystems/Monitors/AMPMonitor.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
 
@@ -137,6 +138,17 @@ export default {
 
         LCARS47.AMP_CLIENT = amp;
         Utility.log( 'proc', `[AMP] Connected to ${ amp.baseUrl } - ${ instances.length } instances cached.` );
+
+        // Watches running game servers for crashes. Its sweep doubles as the
+        // keep-alive for the per-instance proxy sessions, so nothing else has
+        // to hold those open.
+        const ampMonitor = new AMPMonitor( {
+          client: LCARS47,
+          amp,
+          alertChannelId: env.AMP_ALERT_CHANNEL ?? env.ENGINEERING
+        } );
+        await ampMonitor.start();
+        LCARS47.AMP_MONITOR = ampMonitor;
       }
       catch ( ampErr ) {
         Utility.log( 'warn', `[AMP] Init failed: ${ ( ampErr as Error ).message }` );

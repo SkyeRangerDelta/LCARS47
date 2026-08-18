@@ -144,6 +144,49 @@ silently.
 
 ---
 
+## Crash monitoring
+
+Nothing used to notice a game server dying — a Minecraft server crashing at 03:00
+went unnoticed until someone tried to join. A background sweep now watches every
+*running* server and speaks up when one falls over.
+
+| Alert | When |
+| --- | --- |
+| 💥 **Server crashed** | the application dropped into Failed |
+| ⚠️ **Server stopped unexpectedly** | a live server went quiet on its own |
+| ⚠️ **Instance went offline** | the AMP instance itself stopped answering |
+| ✅ **Server recovered** | it came back after one of the above |
+
+Three things keep it honest:
+
+- **Operator actions are not crashes.** Anything you did yourself through `/amp`,
+  or in the two minutes after, is attributed to you and passes silently.
+- **A single missed sample is not an outage.** An instance that stops answering
+  has to miss twice in a row before it is called offline, since one miss can be
+  a blip in the proxy. A definite state from AMP is trusted immediately.
+- **A restart is not a crash.** Startup seeds current state without alerting, so
+  a server that was already down before the bot started is not reported as news.
+
+Recoveries are only announced if the fall was announced — a server coming up from
+an ordinary stopped state is routine, not a recovery.
+
+### `/amp monitor`
+
+`/amp monitor status` shows what is being watched, when the last sweep ran, and
+whether alerts are muted. Open to everyone.
+
+`/amp monitor mute [minutes]` and `/amp monitor unmute` are admin only, for
+planned maintenance. Muting still tracks state, it just stops announcing.
+
+Alerts go to `AMP_ALERT_CHANNEL`, falling back to `ENGINEERING`.
+
+### Cost
+
+Measured against the live controller: a steady-state sweep is **one request per
+running server** — 3 requests in 47ms for the current fleet, once a minute. Only
+running instances are probed, and sweeps never overlap. The sweep also keeps the
+per-instance proxy sessions alive, so nothing else has to.
+
 ## Audit trail
 
 Every control action is recorded to a channel, not just the container console —
@@ -179,6 +222,9 @@ AMP_PASSWORD=your_amp_api_user_password
 
 # Optional — where control actions are recorded. Defaults to ENGINEERING.
 AMP_AUDIT_CHANNEL=channel_id_for_amp_audit
+
+# Optional — where crash alerts go. Defaults to ENGINEERING.
+AMP_ALERT_CHANNEL=channel_id_for_amp_alerts
 ```
 
 All three are required together — set none of them and the feature is simply
