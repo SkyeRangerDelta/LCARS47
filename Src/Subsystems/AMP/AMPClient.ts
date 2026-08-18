@@ -145,6 +145,12 @@ export class AMPClient {
   /** Directly observed states, which outrank the controller's stale aggregate. */
   private readonly observed = new Map<string, { running: boolean; appState: number; at: number }>();
 
+  /**
+   * Which authentication the proxy accepts for each instance, once discovered.
+   * Outlives the session itself, so a renewal does not re-run the discovery.
+   */
+  private readonly proxyMode = new Map<string, 'ads' | 'instance'>();
+
   /** In-flight per-instance logins, so concurrent callers share one attempt. */
   private readonly instanceLogins = new Map<string, Promise<string>>();
   /** Serialises logins across instances so they never go out as a burst. */
@@ -403,9 +409,11 @@ export class AMPClient {
   /**
    * A per-instance call, proxied through the controller.
    *
-   * Route selection is learned per instance: try the controller session, and
-   * only pay for a per-instance Core/Login if AMP refuses it. Whichever mode
-   * works is cached so the probe happens at most once per instance.
+   * Which authentication the proxy accepts varies by controller, so it is
+   * discovered once per instance and then remembered. The discovery is worth a
+   * log line; the renewals that follow are routine and are not — logging every
+   * one of them turns an ordinary session refresh into console noise that looks
+   * like a fault.
    */
   private async callInstance<T>(
     instance: AMPInstance,
@@ -424,22 +432,33 @@ export class AMPClient {
       }
       catch ( err ) {
         if ( !( err instanceof AMPError ) || err.kind !== 'unauthorized' ) throw err;
+        // Expired server-side. Renewal happens below; nothing to announce.
         this.instanceSessions.delete( instance.instanceId );
       }
     }
 
-    const adsSession = await this.ensureSession();
-    try {
-      const out = await this.request<T>( path, params, adsSession );
-      this.instanceSessions.set( instance.instanceId, { sessionId: adsSession, lastCallAt: Date.now(), mode: 'ads' } );
-      return out;
-    }
-    catch ( err ) {
-      if ( !( err instanceof AMPError ) || err.kind !== 'unauthorized' ) throw err;
-    }
+    // Only worth trying the controller session while it might work. Once an
+    // instance is known to need its own, retrying the controller on every
+    // renewal is a wasted round trip against a server we know will refuse it.
+    if ( this.proxyMode.get( instance.instanceId ) !== 'instance' ) {
+      const adsSession = await this.ensureSession();
 
-    Utility.log( 'info',
-      `[AMP] Controller session did not proxy to ${ instance.friendlyName }; using a per-instance login.` );
+      try {
+        const out = await this.request<T>( path, params, adsSession );
+        this.proxyMode.set( instance.instanceId, 'ads' );
+        this.instanceSessions.set( instance.instanceId,
+          { sessionId: adsSession, lastCallAt: Date.now(), mode: 'ads' } );
+        return out;
+      }
+      catch ( err ) {
+        if ( !( err instanceof AMPError ) || err.kind !== 'unauthorized' ) throw err;
+      }
+
+      // First time we have learned this about the instance — say so once.
+      this.proxyMode.set( instance.instanceId, 'instance' );
+      Utility.log( 'info',
+        `[AMP] Controller session does not proxy to ${ instance.friendlyName }; using per-instance logins.` );
+    }
 
     const instanceSession = await this.loginInstance( instance.instanceId );
     return await this.request<T>( path, params, instanceSession );

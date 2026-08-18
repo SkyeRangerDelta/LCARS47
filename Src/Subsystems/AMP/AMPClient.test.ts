@@ -630,14 +630,13 @@ describe( 'AMPClient.probeInstance', () => {
 
   it( 'drops a cached proxy session when the instance is restarted', async () => {
     fetchMock
-      .mockResolvedValueOnce( res( LOGIN_OK ) )
-      .mockResolvedValueOnce( res( UNAUTHORIZED ) )                                    // ADS session refused
-      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )                               // per-instance login
-      .mockResolvedValueOnce( res( { State: 20, Uptime: '01:00:00', Metrics: {} } ) )  // status
-      .mockResolvedValueOnce( res( { Status: true } ) )                                // StartInstance
-      .mockResolvedValueOnce( res( UNAUTHORIZED ) )                                    // ADS session refused again
-      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )                               // fresh login, not the stale one
-      .mockResolvedValueOnce( res( { State: 0, Uptime: '00:00:00', Metrics: {} } ) );
+      .mockResolvedValueOnce( res( LOGIN_OK ) )                                        // 1 controller login
+      .mockResolvedValueOnce( res( UNAUTHORIZED ) )                                    // 2 ADS session refused
+      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )                               // 3 per-instance login
+      .mockResolvedValueOnce( res( { State: 20, Uptime: '01:00:00', Metrics: {} } ) )  // 4 status
+      .mockResolvedValueOnce( res( { Status: true } ) )                                // 5 StartInstance
+      .mockResolvedValueOnce( res( INSTANCE_LOGIN_OK ) )                               // 6 fresh login
+      .mockResolvedValueOnce( res( { State: 0, Uptime: '00:00:00', Metrics: {} } ) );  // 7 status
 
     const amp = makeClient();
     await amp.getInstanceStatus( INSTANCE );
@@ -646,7 +645,45 @@ describe( 'AMPClient.probeInstance', () => {
 
     // A session cached from the instance's previous life would have skipped the
     // re-login and been rejected.
-    expect( urlOf( 7 ) ).toBe( 'https://amp.test/API/ADSModule/Servers/abc-123/API/Core/Login' );
+    expect( urlOf( 6 ) ).toBe( 'https://amp.test/API/ADSModule/Servers/abc-123/API/Core/Login' );
+
+    // And having already learned this instance needs its own session, the
+    // controller session is not re-tried on the way — that request is pure
+    // waste against a server known to refuse it.
+    expect( fetchMock ).toHaveBeenCalledTimes( 7 );
+  } );
+
+  it( 'announces the proxy auth mode once per instance, not once per renewal', async () => {
+    const logged: string[] = [];
+    const spy = vi.spyOn( console, 'info' ).mockImplementation( ( msg: unknown ) => {
+      logged.push( String( msg ) );
+    } );
+
+    fetchMock.mockImplementation( async ( url: string, init: unknown ): Promise<Response> => {
+      await Promise.resolve();
+      const session = ( JSON.parse( ( init as { body: string } ).body ) as { SESSIONID: string } ).SESSIONID;
+
+      if ( url === 'https://amp.test/API/Core/Login' ) return res( LOGIN_OK );
+      if ( url.endsWith( '/Core/Login' ) ) return res( INSTANCE_LOGIN_OK );
+      // The instance session is accepted exactly once, then goes stale — the
+      // shape that was producing a log line on every single transaction.
+      if ( session === 'inst-1' && !expired ) { expired = true; return res( { State: 20, Uptime: '1:00:00', Metrics: {} } ); }
+      return res( UNAUTHORIZED );
+    } );
+
+    let expired = false;
+    const amp = makeClient();
+
+    await amp.getInstanceStatus( INSTANCE );
+    expired = false;
+    await amp.getInstanceStatus( INSTANCE );
+    expired = false;
+    await amp.getInstanceStatus( INSTANCE );
+
+    const announcements = logged.filter( l => l.includes( 'does not proxy' ) );
+    expect( announcements ).toHaveLength( 1 );
+
+    spy.mockRestore();
   } );
 } );
 

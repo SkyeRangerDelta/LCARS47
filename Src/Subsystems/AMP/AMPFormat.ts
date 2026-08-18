@@ -108,6 +108,40 @@ export function instanceState( running: boolean, appState: AMPState ): AMPStateV
 }
 
 /**
+ * Metric names that mean "people connected".
+ *
+ * Deliberately loose, because the metric dictionary is module-defined: the
+ * Minecraft and Generic modules both call it "Active Users", but nothing stops
+ * another module using "Players" or "Players Online". Narrow enough not to
+ * collide with CPU, Memory, Disk or TPS.
+ */
+const PLAYER_METRIC_PATTERN = /player|active users/i;
+
+/**
+ * Pull the player count out of a module's metrics, if it publishes one.
+ *
+ * @returns Current and maximum players, or null when the module has no such
+ *   metric — plenty of modules do not, and that is not an error.
+ */
+export function playerCount( metrics: Record<string, AMPMetric> ): { current: number; max: number } | null {
+  const found = Object.entries( metrics )
+    .find( ( [name] ) => PLAYER_METRIC_PATTERN.test( name ) );
+
+  if ( found == null ) return null;
+
+  const [, metric] = found;
+  return { current: metric.rawValue, max: metric.maxValue };
+}
+
+/** "3/25 players", or "3 players" when the module publishes no cap. */
+export function formatPlayers( count: { current: number; max: number } ): string {
+  const noun = count.current === 1 ? 'player' : 'players';
+  return count.max > 0
+    ? `${ count.current }/${ count.max } ${ noun }`
+    : `${ count.current } ${ noun }`;
+}
+
+/**
  * Render one metric for an embed field.
  *
  * AMP modules publish arbitrary metric dictionaries, so this must degrade
@@ -186,6 +220,8 @@ export default {
   stateColour,
   isTransitional,
   instanceState,
+  playerCount,
+  formatPlayers,
   formatMetric,
   formatUptime
 };

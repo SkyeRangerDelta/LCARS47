@@ -39,9 +39,11 @@ import { isAdminUser } from '../../Subsystems/Utilities/AuthUtils.js';
 import { AMPError, type AMPClient } from '../../Subsystems/AMP/AMPClient.js';
 import {
   formatMetric,
+  formatPlayers,
   formatUptime,
   instanceState,
   isTransitional,
+  playerCount,
   stateColour,
   stateEmoji,
   stateLabel
@@ -235,21 +237,38 @@ async function handleList ( amp: AMPClient, int: ChatInputCommandInteraction ): 
 
     const live = await hydrateStates( amp, instances );
 
-    const lines = instances.map( i => {
-      const view = instanceState( i.running, live.get( i.instanceId ) ?? i.appState );
+    // Live status where we have it, the controller's view where we do not.
+    const resolved = instances.map( i => {
+      const status = live.get( i.instanceId ) ?? null;
+      return { instance: i, status, state: status?.state ?? i.appState };
+    } );
+
+    const lines = resolved.map( ( { instance: i, status, state } ) => {
+      const view = instanceState( i.running, state );
+      const players = status == null ? null : playerCount( status.metrics );
+
       return `${ view.emoji } **${ i.friendlyName }** — ${ view.label }`
+        // Only meaningful while the server is actually serving; a stopped one
+        // reports zero, which reads as information it is not.
+        + ( state === 20 && players != null ? ` · ${ formatPlayers( players ) }` : '' )
         + ( i.moduleDisplayName === '' ? '' : ` \`${ i.moduleDisplayName }\`` );
     } );
 
-    const online = instances.filter( i => i.running ).length;
-    const serving = [...live.values()].filter( s => s === 20 ).length;
+    const online = resolved.filter( r => r.instance.running ).length;
+    const serving = resolved.filter( r => r.instance.running && r.state === 20 );
+
+    const totalPlayers = serving.reduce( ( sum, r ) => {
+      const players = r.status == null ? null : playerCount( r.status.metrics );
+      return sum + ( players?.current ?? 0 );
+    }, 0 );
 
     const embed = new EmbedBuilder()
       .setTitle( '🎮 Impulse Controller — Game Servers' )
-      .setColor( serving > 0 ? 0x00FF00 : 0x808080 )
+      .setColor( serving.length > 0 ? 0x00FF00 : 0x808080 )
       .setDescription( truncate( lines.join( '\n' ), MAX_DESCRIPTION ) )
       .setFooter( {
-        text: `${ online }/${ instances.length } instances online, ${ serving } serving`
+        text: `${ online }/${ instances.length } instances online, ${ serving.length } serving`
+          + ( totalPlayers > 0 ? ` • ${ totalPlayers } online now` : '' )
           + ` • Stardate ${ Utility.stardate() }`
       } )
       .setTimestamp();
@@ -277,35 +296,30 @@ async function handleList ( amp: AMPClient, int: ChatInputCommandInteraction ): 
 async function hydrateStates (
   amp: AMPClient,
   instances: AMPInstance[]
-): Promise<Map<string, number>> {
+): Promise<Map<string, AMPStatus>> {
   const online = instances.filter( i => i.running );
-  const live = new Map<string, number>();
+  const live = new Map<string, AMPStatus>();
 
   // Guard against a fleet where everything is up at once — /amp list should not
   // turn into fifty round trips.
-  if ( online.length === 0 || online.length > MAX_HYDRATED ) {
-    for ( const i of online ) live.set( i.instanceId, i.appState );
-    return live;
-  }
+  if ( online.length === 0 || online.length > MAX_HYDRATED ) return live;
 
   let throttled = false;
 
   await Promise.all( online.map( async i => {
     // Once AMP has told us to back off, stop asking. Continuing to fan out is
     // how a short throttle turns into a long one.
-    if ( throttled ) {
-      live.set( i.instanceId, i.appState );
-      return;
-    }
+    if ( throttled ) return;
 
     try {
       const status = await amp.probeInstance( i );
-      live.set( i.instanceId, status?.state ?? i.appState );
+      // Absent from the map means "no live reading"; the caller falls back to
+      // the controller's view rather than being handed a fabricated one.
+      if ( status != null ) live.set( i.instanceId, status );
     }
     catch ( err ) {
       if ( err instanceof AMPError && err.kind === 'rate-limited' ) throttled = true;
       Utility.log( 'warn', `[AMP] State probe failed for ${ i.friendlyName }: ${ ( err as Error ).message }` );
-      live.set( i.instanceId, i.appState );
     }
   } ) );
 

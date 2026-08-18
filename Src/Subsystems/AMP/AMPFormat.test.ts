@@ -6,6 +6,8 @@ import {
   stateColour,
   isTransitional,
   instanceState,
+  playerCount,
+  formatPlayers,
   formatMetric,
   formatUptime
 } from './AMPFormat.js';
@@ -115,6 +117,43 @@ describe( 'instanceState', () => {
     // The whole point: they must be told apart at a glance in a list.
     expect( idle.emoji ).not.toBe( off.emoji );
     expect( idle.colour ).not.toBe( off.colour );
+  } );
+} );
+
+describe( 'playerCount / formatPlayers', () => {
+  it( 'reads the Active Users metric both modules publish', () => {
+    // Captured shape from amp.pldyn.net.
+    expect( playerCount( { 'Active Users': metric( { rawValue: 3, maxValue: 25, percent: 12 } ) } ) )
+      .toEqual( { current: 3, max: 25 } );
+  } );
+
+  it( 'accepts other module wordings', () => {
+    expect( playerCount( { Players: metric( { rawValue: 1, maxValue: 8 } ) } ) )
+      .toEqual( { current: 1, max: 8 } );
+    expect( playerCount( { 'Players Online': metric( { rawValue: 4, maxValue: 40 } ) } ) )
+      .toEqual( { current: 4, max: 40 } );
+  } );
+
+  it( 'does not mistake other metrics for a player count', () => {
+    expect( playerCount( {
+      'CPU Usage': metric( { rawValue: 42, maxValue: 100, units: '%' } ),
+      'Memory Usage': metric( { rawValue: 2341, maxValue: 16384, units: 'MB' } ),
+      TPS: metric( { rawValue: 20, maxValue: 20, units: 'TPS' } )
+    } ) ).toBeNull();
+  } );
+
+  it( 'returns null for a module that publishes no player metric', () => {
+    expect( playerCount( {} ) ).toBeNull();
+  } );
+
+  it( 'formats a count against its cap', () => {
+    expect( formatPlayers( { current: 3, max: 25 } ) ).toBe( '3/25 players' );
+    expect( formatPlayers( { current: 1, max: 25 } ) ).toBe( '1/25 player' );
+    expect( formatPlayers( { current: 0, max: 25 } ) ).toBe( '0/25 players' );
+  } );
+
+  it( 'drops the cap when the module does not publish one', () => {
+    expect( formatPlayers( { current: 7, max: 0 } ) ).toBe( '7 players' );
   } );
 } );
 
