@@ -55,6 +55,7 @@ export interface LCARSEnv {
   AMP_PASSWORD?: string;
   AMP_AUDIT_CHANNEL?: string;
   AMP_ALERT_CHANNEL?: string;
+  SHIP_LOG_CHANNEL?: string;
   JWST?: string;
   JELLYFIN_HOST?: string;
   JELLYFIN_PORT?: string;

@@ -6,6 +6,8 @@
 import type { Tool } from '@anthropic-ai/sdk/resources/messages';
 import { type LCARSClient } from '../Auxiliary/LCARSClient.js';
 import BeszelUtils from '../RemoteDS/Beszel_Utilities.js';
+import Ship from '../Ship/Ship_Utilities.js';
+import ShipMsg from '../Ship/Ship_Messages.js';
 import { isFeatureEnabled } from '../Utilities/EnvUtils.js';
 import Utility from '../Utilities/SysUtils.js';
 
@@ -43,6 +45,15 @@ export const tools: Tool[] = [
     }
   },
   {
+    name: 'get_ship_position',
+    description: 'Retrieve the ship\'s current position: galactic coordinates, quadrant, sector designation, distance from the galactic core and from Sol, and any voyage under way with its course, velocity, progress and arrival time. Use when the user asks where the ship is, what sector or quadrant she is in, whether she is under way, how far to the destination, or when she arrives.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
     name: 'get_jellyfin_status',
     description: 'Report whether the Jellyfin media library subsystem is configured and online. Use when the user asks about the media library, Jellyfin connection, or whether streaming is available.',
     input_schema: {
@@ -71,6 +82,8 @@ export async function dispatchTool( name: string, input: ToolInput, ctx: ToolCon
         return getBotUptime( ctx );
       case 'get_server_status':
         return await getServerStatus( ctx, input.system_name );
+      case 'get_ship_position':
+        return await getShipPosition( ctx );
       case 'get_jellyfin_status':
         return getJellyfinStatus();
       default:
@@ -103,6 +116,39 @@ function getNowPlaying( ctx: ToolContext ): string {
   parts.push( `Requested by: ${track.requestedBy.displayName}` );
 
   return parts.join( '\n' );
+}
+
+async function getShipPosition( ctx: ToolContext ): Promise<string> {
+  const connection = ctx.client.RDS_CONNECTION;
+  if ( connection == null ) return 'Navigational database unavailable.';
+
+  const doc = await Ship.getShipPosition( connection );
+  ctx.client.SHIP_POSITION = doc;
+
+  const at = Ship.resolveShipPosition( doc, Date.now() );
+
+  const lines = [
+    `Status: ${ ShipMsg.statusLabel( at.status ) }`,
+    `Position: ${ ShipMsg.formatSector( at.sector ) }`,
+    `Galactic coordinates (light years, origin galactic centre): ${ ShipMsg.formatCoordinates( at.position ) }`,
+    `Distance from galactic core: ${ at.distanceFromCoreLy.toFixed( 1 ) } ly`,
+    `Distance from Sol: ${ at.distanceFromSolLy.toFixed( 2 ) } ly`,
+    `Elevation: ${ ShipMsg.formatGalacticPlane( at.position.z ) }`
+  ];
+
+  if ( at.anchorage != null ) lines.push( `Anchorage: ${ at.anchorage }` );
+
+  if ( at.transit != null ) {
+    lines.push(
+      `Course: ${ ShipMsg.formatCourse( at.transit.bearing, at.transit.mark ) }`,
+      `Velocity: ${ ShipMsg.formatWarp( at.transit.warpFactor ) }`,
+      `Run: ${ at.transit.travelledLy.toFixed( 2 ) } of ${ at.transit.totalDistanceLy.toFixed( 2 ) } ly`
+        + ` (${ Math.round( at.transit.progress * 100 ) }% complete)`,
+      `Time to arrival: ${ ShipMsg.formatDuration( at.transit.remainingMs ) }`
+    );
+  }
+
+  return lines.join( '\n' );
 }
 
 function getBotUptime( ctx: ToolContext ): string {

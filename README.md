@@ -63,6 +63,17 @@ than assuming it did. See [the technical notes](docs/technical/amp-api-integrati
 Imagery pulled straight from the James Webb Space Telescope archive — nebulae, galaxy
 clusters, and exoplanet observations on request.
 
+![NAVIGATION](https://img.shields.io/badge/NAVIGATION-FF9900?style=for-the-badge&labelColor=FF9900)
+
+The ship has a real position. Coordinates are light years in a galactic-centre frame, mapped
+onto the canon quadrant, sector block and sector hierarchy — she starts in orbit of Earth,
+Sector 001. Lay in a course by bearing, mark and distance and she gets under way at the
+Galaxy class's normal cruising speed of warp 6, arriving after the time the journey actually
+takes; high warp needs an officer, and she can be sped up or slowed down en route. Position
+mid-voyage is derived from the departure clock rather than ticked, so it survives restarts
+exactly. See
+[the feature notes](docs/features/ship-navigation.md).
+
 ![CREW SERVICES](https://img.shields.io/badge/CREW_SERVICES-CC6666?style=for-the-badge&labelColor=CC6666)
 
 Self-serve role management plus a Ferengi Dabo wheel for wagering Gold-Pressed Latinum —

@@ -219,6 +219,7 @@ export function getEnv(): LCARSEnv {
     AMP_PASSWORD: process.env.AMP_PASSWORD,
     AMP_AUDIT_CHANNEL: process.env.AMP_AUDIT_CHANNEL,
     AMP_ALERT_CHANNEL: process.env.AMP_ALERT_CHANNEL,
+    SHIP_LOG_CHANNEL: process.env.SHIP_LOG_CHANNEL,
     JWST: process.env.JWST,
     JELLYFIN_HOST: process.env.JELLYFIN_HOST,
     JELLYFIN_PORT: process.env.JELLYFIN_PORT,

@@ -23,6 +23,8 @@ import { DateTime } from 'luxon';
 import { LCARS47 } from './OPs_CoreClient.js';
 import Utility from '../Utilities/SysUtils.js';
 import { parsePersona, personas, type Persona } from './OPs_AIPersonas.js';
+import Ship from '../Ship/Ship_Utilities.js';
+import ShipMsg from '../Ship/Ship_Messages.js';
 import { tools, dispatchTool, type ToolContext } from './OPs_AITools.js';
 
 const SONNET_MODEL = 'claude-sonnet-4-6';
@@ -59,8 +61,35 @@ export function classifyAIError ( err: unknown ): AIError {
   return { kind: 'generic', reply: 'No.', raw };
 }
 
+/**
+ * One line describing where the ship is, for the operational context block.
+ *
+ * Read from the cached client copy rather than Mongo: this bot is the only
+ * writer and it refreshes the cache on every write, so the cache is current,
+ * and the position itself is derived from the transit plan's timestamps at
+ * call time. Returns null before the ready event has seeded it.
+ */
+function shipContextLine (): string | null {
+  const doc = LCARS47.SHIP_POSITION;
+  if ( doc == null ) return null;
+
+  const at = Ship.resolveShipPosition( doc, Date.now() );
+  const where = `${ ShipMsg.statusLabel( at.status ) } in ${ ShipMsg.formatSector( at.sector ) }`;
+
+  if ( at.transit == null ) return where;
+
+  return `${ where }, on course ${ ShipMsg.formatCourse( at.transit.bearing, at.transit.mark ) }`
+    + ` at ${ ShipMsg.formatWarp( at.transit.warpFactor ) },`
+    + ` ${ Math.round( at.transit.progress * 100 ) }% of the way,`
+    + ` arriving in ${ ShipMsg.formatDuration( at.transit.remainingMs ) }`;
+}
+
 export function buildSystemBlocks ( persona: Persona, userDisplayName: string ): TextBlockParam[] {
   const stardate = Utility.stardate();
+  const ship = shipContextLine();
+
+  // The persona block is cached; volatile values belong in the second block or
+  // they invalidate the cache on every request.
   return [
     {
       type: 'text',
@@ -69,7 +98,7 @@ export function buildSystemBlocks ( persona: Persona, userDisplayName: string ):
     },
     {
       type: 'text',
-      text: `Operational context: stardate ${stardate}. Active persona: ${persona.label}. Requesting user displayName: ${userDisplayName}.${persona.signoff != null ? ` Signoff convention: ${persona.signoff.trim()}` : ''}`
+      text: `Operational context: stardate ${stardate}. Active persona: ${persona.label}. Requesting user displayName: ${userDisplayName}.${ship != null ? ` Ship position: ${ship}.` : ''}${persona.signoff != null ? ` Signoff convention: ${persona.signoff.trim()}` : ''}`
     }
   ];
 }
