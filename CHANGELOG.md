@@ -1,3 +1,12 @@
+# [7.1.0-E.5](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.4...V47.7.1.0-E.5) (2026-08-28)
+
+
+### Features
+
+* Added astrometrics ([60c585a](https://github.com/SkyeRangerDelta/LCARS47/commit/60c585a7082b6cc5f39bdac4d02b414ee2d82598)), closes [#78](https://github.com/SkyeRangerDelta/LCARS47/issues/78)
+* Added To and Speed subcommands ([12cfaa8](https://github.com/SkyeRangerDelta/LCARS47/commit/12cfaa8ca64f7cb7500046a3631b739cbfecc0b9))
+* Introduced move command ([6f4aa67](https://github.com/SkyeRangerDelta/LCARS47/commit/6f4aa6719313ce349e7417e42a2a5dc08eeb85c5)), closes [#79](https://github.com/SkyeRangerDelta/LCARS47/issues/79)
+
 # [7.1.0-E.4](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.3...V47.7.1.0-E.4) (2026-08-18)
 
 
