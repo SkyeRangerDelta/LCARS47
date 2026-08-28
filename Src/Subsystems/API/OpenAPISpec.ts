@@ -115,6 +115,104 @@ const StatusResponseSchema: OpenAPISchema = {
   }
 };
 
+/**
+ * Payload returned by the ship endpoint.
+ *
+ * Coordinates are light years in the Galactic Standard Reference Frame: origin
+ * at the galactic centre, +Z galactic north, +X running through Sol.
+ */
+const ShipPositionResponseSchema: OpenAPISchema = {
+  type: 'object',
+  description: "The ship's position and any voyage under way.",
+  properties: {
+    STATUS: {
+      type: 'string',
+      enum: ['docked', 'orbit', 'idle', 'transit'],
+      description: 'What the ship is currently doing.'
+    },
+    POSITION: { $ref: '#/components/schemas/ShipVector' },
+    QUADRANT: {
+      type: 'string',
+      enum: ['Alpha', 'Beta', 'Gamma', 'Delta'],
+      description: 'Galactic quadrant containing the ship.'
+    },
+    SECTOR: {
+      type: 'object',
+      description: 'Sector block and sector containing the ship.',
+      properties: {
+        designation: { type: 'string', description: 'Canon-style sector designation, e.g. "001".' },
+        block: { type: 'number', description: 'Sector block number.' },
+        index: { type: 'number', description: 'Sector index within the block, 0-99.' },
+        grid: { $ref: '#/components/schemas/ShipVector' }
+      }
+    },
+    DISTANCE_FROM_CORE_LY: { type: 'number', description: 'Distance from the galactic centre, light years.' },
+    DISTANCE_FROM_SOL_LY: { type: 'number', description: 'Distance from Sol, light years.' },
+    ANCHORAGE: {
+      type: ['string', 'null'],
+      description: 'What the ship is moored to or orbiting; null when under way or adrift.'
+    },
+    TRANSIT: {
+      oneOf: [
+        { $ref: '#/components/schemas/ShipTransit' },
+        { type: 'null' }
+      ],
+      description: 'The voyage under way, or null when the ship is not in transit.'
+    },
+    UPDATED_AT: { type: 'string', format: 'date-time', description: 'When the position was last written.' }
+  }
+};
+
+/** A point or direction in the Galactic Standard Reference Frame. */
+const ShipVectorSchema: OpenAPISchema = {
+  type: 'object',
+  description: 'A GSRF coordinate triple, in light years.',
+  properties: {
+    x: { type: 'number' },
+    y: { type: 'number' },
+    z: { type: 'number' }
+  }
+};
+
+/** A voyage in progress, with its derived state at the moment of the request. */
+const ShipTransitSchema: OpenAPISchema = {
+  type: 'object',
+  description:
+    'A voyage under way. A mid-voyage speed change splits the voyage into legs: the '
+    + 'unprefixed fields span the whole voyage, the LEG_ fields describe the segment '
+    + 'currently being flown.',
+  properties: {
+    BEARING: { type: 'number', description: 'Azimuth in degrees; 000 points at the galactic core.' },
+    MARK: { type: 'number', description: 'Elevation in degrees, canon "mark" notation.' },
+    WARP_FACTOR: { type: 'number', description: 'Ordered warp factor.' },
+    DISTANCE_LY: { type: 'number', description: 'Total distance of the voyage, light years.' },
+    TRAVELLED_LY: { type: 'number', description: 'Distance covered so far, across every leg.' },
+    REMAINING_LY: { type: 'number', description: 'Distance still to run.' },
+    PROGRESS: { type: 'number', description: 'Fraction of the whole voyage complete, 0 to 1.' },
+    ORIGIN: { $ref: '#/components/schemas/ShipVector' },
+    DESTINATION: { $ref: '#/components/schemas/ShipVector' },
+    DESTINATION_NAME: {
+      type: ['string', 'null'],
+      description: 'Name of the target when the course was laid in against a named point; null for a bearing course.'
+    },
+    DEPARTED_AT: { type: 'string', format: 'date-time', description: 'When the voyage began.' },
+    ETA_AT: { type: 'string', format: 'date-time' },
+    ORDERED_BY: { type: 'string', description: 'Discord user ID of whoever gave the order.' },
+    LEG_ORIGIN: {
+      $ref: '#/components/schemas/ShipVector'
+    },
+    LEG_DISTANCE_LY: {
+      type: 'number',
+      description: 'Distance of the current leg. Differs from DISTANCE_LY once the speed has been changed mid-voyage.'
+    },
+    LEG_DEPARTED_AT: {
+      type: 'string',
+      format: 'date-time',
+      description: 'When the current leg began - the last speed change, or departure.'
+    }
+  }
+};
+
 /** Request body accepted by the sendMessage endpoint. */
 const SendMessageRequestSchema: OpenAPISchema = {
   type: 'object',
@@ -234,7 +332,8 @@ export function buildDocument(
     tags: [
       { name: 'System', description: 'Service metadata and discovery.' },
       { name: 'Telemetry', description: 'Bot status and runtime statistics.' },
-      { name: 'Messaging', description: 'Outbound Discord messaging.' }
+      { name: 'Messaging', description: 'Outbound Discord messaging.' },
+      { name: 'Navigation', description: 'Ship position and stellar cartography.' }
     ],
     paths: { ...BASE_PATHS, ...paths },
     components: {
@@ -242,7 +341,10 @@ export function buildDocument(
         APIResponse: APIResponseSchema,
         StatusResponse: StatusResponseSchema,
         SendMessageRequest: SendMessageRequestSchema,
-        APIIndexResponse: APIIndexResponseSchema
+        APIIndexResponse: APIIndexResponseSchema,
+        ShipPositionResponse: ShipPositionResponseSchema,
+        ShipVector: ShipVectorSchema,
+        ShipTransit: ShipTransitSchema
       },
       securitySchemes: {
         [API_SECURITY_SCHEME]: {

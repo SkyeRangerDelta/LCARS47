@@ -162,6 +162,17 @@
       "feature": "Beszel Monitoring"
     },
     {
+      "name": "SHIP_LOG_CHANNEL",
+      "description": "Channel ID for ship arrival announcements. Falls back to ENGINEERING when unset.",
+      "feature": "Ship Navigation"
+    },
+    {
+      "name": "ASTROMETRICS_REMOTE",
+      "description": "Set to false to disable outbound lookups to the SIMBAD and STAPI catalogues. Astrometrics then reports procedural readings only.",
+      "default": "true",
+      "feature": "Astrometrics"
+    },
+    {
       "name": "COMPUTER_CMD_COOLDOWN_SEC",
       "description": "Per-user cooldown (seconds) between /computer slash command invocations.",
       "default": "60",

@@ -4,6 +4,7 @@
 import Utility from '../Subsystems/Utilities/SysUtils.js';
 import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
+import Ship from '../Subsystems/Ship/Ship_Utilities.js';
 import Beszel from '../Subsystems/RemoteDS/Beszel_Connect.js';
 import BeszelUtils from '../Subsystems/RemoteDS/Beszel_Utilities.js';
 import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
@@ -13,6 +14,9 @@ import { JellyfinClient } from '../Subsystems/Jellyfin/JellyfinClient.js';
 import { AMPClient } from '../Subsystems/AMP/AMPClient.js';
 import { BeszelMonitor } from '../Subsystems/Monitors/BeszelMonitor.js';
 import { AMPMonitor } from '../Subsystems/Monitors/AMPMonitor.js';
+import { ShipMonitor } from '../Subsystems/Monitors/ShipMonitor.js';
+import Astro from '../Subsystems/Astrometrics/AstrometricsService.js';
+import AstroConfig from '../Subsystems/Astrometrics/Astro_Config.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
 
@@ -67,6 +71,37 @@ export default {
     }
 
     LCARS47.RDS_CONNECTION = await RDS.rds_connect();
+
+    // Load-or-seed the ship's position. Must sit after the --heartbeat guard
+    // above: that path exits before RDS_CONNECTION exists.
+    LCARS47.SHIP_POSITION = await Ship.getShipPosition( LCARS47.RDS_CONNECTION );
+    Utility.log(
+      'proc',
+      `[SHIP] Position restored: ${ LCARS47.SHIP_POSITION.status } in Sector `
+      + `${ Ship.resolveShipPosition( LCARS47.SHIP_POSITION, Date.now() ).sector.designation }.`
+    );
+
+    // Astrometrics needs no credentials and no client - the catalogues are
+    // public and read-only - so there is nothing to start. Logging the mode is
+    // the only useful thing to do at boot.
+    Astro.logMode( AstroConfig.astrometricsOptions( LCARS47.RDS_CONNECTION ) );
+
+    // Announces arrivals and closes out finished voyages. Not required for
+    // correctness - every reader derives position from the transit plan's
+    // timestamps - so a failure here costs the announcement and nothing else.
+    try {
+      const shipMonitor = new ShipMonitor( {
+        client: LCARS47,
+        connection: LCARS47.RDS_CONNECTION,
+        alertChannelId: env.SHIP_LOG_CHANNEL ?? env.ENGINEERING
+      } );
+      await shipMonitor.start();
+      LCARS47.SHIP_MONITOR = shipMonitor;
+    }
+    catch ( shipErr ) {
+      Utility.log( 'warn', `[SHIP-MON] Init failed: ${ ( shipErr as Error ).message }` );
+      Utility.log( 'warn', '[SHIP-MON] Arrivals will not be announced; positions remain correct.' );
+    }
 
     // Initialize Beszel client if feature is enabled
     if ( isFeatureEnabled( 'jellyfin' ) ) {

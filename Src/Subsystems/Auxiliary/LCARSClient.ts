@@ -16,6 +16,8 @@ import type { MediaPlayerService } from '../MediaPlayer/MediaPlayerService.js';
 import type { AMPClient } from '../AMP/AMPClient.js';
 import type { BeszelMonitor } from '../Monitors/BeszelMonitor.js';
 import type { AMPMonitor } from '../Monitors/AMPMonitor.js';
+import type { ShipMonitor } from '../Monitors/ShipMonitor.js';
+import type { ShipPosition } from './Interfaces/ShipInterfaces.js';
 
 // Exports
 export interface LCARSClient extends Client {
@@ -36,4 +38,8 @@ export interface LCARSClient extends Client {
   /** Undefined when AMP is unavailable or the monitor failed to start. */
   AMP_MONITOR?: AMPMonitor
   CLIENT_STATS: StatusInterface
+  /** The ship's last persisted position. Mid-voyage positions are derived, not stored - see Ship_Utilities. */
+  SHIP_POSITION: ShipPosition
+  /** Undefined when the arrival monitor failed to start. Not required for correctness - positions are derived. */
+  SHIP_MONITOR?: ShipMonitor
 }

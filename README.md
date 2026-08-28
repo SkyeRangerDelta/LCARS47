@@ -61,7 +61,24 @@ than assuming it did. See [the technical notes](docs/technical/amp-api-integrati
 ![STELLAR CARTOGRAPHY](https://img.shields.io/badge/STELLAR_CARTOGRAPHY-FFCC66?style=for-the-badge&labelColor=FFCC66)
 
 Imagery pulled straight from the James Webb Space Telescope archive — nebulae, galaxy
-clusters, and exoplanet observations on request.
+clusters, and exoplanet observations on request. Astrometrics reports sensor data against
+wherever the ship actually is: real stars from the SIMBAD catalogue with their range and
+bearing, canon Star Trek identities from STAPI, and procedurally generated sector readings
+everywhere the real catalogues cannot reach. Ask it where Vulcan is and it resolves through
+40 Eridani to a genuine fix, 16.3 light years out. See
+[the feature notes](docs/features/astrometrics.md).
+
+![NAVIGATION](https://img.shields.io/badge/NAVIGATION-FF9900?style=for-the-badge&labelColor=FF9900)
+
+The ship has a real position. Coordinates are light years in a galactic-centre frame, mapped
+onto the canon quadrant, sector block and sector hierarchy — she starts in orbit of Earth,
+Sector 001. Lay in a course by bearing, mark and distance — or just name where you want to go —
+and she gets under way at the
+Galaxy class's normal cruising speed of warp 6, arriving after the time the journey actually
+takes; high warp needs an officer, and she can be sped up or slowed down en route. Position
+mid-voyage is derived from the departure clock rather than ticked, so it survives restarts
+exactly. See
+[the feature notes](docs/features/ship-navigation.md).
 
 ![CREW SERVICES](https://img.shields.io/badge/CREW_SERVICES-CC6666?style=for-the-badge&labelColor=CC6666)
 
