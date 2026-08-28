@@ -67,7 +67,8 @@ clusters, and exoplanet observations on request.
 
 The ship has a real position. Coordinates are light years in a galactic-centre frame, mapped
 onto the canon quadrant, sector block and sector hierarchy — she starts in orbit of Earth,
-Sector 001. Lay in a course by bearing, mark and distance and she gets under way at the
+Sector 001. Lay in a course by bearing, mark and distance — or just name where you want to go —
+and she gets under way at the
 Galaxy class's normal cruising speed of warp 6, arriving after the time the journey actually
 takes; high warp needs an officer, and she can be sped up or slowed down en route. Position
 mid-voyage is derived from the departure clock rather than ticked, so it survives restarts

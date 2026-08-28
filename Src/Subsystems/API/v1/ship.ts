@@ -82,6 +82,7 @@ export function buildShipResponse( resolved: ResolvedPosition ): ShipPositionRes
       PROGRESS: transit.progress,
       ORIGIN: { ...( transit.voyageOrigin ?? transit.origin ) },
       DESTINATION: { ...transit.destination },
+      DESTINATION_NAME: transit.destinationName ?? null,
       DEPARTED_AT: ( transit.voyageDepartedAt ?? transit.departedAt ).toISOString(),
       ETA_AT: transit.etaAt.toISOString(),
       ORDERED_BY: transit.orderedBy,

@@ -6,7 +6,11 @@ import { describe, it, expect } from 'vitest';
 
 import { buildShipResponse } from './ship.js';
 import { SOL, WARP_DEFAULT, transitDurationMs } from '../../Ship/Ship_Navigation.js';
-import { planSpeedChange, resolveShipPosition } from '../../Ship/Ship_Utilities.js';
+import {
+  planCourseToPoint,
+  planSpeedChange,
+  resolveShipPosition
+} from '../../Ship/Ship_Utilities.js';
 import type { ShipPosition } from '../../Auxiliary/Interfaces/ShipInterfaces.js';
 
 const DEPARTED = Date.UTC( 2026, 7, 1, 12, 0, 0 );
@@ -153,5 +157,34 @@ describe( 'buildShipResponse after a speed change', () => {
     expect( body.TRANSIT?.LEG_ORIGIN ).toEqual( body.TRANSIT?.ORIGIN );
     expect( body.TRANSIT?.LEG_DISTANCE_LY ).toBe( body.TRANSIT?.DISTANCE_LY );
     expect( body.TRANSIT?.LEG_DEPARTED_AT ).toBe( body.TRANSIT?.DEPARTED_AT );
+  } );
+} );
+
+describe( 'buildShipResponse destination naming', () => {
+  it( 'reports null for a course laid in on a bearing', () => {
+    const body = buildShipResponse( resolveShipPosition( underway, DEPARTED + 1 ) );
+
+    expect( body.TRANSIT?.DESTINATION_NAME ).toBeNull();
+  } );
+
+  it( 'reports the name for a course laid in against a named point', () => {
+    const target = { x: SOL.x - 20, y: 0, z: 0 };
+    const plan = planCourseToPoint( SOL, target, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone', destinationName: 'Sol'
+    }, DEPARTED );
+
+    const doc: ShipPosition = {
+      id: 1,
+      status: 'transit',
+      position: { ...SOL },
+      transit: plan,
+      updatedAt: new Date( DEPARTED ),
+      updatedBy: 'someone'
+    };
+
+    const body = buildShipResponse( resolveShipPosition( doc, DEPARTED + 1 ) );
+
+    expect( body.TRANSIT?.DESTINATION_NAME ).toBe( 'Sol' );
+    expect( body.TRANSIT?.DESTINATION ).toEqual( target );
   } );
 } );

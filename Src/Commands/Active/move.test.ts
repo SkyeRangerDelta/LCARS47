@@ -21,6 +21,7 @@ import {
   transitDurationMs
 } from '../../Subsystems/Ship/Ship_Navigation.js';
 import {
+  planCourseToPoint,
   planSpeedChange,
   resolveShipPosition
 } from '../../Subsystems/Ship/Ship_Utilities.js';
@@ -300,5 +301,71 @@ describe( 'buildRefusalEmbed, speed cases', () => {
     const embed = buildRefusalEmbed( { code: 'not-under-way' }, 0 );
 
     expect( embed.data.description ).toContain( '/move course' );
+  } );
+} );
+
+describe( 'named destinations in the embeds', () => {
+  const TARGET = { x: SOL.x - 20, y: 0, z: 0 };
+  const named = planCourseToPoint( SOL, TARGET, {
+    warpFactor: WARP_DEFAULT, orderedBy: '1234567890', destinationName: 'Sol'
+  }, DEPARTED );
+  const from = resolveShipPosition( moored, DEPARTED );
+
+  it( 'names the destination on departure', () => {
+    const embed = buildDepartureEmbed( named, from, 'Skye' );
+
+    expect( fieldValue( embed, 'Bound for' ) ).toContain( 'Sol' );
+    expect( fieldValue( embed, 'Bound for' ) ).toContain( 'Sector' );
+  } );
+
+  it( 'falls back to the destination sector for a bearing course', () => {
+    const embed = buildDepartureEmbed( plan, from, 'Skye' );
+    const bound = fieldValue( embed, 'Bound for' );
+
+    expect( bound ).toContain( 'Sector' );
+    expect( bound ).not.toContain( '**' );
+  } );
+
+  it( 'keeps naming the destination in the status report', () => {
+    const doc: ShipPosition = {
+      id: 1,
+      status: 'transit',
+      position: { ...SOL },
+      transit: named,
+      updatedAt: new Date( DEPARTED ),
+      updatedBy: '1234567890'
+    };
+
+    const embed = buildStatusEmbed( resolveShipPosition( doc, DEPARTED + DURATION / 2 ) );
+
+    expect( fieldValue( embed, 'Bound for' ) ).toContain( 'Sol' );
+  } );
+} );
+
+describe( 'buildRefusalEmbed, destination cases', () => {
+  it( 'lists what it will accept when the destination is unknown', () => {
+    const embed = buildRefusalEmbed( { code: 'unknown-destination', input: 'Qo\'noS' }, 0 );
+
+    expect( embed.data.description ).toContain( 'Qo\'noS' );
+    expect( embed.data.description ).toContain( '29980, 0, 0' );
+  } );
+
+  it( 'names the point when the ship is already there', () => {
+    expect( buildRefusalEmbed( { code: 'already-there', name: 'Sol' }, 0 ).data.description )
+      .toBe( 'We are already at Sol.' );
+  } );
+
+  it( 'falls back to coordinates when there is no name', () => {
+    expect( buildRefusalEmbed( { code: 'already-there' }, 0 ).data.description )
+      .toContain( 'those coordinates' );
+  } );
+
+  it( 'quotes the requested distance when a course is too long', () => {
+    // Ordering a course for the galactic centre is 30,000 ly; the refusal is
+    // only useful if it says so.
+    const embed = buildRefusalEmbed( { code: 'invalid-distance', maxLy: 5000 }, 30000 );
+
+    expect( embed.data.description ).toContain( '5000' );
+    expect( embed.data.description ).toContain( '30000.00 ly' );
   } );
 } );

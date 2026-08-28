@@ -191,6 +191,10 @@ const ShipTransitSchema: OpenAPISchema = {
     PROGRESS: { type: 'number', description: 'Fraction of the whole voyage complete, 0 to 1.' },
     ORIGIN: { $ref: '#/components/schemas/ShipVector' },
     DESTINATION: { $ref: '#/components/schemas/ShipVector' },
+    DESTINATION_NAME: {
+      type: ['string', 'null'],
+      description: 'Name of the target when the course was laid in against a named point; null for a bearing course.'
+    },
     DEPARTED_AT: { type: 'string', format: 'date-time', description: 'When the voyage began.' },
     ETA_AT: { type: 'string', format: 'date-time' },
     ORDERED_BY: { type: 'string', description: 'Discord user ID of whoever gave the order.' },

@@ -6,6 +6,7 @@
 import type {
   ResolvedPosition,
   SectorAddress,
+  TransitPlan,
   Vector3
 } from '../Auxiliary/Interfaces/ShipInterfaces.js';
 import {
@@ -13,6 +14,7 @@ import {
   WARP_MAX_CRUISE,
   WARP_MAX_RATED,
   WARP_OPEN_MAX,
+  sectorAddress,
   velocityBand
 } from './Ship_Navigation.js';
 
@@ -177,6 +179,20 @@ export function formatCoordinates( position: Vector3 ): string {
   return `${ fixed( position.x ) }, ${ fixed( position.y ) }, ${ fixed( position.z ) }`;
 }
 
+/**
+ * Where a voyage is headed.
+ *
+ * A course laid in against a named point says the name; one laid in on a
+ * bearing has no name to give, so it falls back to the destination sector.
+ */
+export function describeDestination( plan: TransitPlan ): string {
+  const sector = formatSector( sectorAddress( plan.destination ) );
+
+  return plan.destinationName == null
+    ? sector
+    : `**${ plan.destinationName }** · ${ sector }`;
+}
+
 /** `Sector 001 · Alpha Quadrant`. */
 export function formatSector( sector: SectorAddress ): string {
   return `Sector ${ sector.designation } · ${ sector.quadrant } Quadrant`;
@@ -255,6 +271,7 @@ export default {
   formatCourse,
   formatCoordinates,
   formatSector,
+  describeDestination,
   formatWarp,
   formatDuration,
   progressBar,

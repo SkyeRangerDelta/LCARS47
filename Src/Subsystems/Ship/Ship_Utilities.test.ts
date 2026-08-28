@@ -10,6 +10,7 @@ import {
   arrivalDue,
   getShipPosition,
   planCourse,
+  planCourseToPoint,
   planSpeedChange,
   resolveShipPosition,
   setCourse,
@@ -470,5 +471,103 @@ describe( 'resolveShipPosition across a speed change', () => {
 
     expect( at.transit?.totalDistanceLy ).toBeCloseTo( 20, 6 );
     expect( at.transit?.progress ).toBeCloseTo( 0.5, 6 );
+  } );
+} );
+
+describe( 'planCourseToPoint', () => {
+  const TARGET = { x: SOL.x - 12, y: 5, z: -3 };
+
+  it( 'lands exactly on the target, not near it', () => {
+    // The whole reason this exists rather than reusing planCourse: projecting a
+    // rounded bearing over a distance would miss by a little, and "set course
+    // for Sol" has to actually arrive at Sol.
+    const plan = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone'
+    }, DEPARTED );
+
+    expect( plan.destination ).toEqual( TARGET );
+    expect( distance( plan.destination, TARGET ) ).toBe( 0 );
+  } );
+
+  it( 'derives the distance and ETA from the two points', () => {
+    const plan = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone'
+    }, DEPARTED );
+
+    const expected = distance( SOL, TARGET );
+
+    expect( plan.distanceLy ).toBeCloseTo( expected, 9 );
+    expect( plan.etaAt.getTime() - DEPARTED )
+      .toBeCloseTo( transitDurationMs( expected, WARP_DEFAULT ), 0 );
+  } );
+
+  it( 'derives a bearing that points at the target', () => {
+    const plan = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone'
+    }, DEPARTED );
+
+    // Flying the derived bearing for the derived distance must reach the target.
+    const flown = planCourse( SOL, {
+      bearing: plan.bearing,
+      mark: plan.mark,
+      distanceLy: plan.distanceLy,
+      warpFactor: WARP_DEFAULT,
+      orderedBy: 'someone'
+    }, DEPARTED );
+
+    expect( distance( flown.destination, TARGET ) ).toBeCloseTo( 0, 9 );
+  } );
+
+  it( 'records the destination name when there is one', () => {
+    const named = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone', destinationName: 'Sol'
+    }, DEPARTED );
+    const anonymous = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone'
+    }, DEPARTED );
+
+    expect( named.destinationName ).toBe( 'Sol' );
+    expect( anonymous.destinationName ).toBeUndefined();
+  } );
+
+  it( 'stamps the voyage origin like any other course', () => {
+    const plan = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone'
+    }, DEPARTED );
+
+    expect( plan.voyageOrigin ).toEqual( SOL );
+    expect( voyageDepartedAt( plan ).getTime() ).toBe( DEPARTED );
+  } );
+
+  it( 'carries the destination name through a speed change', () => {
+    const plan = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone', destinationName: 'Somewhere'
+    }, DEPARTED );
+
+    const midpoint = { x: ( SOL.x + TARGET.x ) / 2, y: TARGET.y / 2, z: TARGET.z / 2 };
+    const faster = planSpeedChange( plan, midpoint, 9, DEPARTED + 1000, 'someone' );
+
+    expect( faster.destinationName ).toBe( 'Somewhere' );
+    expect( faster.destination ).toEqual( TARGET );
+  } );
+
+  it( 'arrives at the target when the voyage completes', () => {
+    const plan = planCourseToPoint( SOL, TARGET, {
+      warpFactor: WARP_DEFAULT, orderedBy: 'someone', destinationName: 'Somewhere'
+    }, DEPARTED );
+
+    const doc: ShipPosition = {
+      id: 1,
+      status: 'transit',
+      position: { ...SOL },
+      transit: plan,
+      updatedAt: new Date( DEPARTED ),
+      updatedBy: 'someone'
+    };
+
+    const arrived = resolveShipPosition( doc, plan.etaAt.getTime() );
+
+    expect( arrived.status ).toBe( 'idle' );
+    expect( arrived.position ).toEqual( TARGET );
   } );
 } );

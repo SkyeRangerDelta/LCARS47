@@ -411,7 +411,9 @@ export type CourseRejection =
   | { code: 'high-warp-restricted', threshold: number }
   | { code: 'high-warp-duration', limitLy: number, alternativeWarp: number }
   | { code: 'same-velocity', warpFactor: number }
-  | { code: 'not-under-way' };
+  | { code: 'not-under-way' }
+  | { code: 'unknown-destination', input: string }
+  | { code: 'already-there', name?: string };
 
 export type CourseCheck =
   | { ok: true }

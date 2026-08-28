@@ -181,6 +181,7 @@ Mongo collection `ship_position`, a singleton keyed `{ id: 1 }` — the same con
     origin,                       // start of the CURRENT leg
     voyageOrigin?,                // where the voyage began, if speed was changed
     destination,
+    destinationName?,             // set when laid in against a named point
     bearing, mark, distanceLy,    // distanceLy is the current leg
     warpFactor,
     departedAt,                   // start of the CURRENT leg
@@ -209,6 +210,32 @@ Open to everyone up to warp 9.0. `warp` is optional and defaults to 6.
 **No course may be ordered while the ship is already under way.** Redirects and emergency
 course changes are deliberately deferred until there is a map to navigate against.
 
+### `/move to destination [warp]`
+
+Lay in a course for a point rather than a heading. The bearing, mark and distance are worked
+out from where the ship currently is, and the destination is stored **exactly** rather than
+re-projected from a rounded bearing — "set course for Sol" has to actually arrive at Sol.
+
+`destination` accepts either:
+
+- a **known point**, with autocomplete — currently `Sol` and `Galactic Centre`, both with
+  aliases (`earth`, `terra`, `sector 001`, `core`, `sgr a*`, …);
+- a **GSRF coordinate triple** in light years, tolerant of the shapes people actually type:
+  `29980, 0, 0`, `29980 0 0`, `(29980, 0, 0)`, `[29980; 0; 0]`.
+
+Named points are tried first, so a point of interest can never be shadowed by something that
+happens to parse as three numbers. Anything else is refused with a message naming both formats.
+
+`Src/Subsystems/Ship/Ship_Destinations.ts` is **the seam points of interest will land on.**
+It exposes `resolveDestination`, `findCataloguePoint`, `parseCoordinates` and
+`suggestDestinations`; when the canon location catalogue arrives it plugs in behind those, and
+the command, its autocomplete and the planner all keep working unchanged. A named course
+records `destinationName` on the transit plan, so every surface — status, departure, speed
+change, arrival, the API — says where she is bound rather than just quoting a sector.
+
+Note that ordering the galactic centre is ~30,000 ly and will be refused by the 5,000 ly course
+cap. That is correct, and the refusal quotes the actual distance so it says something useful.
+
 ### `/move speed warp`
 
 Only while under way — velocity means nothing on a stationary ship, and the refusal points at
@@ -234,7 +261,8 @@ with no recovery path.
   the position advancing while origin and destination stay fixed. Once the speed has been
   changed the voyage has more than one leg: the unprefixed `TRANSIT` fields span the whole
   voyage, and `LEG_ORIGIN` / `LEG_DISTANCE_LY` / `LEG_DEPARTED_AT` describe the segment
-  currently being flown. With no speed change they are identical.
+  currently being flown. With no speed change they are identical. `DESTINATION_NAME` carries
+  the name of a named target, or null for a bearing course.
 - **`get_ship_position` AI tool** — lets `/computer` answer "where are we?" with real data.
 - **AI operational context** — a one-line position summary rides in the second (uncached)
   system block, so the persona knows where the ship is without spending a tool call. It never
@@ -252,6 +280,7 @@ with no recovery path.
 |---|---|
 | `Src/Subsystems/Ship/Ship_Navigation.ts` | Pure geometry, velocity and course rules |
 | `Src/Subsystems/Ship/Ship_Utilities.ts` | Persistence and the position resolver |
+| `Src/Subsystems/Ship/Ship_Destinations.ts` | Target resolution — the seam for points of interest |
 | `Src/Subsystems/Ship/Ship_Messages.ts` | Flavour text and formatting |
 | `Src/Subsystems/Monitors/ShipMonitor.ts` | Arrival announcements |
 | `Src/Commands/Active/move.ts` | The slash command and its embeds |

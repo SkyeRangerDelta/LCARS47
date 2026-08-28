@@ -34,6 +34,8 @@ export interface ShipTransitPayload {
   PROGRESS: number
   ORIGIN: ShipVectorPayload
   DESTINATION: ShipVectorPayload
+  /** Name of the target, when the course was laid in against a named point. */
+  DESTINATION_NAME: string | null
   DEPARTED_AT: string
   ETA_AT: string
   ORDERED_BY: string

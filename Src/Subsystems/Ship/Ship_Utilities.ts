@@ -20,6 +20,7 @@ import {
   distanceFromCore,
   distanceFromSol,
   lerp,
+  magnitude,
   projectCourse,
   sectorAddress,
   subtract,
@@ -206,6 +207,40 @@ export function planCourse(
 }
 
 /**
+ * Build the transit plan for a course laid in against a fixed point.
+ *
+ * Unlike planCourse this sets the destination directly rather than projecting a
+ * bearing over a distance. That matters: a bearing rounded for display would
+ * put the ship a little to one side of the point it was aimed at, and "set
+ * course for Sol" has to actually arrive at Sol.
+ */
+export function planCourseToPoint(
+  from: Vector3,
+  destination: Vector3,
+  order: { warpFactor: number, orderedBy: string, destinationName?: string },
+  now: number
+): TransitPlan {
+  const heading = subtract( destination, from );
+  const distanceLy = magnitude( heading );
+  const { bearing, mark } = vectorToBearing( from, heading );
+
+  return {
+    origin: { ...from },
+    voyageOrigin: { ...from },
+    destination: { ...destination },
+    destinationName: order.destinationName,
+    bearing,
+    mark,
+    distanceLy,
+    warpFactor: order.warpFactor,
+    departedAt: new Date( now ),
+    voyageDepartedAt: new Date( now ),
+    etaAt: new Date( now + transitDurationMs( distanceLy, order.warpFactor ) ),
+    orderedBy: order.orderedBy
+  };
+}
+
+/**
  * Rebuild a voyage at a new velocity, from wherever the ship has reached.
  *
  * A speed change is not a mutation of the running plan - it is a fresh leg. The
@@ -232,6 +267,7 @@ export function planSpeedChange(
     origin: { ...positionNow },
     voyageOrigin: { ...( plan.voyageOrigin ?? plan.origin ) },
     destination: { ...plan.destination },
+    destinationName: plan.destinationName,
     bearing,
     mark,
     distanceLy: remainingLy,
@@ -322,6 +358,7 @@ export default {
   resolveShipPosition,
   arrivalDue,
   planCourse,
+  planCourseToPoint,
   planSpeedChange,
   setCourse,
   settleAt,

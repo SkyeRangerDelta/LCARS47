@@ -31,6 +31,7 @@ import Utility from '../../Subsystems/Utilities/SysUtils.js';
 import { hasBridgeAuthority, isAdminUser } from '../../Subsystems/Utilities/AuthUtils.js';
 import Ship from '../../Subsystems/Ship/Ship_Utilities.js';
 import Msg from '../../Subsystems/Ship/Ship_Messages.js';
+import Destinations from '../../Subsystems/Ship/Ship_Destinations.js';
 import {
   MAX_COURSE_DISTANCE_LY,
   WARP_DEFAULT,
@@ -39,7 +40,10 @@ import {
   WARP_OPEN_MAX,
   checkCourseOrder,
   checkSpeedChange,
+  distance,
+  subtract,
   transitDurationMs,
+  vectorToBearing,
   type CourseRejection
 } from '../../Subsystems/Ship/Ship_Navigation.js';
 import type { Command } from '../../Subsystems/Auxiliary/Interfaces/CommandInterface.js';
@@ -88,6 +92,25 @@ data.addSubcommand( s => s
   )
 );
 
+// Subcommand: to
+data.addSubcommand( s => s
+  .setName( 'to' )
+  .setDescription( 'Lay in a course for a named point or a set of coordinates.' )
+  .addStringOption( o => o
+    .setName( 'destination' )
+    .setDescription( 'A known point (Sol, Galactic Centre) or GSRF coordinates like "29980, 0, 0".' )
+    .setAutocomplete( true )
+    .setRequired( true )
+  )
+  .addNumberOption( o => o
+    .setName( 'warp' )
+    .setDescription( `Warp factor. Defaults to ${ WARP_DEFAULT } (normal cruise). Above ${ WARP_OPEN_MAX } needs an officer.` )
+    .setMinValue( 1 )
+    .setMaxValue( WARP_MAX_RATED )
+    .setRequired( false )
+  )
+);
+
 // Subcommand: speed
 data.addSubcommand( s => s
   .setName( 'speed' )
@@ -118,9 +141,7 @@ async function execute (
   LCARS47: LCARSClient,
   int: ChatInputCommandInteraction | AutocompleteInteraction
 ): Promise<unknown> {
-  if ( int.isAutocomplete() ) return await int.respond( [
-    { name: 'This command does not support autocomplete.', value: 'none' }
-  ] );
+  if ( int.isAutocomplete() ) return await handleAutocomplete( int );
 
   if ( !int.isChatInputCommand() ) return;
 
@@ -134,6 +155,9 @@ async function execute (
   switch ( subCmd ) {
     case 'course':
       return await handleCourse( LCARS47, int );
+
+    case 'to':
+      return await handleCourseTo( LCARS47, int );
 
     case 'speed':
       return await handleSpeed( LCARS47, int );
@@ -218,6 +242,95 @@ async function handleCourse (
     'proc',
     `[SHIP] Under way: course ${ Msg.formatCourse( bearing, mark ) } at `
     + `${ Msg.formatWarp( warpFactor ) }, ${ distanceLy } ly, ordered by ${ int.user.tag }.`
+  );
+
+  return await int.editReply( {
+    embeds: [buildDepartureEmbed( plan, resolved, int.user.displayName )]
+  } );
+}
+
+async function handleAutocomplete ( int: AutocompleteInteraction ): Promise<unknown> {
+  try {
+    const focused = int.options.getFocused( true );
+
+    if ( focused.name !== 'destination' ) return await int.respond( [] );
+
+    return await int.respond( Destinations.suggestDestinations( focused.value ) );
+  }
+  catch ( err ) {
+    Utility.log( 'err', `[SHIP] Destination autocomplete failed: ${ ( err as Error ).message }` );
+    return await int.respond( [] );
+  }
+}
+
+async function handleCourseTo (
+  LCARS47: LCARSClient,
+  int: ChatInputCommandInteraction
+): Promise<unknown> {
+  const now = Date.now();
+
+  const doc = await Ship.getShipPosition( LCARS47.RDS_CONNECTION );
+  LCARS47.SHIP_POSITION = doc;
+
+  const resolved = Ship.resolveShipPosition( doc, now );
+
+  if ( resolved.status === 'transit' ) {
+    return await int.editReply( { embeds: [buildUnderwayRefusalEmbed( resolved )] } );
+  }
+
+  const input = int.options.getString( 'destination', true );
+  const warpFactor = int.options.getNumber( 'warp' ) ?? WARP_DEFAULT;
+
+  const target = Destinations.resolveDestination( input );
+  if ( target == null ) {
+    return await int.editReply( {
+      embeds: [buildRefusalEmbed( { code: 'unknown-destination', input }, 0 )]
+    } );
+  }
+
+  const distanceLy = distance( resolved.position, target.position );
+
+  // A course of zero length is not a voyage, and the generic distance refusal
+  // would read as a validation complaint rather than "we are already here".
+  if ( distanceLy === 0 ) {
+    return await int.editReply( {
+      embeds: [buildRefusalEmbed( { code: 'already-there', name: target.name }, 0 )]
+    } );
+  }
+
+  const heading = subtract( target.position, resolved.position );
+  const { bearing, mark } = vectorToBearing( resolved.position, heading );
+
+  const member: GuildMember = await LCARS47.PLDYN.members.fetch( int.user.id );
+  const isOfficer = hasBridgeAuthority( member, int.memberPermissions );
+
+  const check = checkCourseOrder( { bearing, mark, distanceLy, warpFactor }, { isOfficer } );
+
+  if ( !check.ok ) {
+    Utility.log(
+      'info',
+      `[SHIP] Course to ${ target.name ?? 'coordinates' } refused for `
+      + `${ int.user.tag }: ${ check.reason.code }`
+    );
+
+    return await int.editReply( {
+      embeds: [buildRefusalEmbed( check.reason, distanceLy )]
+    } );
+  }
+
+  const plan = Ship.planCourseToPoint( resolved.position, target.position, {
+    warpFactor,
+    orderedBy: int.user.id,
+    destinationName: target.name
+  }, now );
+
+  LCARS47.SHIP_POSITION = await Ship.setCourse( LCARS47.RDS_CONNECTION, plan );
+
+  Utility.log(
+    'proc',
+    `[SHIP] Under way for ${ target.name ?? Msg.formatCoordinates( target.position ) } at `
+    + `${ Msg.formatWarp( warpFactor ) }, ${ distanceLy.toFixed( 2 ) } ly, `
+    + `ordered by ${ int.user.tag }.`
   );
 
   return await int.editReply( {
@@ -367,6 +480,7 @@ export function buildStatusEmbed ( resolved: ResolvedPosition ): EmbedBuilder {
     );
 
     embed.addFields(
+      { name: 'Bound for', value: Msg.describeDestination( underway ), inline: false },
       { name: 'Progress', value: Msg.progressBar( underway.progress ), inline: false },
       {
         name: 'Run',
@@ -421,6 +535,11 @@ export function buildDepartureEmbed (
         inline: true
       },
       {
+        name: 'Bound for',
+        value: Msg.describeDestination( plan ),
+        inline: true
+      },
+      {
         name: 'Duration',
         value: Msg.formatDuration( plan.etaAt.getTime() - plan.departedAt.getTime() ),
         inline: true
@@ -468,6 +587,11 @@ export function buildSpeedChangeEmbed (
         inline: true
       },
       {
+        name: 'Bound for',
+        value: Msg.describeDestination( plan ),
+        inline: true
+      },
+      {
         name: 'Remaining',
         value: `${ plan.distanceLy.toFixed( 2 ) } ly`,
         inline: true
@@ -505,7 +629,7 @@ export function buildSpeedChangeEmbed (
   return embed;
 }
 
-/** The ship is already under way; no course may be ordered. */
+/** The ship is already under way; no new heading may be ordered. */
 export function buildUnderwayRefusalEmbed ( resolved: ResolvedPosition ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setTitle( '🚫 Course Change Refused' )
@@ -546,6 +670,9 @@ export function buildRefusalEmbed (
     case 'invalid-distance':
       return embed.setDescription(
         `Distance must be greater than zero and no more than ${ reason.maxLy } light years.`
+        + ( distanceLy > reason.maxLy
+          ? ` That course runs ${ distanceLy.toFixed( 2 ) } ly.`
+          : '' )
       );
 
     case 'warp-out-of-range':
@@ -558,6 +685,20 @@ export function buildRefusalEmbed (
       return embed.setDescription(
         `Velocities above warp ${ reason.threshold } stress the spaceframe and require `
         + 'bridge officer authorisation. Order refused.'
+      );
+
+    case 'unknown-destination':
+      return embed.setDescription(
+        `No point of interest named \`${ reason.input }\`, and that does not parse as `
+        + 'coordinates either. Give a known point, or a GSRF triple in light years — '
+        + 'for example `29980, 0, 0`.'
+      );
+
+    case 'already-there':
+      return embed.setDescription(
+        reason.name != null
+          ? `We are already at ${ reason.name }.`
+          : 'We are already at those coordinates.'
       );
 
     case 'same-velocity':
@@ -599,10 +740,15 @@ function help (): string {
   return 'Navigation control for the ship.\n'
     + '`/move status` — position, sector and any voyage under way. Open to all.\n'
     + '`/move course bearing mark distance [warp]` — lay in a course and engage. '
-    + `Bearing 000 heads for the galactic core; mark 90 is galactic north. Warp defaults to ${ WARP_DEFAULT }, `
-    + `the normal cruising speed. Above warp 9 needs the Officer role, and warp ${ WARP_MAX_RATED } is the ceiling.\n`
+    + 'Bearing 000 heads for the galactic core; mark 90 is galactic north.\n'
+    + '`/move to destination [warp]` — lay in a course for a named point (Sol, Galactic Centre) '
+    + 'or a GSRF coordinate triple like `29980, 0, 0`. Bearing and distance are worked out for you.\n'
+    + '`/move speed warp` — change velocity without changing the heading, while under way. '
+    + 'The twelve-hour rule is measured against the distance still to run.\n'
     + '`/move abort` — all stop, admin only.\n'
-    + 'No course may be ordered while the ship is already under way.';
+    + `Warp defaults to ${ WARP_DEFAULT }, the Galaxy class's normal cruising speed. Above warp `
+    + `${ WARP_OPEN_MAX } needs the Officer role, and warp ${ WARP_MAX_RATED } is the ceiling.\n`
+    + 'No new heading may be ordered while the ship is already under way — only her speed.';
 }
 
 export default {

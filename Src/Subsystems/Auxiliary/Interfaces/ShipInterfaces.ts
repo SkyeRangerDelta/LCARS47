@@ -50,6 +50,11 @@ export interface TransitPlan {
    */
   voyageOrigin?: Vector3
   destination: Vector3
+  /**
+   * What the destination is called, when the course was laid in against a named
+   * point rather than a bearing. Absent for a bearing-and-distance course.
+   */
+  destinationName?: string
   // Azimuth, degrees, 0-359.9. 000 points at the galactic core.
   bearing: number
   // Elevation, degrees, 0-359.9. Canon 'mark' notation.
