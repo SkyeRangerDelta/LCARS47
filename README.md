@@ -61,7 +61,12 @@ than assuming it did. See [the technical notes](docs/technical/amp-api-integrati
 ![STELLAR CARTOGRAPHY](https://img.shields.io/badge/STELLAR_CARTOGRAPHY-FFCC66?style=for-the-badge&labelColor=FFCC66)
 
 Imagery pulled straight from the James Webb Space Telescope archive — nebulae, galaxy
-clusters, and exoplanet observations on request.
+clusters, and exoplanet observations on request. Astrometrics reports sensor data against
+wherever the ship actually is: real stars from the SIMBAD catalogue with their range and
+bearing, canon Star Trek identities from STAPI, and procedurally generated sector readings
+everywhere the real catalogues cannot reach. Ask it where Vulcan is and it resolves through
+40 Eridani to a genuine fix, 16.3 light years out. See
+[the feature notes](docs/features/astrometrics.md).
 
 ![NAVIGATION](https://img.shields.io/badge/NAVIGATION-FF9900?style=for-the-badge&labelColor=FF9900)
 

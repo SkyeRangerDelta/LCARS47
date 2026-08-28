@@ -15,6 +15,8 @@ import { AMPClient } from '../Subsystems/AMP/AMPClient.js';
 import { BeszelMonitor } from '../Subsystems/Monitors/BeszelMonitor.js';
 import { AMPMonitor } from '../Subsystems/Monitors/AMPMonitor.js';
 import { ShipMonitor } from '../Subsystems/Monitors/ShipMonitor.js';
+import Astro from '../Subsystems/Astrometrics/AstrometricsService.js';
+import AstroConfig from '../Subsystems/Astrometrics/Astro_Config.js';
 
 import { ActivityType, type TextChannel } from 'discord.js';
 
@@ -78,6 +80,11 @@ export default {
       `[SHIP] Position restored: ${ LCARS47.SHIP_POSITION.status } in Sector `
       + `${ Ship.resolveShipPosition( LCARS47.SHIP_POSITION, Date.now() ).sector.designation }.`
     );
+
+    // Astrometrics needs no credentials and no client - the catalogues are
+    // public and read-only - so there is nothing to start. Logging the mode is
+    // the only useful thing to do at boot.
+    Astro.logMode( AstroConfig.astrometricsOptions( LCARS47.RDS_CONNECTION ) );
 
     // Announces arrivals and closes out finished voyages. Not required for
     // correctness - every reader derives position from the transit plan's

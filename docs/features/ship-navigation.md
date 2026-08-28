@@ -264,6 +264,8 @@ with no recovery path.
   currently being flown. With no speed change they are identical. `DESTINATION_NAME` carries
   the name of a named target, or null for a bearing course.
 - **`get_ship_position` AI tool** — lets `/computer` answer "where are we?" with real data.
+- **[Astrometrics](astrometrics.md)** — sensor reports keyed off the position this subsystem
+  maintains.
 - **AI operational context** — a one-line position summary rides in the second (uncached)
   system block, so the persona knows where the ship is without spending a tool call. It never
   goes in the persona block, which is `cache_control: ephemeral`.
