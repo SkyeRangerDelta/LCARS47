@@ -83,10 +83,57 @@ export function hasBridgeAuthority(
   return hasOfficerRole( member );
 }
 
+/**
+ * Roles that carry flag officer authority.
+ *
+ * Matched by name for the same reason OFFICER_ROLE_NAME is, and kept as a list
+ * because PlDyn runs two distinct flag ranks rather than one.
+ */
+export const FLAG_ROLE_NAMES = [ 'Fleet Admiral', 'Admiral' ] as const;
+
+function isFlagRoleName( name: string ): boolean {
+  return FLAG_ROLE_NAMES.some( flag => flag.toLowerCase() === name.toLowerCase() );
+}
+
+/** Does this guild have any flag officer role at all? */
+export function guildHasFlagRole( guild: Guild ): boolean {
+  return guild.roles.cache.some( r => isFlagRoleName( r.name ) );
+}
+
+/** Does this member hold a flag officer role? */
+export function hasFlagRole( member: GuildMember ): boolean {
+  return member.roles.cache.some( r => isFlagRoleName( r.name ) );
+}
+
+/**
+ * Is this member cleared to change what the rest of the crew may self-assign?
+ *
+ * Same shape and same failure mode as hasBridgeAuthority: admins always pass,
+ * and a guild with no flag role at all fails CLOSED to admins only. This gate
+ * decides who can widen the self-assignable role list, so a gate that silently
+ * opens because a role was renamed would be worse than no gate.
+ *
+ * @param member - The invoking member, fetched from the guild so role names resolve.
+ * @param memberPermissions - `interaction.memberPermissions`; null in DMs.
+ */
+export function hasFlagAuthority(
+  member: GuildMember,
+  memberPermissions: Readonly<PermissionsBitField> | null
+): boolean {
+  if ( isAdminUser( member.id, memberPermissions ) ) return true;
+  if ( !guildHasFlagRole( member.guild ) ) return false;
+
+  return hasFlagRole( member );
+}
+
 export default {
   isAdminUser,
   hasBridgeAuthority,
   hasOfficerRole,
   guildHasOfficerRole,
-  OFFICER_ROLE_NAME
+  hasFlagAuthority,
+  hasFlagRole,
+  guildHasFlagRole,
+  OFFICER_ROLE_NAME,
+  FLAG_ROLE_NAMES
 };

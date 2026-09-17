@@ -6,6 +6,7 @@ import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import RDS from '../Subsystems/RemoteDS/RDS_Utilities.js';
 import Ship from '../Subsystems/Ship/Ship_Utilities.js';
 import Stats from '../Subsystems/Stats/Stats_Utilities.js';
+import Roles from '../Subsystems/Roles/Roles_Utilities.js';
 import Beszel from '../Subsystems/RemoteDS/Beszel_Connect.js';
 import BeszelUtils from '../Subsystems/RemoteDS/Beszel_Utilities.js';
 import { type StatusInterface } from '../Subsystems/Auxiliary/Interfaces/StatusInterface.js';
@@ -75,6 +76,7 @@ export default {
 
     // Idempotent, and the upsert path touches this index on every message.
     await Stats.ensureStatsIndex( LCARS47.RDS_CONNECTION );
+    await Roles.ensureRolesIndex( LCARS47.RDS_CONNECTION );
 
     // Load-or-seed the ship's position. Must sit after the --heartbeat guard
     // above: that path exits before RDS_CONNECTION exists.

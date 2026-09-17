@@ -1,7 +1,7 @@
 // -- INTERACTION EVENT --
 
 // Imports
-import { type BaseInteraction } from 'discord.js';
+import { type BaseInteraction, MessageFlags } from 'discord.js';
 import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../Subsystems/Utilities/SysUtils.js';
 import RDS_Utilities from '../Subsystems/RemoteDS/RDS_Utilities.js';
@@ -45,6 +45,31 @@ export default {
         Utility.log( 'err', `[INT-HANDLER] Button handler failed: ${ buttonErr as string }` );
         if ( !int.replied && !int.deferred ) {
           await int.reply( { content: 'Button interaction failed!', ephemeral: true } );
+        }
+      }
+      return;
+    }
+
+    // Handle string select menu interactions
+    if ( int.isStringSelectMenu() ) {
+      const customId = int.customId;
+
+      // Same prefix routing as buttons above (e.g. "role_select_0" -> "role").
+      const cmdName = customId.split( '_' )[0];
+      const cmd = LCARS47.CMD_INDEX.get( cmdName );
+
+      if ( cmd?.handleSelect == null ) {
+        Utility.log( 'warn', `[INT-HANDLER] No select handler for: ${customId}` );
+        return;
+      }
+
+      try {
+        Utility.log( 'info', `[INT-HANDLER] Select interaction received: ${customId}` );
+        await cmd.handleSelect( LCARS47, int );
+      } catch ( selectErr ) {
+        Utility.log( 'err', `[INT-HANDLER] Select handler failed: ${ selectErr as string }` );
+        if ( !int.replied && !int.deferred ) {
+          await int.reply( { content: 'Selection failed!', flags: MessageFlags.Ephemeral } );
         }
       }
       return;
