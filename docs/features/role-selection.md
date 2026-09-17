@@ -42,6 +42,26 @@ Mute, Deafen, MoveMembers, MentionEveryone, ViewAuditLog.
 A game role wrongly excluded is an annoyance a flag officer diagnoses in seconds with
 `/role list`. A moderation role wrongly offered to the whole server is a much worse afternoon.
 
+### The record
+
+```js
+{
+  roleId:  "432294689044037637",  // string, always - see below
+  name:    "Belt Repairman",      // display fallback for a deleted role
+  game:    "Factorio",            // optional; the picker's subtitle
+  addedBy: "107203929447616512",
+  addedAt: ISODate("...")
+}
+```
+
+Only `roleId` is load-bearing. It **must** be stored as a string: a snowflake exceeds 2^53, so
+as a BSON Double `732752652202410015` lands as `732752652202410000`, the role lookup misses, and
+the entry reports as *the role no longer exists* — pointing you at Discord instead of at the
+type. Worth knowing if you ever seed entries straight from Compass.
+
+`game` is optional in the schema so entries predating the field keep working, but required on
+`/role add` so nothing new arrives unlabelled.
+
 ### The allowlist is the authority; the menu is only a cache
 
 A rendered menu is a snapshot. Between rendering and submitting, the allowlist can change, a
@@ -58,13 +78,53 @@ open simply isn't in the fresh result and cannot be applied.
 | Command | Who | What |
 |---|---|---|
 | `/role select` | everyone | The picker |
-| `/role add <role>` | flag officers | Open a role up |
+| `/role create <name> <game> [colour] [mentionable]` | flag officers | Create a role and list it in one step |
+| `/role add <role> <game>` | flag officers | Open an existing role up, or relabel one |
 | `/role remove <role>` | flag officers | Close a role off |
 | `/role list` | flag officers | Review the list, including stale entries |
 
 `/role add` keeps a native role option, which is correct there — an officer picking from the
 full guild list is exactly the intended behaviour. It applies the safety floor before storing
 and explains the specific rejection.
+
+It also takes a **game**, which is what the picker shows under the role name. Half the roles
+on PlDyn don't announce what they're for — "Belt Repairman" is Factorio, and nobody who wasn't
+there when it was named would guess. The option is required, so new entries can't quietly skip
+the one piece of context that makes the list readable.
+
+`name` and `game` are refreshed on *every* `/role add`, not just on insert. So re-running the
+command on a role that's already listed is how you correct a label — the alternative would be
+removing the entry and adding it back, and removal is the one operation with a side effect
+worth avoiding. The reply distinguishes *added* from *relabelled* from *nothing changed*, so a
+typo fix visibly takes effect.
+
+### `/role create`
+
+Creating a role in Discord and listing it here were always done together, and doing them apart
+is where mistakes creep in — a role made by hand and never listed just quietly fails to appear
+in anyone's picker. This does both.
+
+Three details that matter:
+
+**Permissions are set explicitly to none.** Omitting `permissions` on `roles.create` copies
+@everyone's permissions onto the new role. If @everyone happens to hold something on the
+privileged list, the command would create a role the safety floor then refuses to list. A game
+role is a tag; it needs nothing.
+
+**Duplicate names are refused.** Discord permits two roles with the same name, which would put
+two indistinguishable entries in the picker. The command checks case-insensitively and points
+at `/role add` instead, which is usually what was meant.
+
+**New roles land just above @everyone**, so they're always below LCARS and clear the hierarchy
+check without any repositioning. The floor still runs afterwards as a backstop — if it somehow
+fails, the role is left off the list and the reply says so rather than listing something that
+will never render.
+
+`colour` takes `#rrggbb`, `rrggbb`, or the three-digit shorthand, and rejects anything else
+rather than silently producing a black role. `mentionable` defaults to off.
+
+Failures are reported in terms an officer can act on: a missing Manage Roles permission and
+Discord's 250-role ceiling are named specifically rather than surfacing a raw API error.
 
 `/role remove` un-lists the role. **Members already holding it keep it.** Un-listing means
 "nobody new may take this", not "revoke it from everyone" — a mass role strip is not something
@@ -92,12 +152,19 @@ someone renamed a role would be worse than no gate.
 │ available. Roles you already    │
 │ hold are ticked.                │
 │ ┌─────────────────────────────┐ │
-│ │ ✓ Valheim                   │ │
-│ │   Minecraft                 │ │
+│ │ ✓ Belt Repairman            │ │
+│ │     Factorio                │ │
+│ │   Ark Survivor              │ │
+│ │     ARK: Survival Evolved   │ │
 │ │ ✓ Star Citizen              │ │
+│ │     Star Citizen            │ │
 │ └─────────────────────────────┘ │
 └─────────────────────────────────┘
 ```
+
+The smaller second line is the stored game, rendered by Discord as the option's description.
+Entries with no game on record — the two that predate the field — simply have no subtitle
+rather than an empty one.
 
 **Ephemeral is load-bearing, not just tidiness.** The response is per-viewer, which is the only
 reason the menu can open with the invoker's current roles already ticked. A shared, persistent
@@ -148,7 +215,7 @@ special casing.
 
 | Path | Role |
 |---|---|
-| `Src/Subsystems/Auxiliary/Interfaces/RoleInterfaces.ts` | `SelfRoleRecord`, `ResolvedSelfRole`, `RoleIneligibility` |
+| `Src/Subsystems/Auxiliary/Interfaces/RoleInterfaces.ts` | `SelfRoleRecord`, `ResolvedSelfRole`, `EligibleSelfRole`, `RoleIneligibility`, `SelfRoleAddResult` |
 | `Src/Subsystems/Roles/Roles_Utilities.ts` | Allowlist storage, safety floor, resolution, paging |
 | `Src/Subsystems/Utilities/AuthUtils.ts` | `hasFlagAuthority`, `FLAG_ROLE_NAMES` |
 | `Src/Commands/Active/role.ts` | The four subcommands, menu building, submit handling |

@@ -20,8 +20,10 @@ import { type Guild, PermissionFlagsBits, type Role } from 'discord.js';
 
 import Utility from '../Utilities/SysUtils.js';
 import type {
+  EligibleSelfRole,
   ResolvedSelfRole,
   RoleIneligibility,
+  SelfRoleAddResult,
   SelfRoleRecord
 } from '../Auxiliary/Interfaces/RoleInterfaces.js';
 
@@ -131,26 +133,37 @@ export async function listSelfRoles( connection: MongoClient ): Promise<SelfRole
 }
 
 /**
- * Add a role to the allowlist.
+ * Add a role to the allowlist, or relabel one already on it.
  *
- * Upserts, so adding a role that is already listed is a no-op rather than an
- * error - it returns false to let the caller say "already listed".
+ * Upserts. `name` and `game` are refreshed on every call rather than only on
+ * insert, which makes re-running /role add the way to correct a game label -
+ * otherwise fixing a typo would mean removing the entry and adding it back,
+ * and removal is the one operation with a side effect worth avoiding.
  *
  * Does NOT apply the safety floor: the command layer checks that first so it
  * can explain the specific rejection. This is storage only.
+ *
+ * @returns what happened, so the caller can tell the officer whether they
+ *   added something new, relabelled an entry, or changed nothing.
  */
 export async function addSelfRole(
   connection: MongoClient,
   role: Role,
-  addedBy: string
-): Promise<boolean> {
+  addedBy: string,
+  game?: string
+): Promise<SelfRoleAddResult> {
   const result = await getCollection( connection ).updateOne(
     { roleId: role.id },
-    { $setOnInsert: { roleId: role.id, name: role.name, addedBy, addedAt: new Date() } },
+    {
+      $set: game != null ? { name: role.name, game } : { name: role.name },
+      $setOnInsert: { roleId: role.id, addedBy, addedAt: new Date() }
+    },
     { upsert: true }
   );
 
-  return result.upsertedCount === 1;
+  if ( result.upsertedCount === 1 ) return 'added';
+
+  return result.modifiedCount === 1 ? 'updated' : 'unchanged';
 }
 
 /**
@@ -210,12 +223,15 @@ export function resolveSelfRoles( guild: Guild, records: SelfRoleRecord[] ): Res
 /**
  * The roles a member may actually pick right now, in Discord's own display
  * order (highest first) so the menu matches the server's role list.
+ *
+ * Returns role/record pairs rather than bare roles: the picker needs the stored
+ * game name, which only lives on the record.
  */
-export function eligibleRoles( guild: Guild, records: SelfRoleRecord[] ): Role[] {
+export function eligibleRoles( guild: Guild, records: SelfRoleRecord[] ): EligibleSelfRole[] {
   return resolveSelfRoles( guild, records )
     .filter( resolved => resolved.eligible && resolved.role != null )
-    .map( resolved => resolved.role! )
-    .sort( ( a, b ) => b.position - a.position );
+    .map( resolved => ( { role: resolved.role!, record: resolved.record } ) )
+    .sort( ( a, b ) => b.role.position - a.role.position );
 }
 
 /**
@@ -229,7 +245,7 @@ export function eligibleRoles( guild: Guild, records: SelfRoleRecord[] ): Role[]
  * Anything past MAX_RENDERABLE_ROLES is dropped with a warning; growing beyond
  * that needs pagination buttons, which is a bridge to cross at 126 roles.
  */
-export function pageRoles( roles: Role[] ): Role[][] {
+export function pageRoles( roles: EligibleSelfRole[] ): EligibleSelfRole[][] {
   if ( roles.length > MAX_RENDERABLE_ROLES ) {
     Utility.log(
       'warn',
@@ -238,7 +254,7 @@ export function pageRoles( roles: Role[] ): Role[][] {
     );
   }
 
-  const pages: Role[][] = [];
+  const pages: EligibleSelfRole[][] = [];
   for ( let i = 0; i < Math.min( roles.length, MAX_RENDERABLE_ROLES ); i += OPTIONS_PER_MENU ) {
     pages.push( roles.slice( i, i + OPTIONS_PER_MENU ) );
   }

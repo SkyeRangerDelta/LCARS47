@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import type { MongoClient } from 'mongodb';
-import { PermissionFlagsBits, type Guild, type Role } from 'discord.js';
+import { Collection, PermissionFlagsBits, type Guild, type Role } from 'discord.js';
 
 import {
   MAX_RENDERABLE_ROLES,
@@ -60,7 +60,7 @@ function fakeRole( over: Record<string, unknown> = {} ): Role {
 }
 
 function fakeGuild( roles: Role[], ceiling: number = BOT_CEILING ): Guild {
-  const cache = new Map( roles.map( r => [ r.id, r ] ) );
+  const cache = new Collection( roles.map( r => [ r.id, r ] ) );
 
   return {
     id: GUILD_ID,
@@ -84,7 +84,7 @@ function fakeConnection( stored: SelfRoleRecord[] = [], failWith?: Error ) {
     find: vi.fn( () => ( {
       sort: () => ( { toArray: () => Promise.resolve( stored ) } )
     } ) ),
-    updateOne: vi.fn( () => Promise.resolve( { upsertedCount: 1 } ) ),
+    updateOne: vi.fn( () => Promise.resolve( { upsertedCount: 1, modifiedCount: 0 } ) ),
     deleteOne: vi.fn( () => Promise.resolve( { deletedCount: 1 } ) ),
     createIndex: vi.fn( () => {
       if ( failWith != null ) return Promise.reject( failWith );
@@ -165,7 +165,7 @@ describe( 'botHighestPosition', () => {
   } );
 
   it( 'falls back to zero when the bot member is missing, excluding everything', () => {
-    const guild = { roles: { cache: new Map() }, members: { me: null } } as unknown as Guild;
+    const guild = { roles: { cache: new Collection() }, members: { me: null } } as unknown as Guild;
 
     expect( botHighestPosition( guild ) ).toBe( 0 );
   } );
@@ -206,7 +206,7 @@ describe( 'eligibleRoles', () => {
 
     const result = eligibleRoles( guild, [ record( { roleId: 'a' } ), record( { roleId: 'b' } ) ] );
 
-    expect( result.map( r => r.id ) ).toEqual( [ 'a' ] );
+    expect( result.map( e => e.role.id ) ).toEqual( [ 'a' ] );
   } );
 
   it( 'sorts by guild position, highest first, to match the server role list', () => {
@@ -220,17 +220,30 @@ describe( 'eligibleRoles', () => {
       [ record( { roleId: 'low' } ), record( { roleId: 'high' } ), record( { roleId: 'mid' } ) ]
     );
 
-    expect( result.map( r => r.id ) ).toEqual( [ 'high', 'mid', 'low' ] );
+    expect( result.map( e => e.role.id ) ).toEqual( [ 'high', 'mid', 'low' ] );
   } );
 
   it( 'is empty when the allowlist is empty', () => {
     expect( eligibleRoles( fakeGuild( [] ), [] ) ).toEqual( [] );
   } );
+
+  it( 'carries the stored record through so the picker can show the game', () => {
+    // The whole reason this returns pairs rather than bare roles.
+    const role = fakeRole( { id: 'a', name: 'Belt Repairman' } );
+    const result = eligibleRoles( fakeGuild( [ role ] ), [
+      record( { roleId: 'a', name: 'Belt Repairman', game: 'Factorio' } )
+    ] );
+
+    expect( result[0].record.game ).toBe( 'Factorio' );
+  } );
 } );
 
 describe( 'pageRoles', () => {
-  function manyRoles( count: number ): Role[] {
-    return Array.from( { length: count }, ( _, i ) => fakeRole( { id: `r${i}`, position: count - i } ) );
+  function manyRoles( count: number ) {
+    return Array.from( { length: count }, ( _, i ) => ( {
+      role: fakeRole( { id: `r${i}`, position: count - i } ),
+      record: record( { roleId: `r${i}` } )
+    } ) );
   }
 
   it( 'keeps exactly 25 roles in a single page - PlDyn sits on this boundary', () => {
@@ -267,17 +280,58 @@ describe( 'pageRoles', () => {
 } );
 
 describe( 'allowlist storage', () => {
-  it( 'reports true when the role was newly added', async () => {
+  it( 'reports an insert as added', async () => {
     const { connection } = fakeConnection();
 
-    await expect( addSelfRole( connection, fakeRole(), '111' ) ).resolves.toBe( true );
+    await expect( addSelfRole( connection, fakeRole(), '111', 'Valheim' ) ).resolves.toBe( 'added' );
   } );
 
-  it( 'reports false when the role was already listed', async () => {
+  it( 'reports a relabel of an existing entry as updated', async () => {
+    // Re-running /role add is how a game label gets corrected, so this has to
+    // be distinguishable from a no-op.
     const { connection, collection } = fakeConnection();
-    collection.updateOne.mockResolvedValueOnce( { upsertedCount: 0 } );
+    collection.updateOne.mockResolvedValueOnce( { upsertedCount: 0, modifiedCount: 1 } );
 
-    await expect( addSelfRole( connection, fakeRole(), '111' ) ).resolves.toBe( false );
+    await expect( addSelfRole( connection, fakeRole(), '111', 'Factorio' ) ).resolves.toBe( 'updated' );
+  } );
+
+  it( 'reports a re-add with identical data as unchanged', async () => {
+    const { connection, collection } = fakeConnection();
+    collection.updateOne.mockResolvedValueOnce( { upsertedCount: 0, modifiedCount: 0 } );
+
+    await expect( addSelfRole( connection, fakeRole(), '111', 'Valheim' ) ).resolves.toBe( 'unchanged' );
+  } );
+
+  it( 'stores the game alongside the role', async () => {
+    const { connection, collection } = fakeConnection();
+
+    await addSelfRole( connection, fakeRole(), '111', 'Factorio' );
+
+    const update = ( collection.updateOne.mock.calls[0] as unknown[] )[1] as { $set: { game?: string } };
+    expect( update.$set.game ).toBe( 'Factorio' );
+  } );
+
+  it( 'refreshes name and game on every call, not only on insert', async () => {
+    // $setOnInsert would leave a corrected label unapplied.
+    const { connection, collection } = fakeConnection();
+
+    await addSelfRole( connection, fakeRole(), '111', 'Factorio' );
+
+    const update = ( collection.updateOne.mock.calls[0] as unknown[] )[1] as {
+      $set: Record<string, unknown>
+      $setOnInsert: Record<string, unknown>
+    };
+    expect( Object.keys( update.$set ).sort() ).toEqual( [ 'game', 'name' ] );
+    expect( update.$setOnInsert.game ).toBeUndefined();
+  } );
+
+  it( 'leaves an existing game untouched when none is supplied', async () => {
+    const { connection, collection } = fakeConnection();
+
+    await addSelfRole( connection, fakeRole(), '111' );
+
+    const update = ( collection.updateOne.mock.calls[0] as unknown[] )[1] as { $set: Record<string, unknown> };
+    expect( 'game' in update.$set ).toBe( false );
   } );
 
   it( 'stores who added it and when', async () => {
