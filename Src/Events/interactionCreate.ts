@@ -5,6 +5,7 @@ import { type BaseInteraction } from 'discord.js';
 import { type LCARSClient } from '../Subsystems/Auxiliary/LCARSClient.js';
 import Utility from '../Subsystems/Utilities/SysUtils.js';
 import RDS_Utilities from '../Subsystems/RemoteDS/RDS_Utilities.js';
+import Stats from '../Subsystems/Stats/Stats_Utilities.js';
 
 // Exports
 export default {
@@ -60,6 +61,7 @@ export default {
 
       // Command done, update stats
       await RDS_Utilities.rds_update( LCARS47.RDS_CONNECTION, 'rds_status', { id: 1 }, { $inc: { CMD_QUERIES: 1 } } );
+      Stats.recordActivity( LCARS47.RDS_CONNECTION, int.user.id, int.user.username, 'COMMANDS' );
     }
     catch ( cmdErr ) {
       if ( int.deferred || int.replied ) {
@@ -68,12 +70,14 @@ export default {
 
         // Command failed, update stats
         await RDS_Utilities.rds_update( LCARS47.RDS_CONNECTION, 'rds_status', { id: 1 }, { $inc: { CMD_QUERIES_FAILED: 1 } } );
+        Stats.recordActivity( LCARS47.RDS_CONNECTION, int.user.id, int.user.username, 'COMMANDS_FAILED' );
       }
       else {
         await int.reply( `Looks like something is busted on the subnet.\n${ cmdErr as string }`);
 
         // Command failed, update stats
         await RDS_Utilities.rds_update( LCARS47.RDS_CONNECTION, 'rds_status', { id: 1 }, { $inc: { CMD_QUERIES_FAILED: 1 } } );
+        Stats.recordActivity( LCARS47.RDS_CONNECTION, int.user.id, int.user.username, 'COMMANDS_FAILED' );
       }
     }
   }
