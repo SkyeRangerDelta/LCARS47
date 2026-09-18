@@ -68,7 +68,11 @@ export async function bumpUserStat(
     { id: userId },
     {
       $inc: { [field]: amount },
-      $set: { username, lastSeen: now },
+      $set: { username },
+      // $max, not $set. These writes are fire-and-forget, so two events can
+      // land out of order and an older one would otherwise drag lastSeen
+      // backwards. $max makes the field monotonic regardless of arrival order.
+      $max: { lastSeen: now },
       $setOnInsert: { id: userId, firstSeen: now, ...seedCounters }
     },
     { upsert: true }
@@ -120,6 +124,12 @@ export async function getUserStats(
  * Idempotent, so calling it on every boot is fine. Not required for
  * correctness - an unindexed collection this small answers fine either way -
  * but the upsert path touches it on every single message.
+ *
+ * Deliberately NOT a startup prerequisite. Without the unique index two
+ * simultaneous first-events for one member could in principle both insert and
+ * split their counters, but the cost of that is a slightly wrong message count
+ * for one person. Refusing to boot the bot over it would trade a cosmetic
+ * inaccuracy for total unavailability, which is plainly the worse failure.
  */
 export async function ensureStatsIndex( connection: MongoClient ): Promise<void> {
   try {

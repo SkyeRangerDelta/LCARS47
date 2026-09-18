@@ -55,11 +55,16 @@ async function execute (
 
   const record = await Stats.getUserStats( LCARS47.RDS_CONNECTION, target.id );
 
-  // getMember returns the cached member when the option was supplied, and null
-  // for a user who is not in the guild. Falls back to the invoker's own member
-  // object, which is always present for a guild command.
-  const member = ( int.options.getMember( 'officer' ) as GuildMember | null )
-    ?? ( target.id === int.user.id ? int.member as GuildMember | null : null );
+  if ( !int.inCachedGuild() ) {
+    await int.editReply( { content: 'Personnel records are only available from within the guild.' } );
+    return;
+  }
+
+  // Fetch rather than read the interaction's resolved data. The join fields are
+  // the only reason the member is wanted here, and fetching is what guarantees
+  // they are populated for any target - not just the invoker. A member who has
+  // left resolves to null, which the embed already renders correctly.
+  const member = await int.guild.members.fetch( target.id ).catch( () => null );
 
   await int.editReply( { embeds: [ buildProfileEmbed( target, member, record ) ] } );
 }

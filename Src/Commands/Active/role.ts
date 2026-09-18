@@ -161,11 +161,16 @@ async function execute (
 async function selectRoles ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<void> {
   await int.deferReply( { flags: MessageFlags.Ephemeral } );
 
-  const member = int.member as GuildMember | null;
-  if ( member == null || int.guild == null ) {
+  // inCachedGuild() is a real type guard: past it, int.member is a GuildMember
+  // and int.guild is a Guild, with no cast. It also covers the case a cast
+  // cannot - an interaction from a guild LCARS is not in, where member arrives
+  // as raw API data whose `roles` is an id array rather than a manager.
+  if ( !int.inCachedGuild() ) {
     await int.editReply( { content: 'Segment fault: unable to identify member role manager.' } );
     return;
   }
+
+  const member = int.member;
 
   const records = await Roles.listSelfRoles( LCARS47.RDS_CONNECTION );
   const eligible = Roles.eligibleRoles( int.guild, records );
@@ -195,11 +200,12 @@ async function selectRoles ( LCARS47: LCARSClient, int: ChatInputCommandInteract
 async function handleSelect ( LCARS47: LCARSClient, int: StringSelectMenuInteraction ): Promise<void> {
   await int.deferUpdate();
 
-  const member = int.member as GuildMember | null;
-  if ( member == null || int.guild == null ) {
+  if ( !int.inCachedGuild() ) {
     await int.editReply( { content: 'Segment fault: unable to identify member role manager.', components: [] } );
     return;
   }
+
+  const member = int.member;
 
   const page = Number( int.customId.split( '_' )[2] );
   const records = await Roles.listSelfRoles( LCARS47.RDS_CONNECTION );
@@ -270,11 +276,12 @@ async function handleSelect ( LCARS47: LCARSClient, int: StringSelectMenuInterac
 // -- Flag officer controls --
 
 async function addRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<void> {
-  const member = int.member as GuildMember | null;
-  if ( member == null || int.guild == null || !Auth.hasFlagAuthority( member, int.memberPermissions ) ) {
+  if ( !int.inCachedGuild() || !Auth.hasFlagAuthority( int.member, int.memberPermissions ) ) {
     await int.reply( { content: refusal(), flags: MessageFlags.Ephemeral } );
     return;
   }
+
+  const member = int.member;
 
   await int.deferReply( { flags: MessageFlags.Ephemeral } );
 
@@ -291,7 +298,14 @@ async function addRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
     return;
   }
 
-  const game = int.options.getString( 'game' ) ?? undefined;
+  // Trim before storing, and treat whitespace-only as absent rather than
+  // writing an empty string the picker would render as a blank subtitle.
+  const game = int.options.getString( 'game' )?.trim();
+  if ( game === '' ) {
+    await int.editReply( { content: 'A role needs a game with something in it.' } );
+    return;
+  }
+
   const result = await Roles.addSelfRole( LCARS47.RDS_CONNECTION, role, member.id, game );
 
   await int.editReply( { content: describeAdd( result, role.name, game ) } );
@@ -305,11 +319,12 @@ async function addRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction 
  * quietly fails to appear in anyone's picker.
  */
 async function createRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<void> {
-  const member = int.member as GuildMember | null;
-  if ( member == null || int.guild == null || !Auth.hasFlagAuthority( member, int.memberPermissions ) ) {
+  if ( !int.inCachedGuild() || !Auth.hasFlagAuthority( int.member, int.memberPermissions ) ) {
     await int.reply( { content: refusal(), flags: MessageFlags.Ephemeral } );
     return;
   }
+
+  const member = int.member;
 
   await int.deferReply( { flags: MessageFlags.Ephemeral } );
 
@@ -320,6 +335,14 @@ async function createRole ( LCARS47: LCARSClient, int: ChatInputCommandInteracti
 
   if ( name === '' ) {
     await int.editReply( { content: 'A role needs a name with something in it.' } );
+    return;
+  }
+
+  // Required by Discord, but "required" only means present - a space satisfies
+  // it. An all-whitespace game would store as an empty string and render no
+  // subtitle at all, which is exactly what the field exists to prevent.
+  if ( game === '' ) {
+    await int.editReply( { content: 'A role needs a game with something in it.' } );
     return;
   }
 
@@ -381,14 +404,42 @@ async function createRole ( LCARS47: LCARSClient, int: ChatInputCommandInteracti
     return;
   }
 
-  await Roles.addSelfRole( LCARS47.RDS_CONNECTION, role, member.id, game );
+  // Roll the role back if the allowlist write fails. Leaving it behind is the
+  // worst outcome available: an unlisted role nobody can pick, which the
+  // duplicate-name guard above then blocks you from re-creating. Deleting what
+  // we just made - and nothing else - returns the guild to where it started.
+  try {
+    await Roles.addSelfRole( LCARS47.RDS_CONNECTION, role, member.id, game );
+  }
+  catch ( storeErr ) {
+    Utility.log( 'err', `[ROLE-SYS] Allowlist write failed for ${ role.name }: ${ ( storeErr as Error ).message }` );
+
+    try {
+      await role.delete( 'LCARS rollback: self-assignable list write failed' );
+      await int.editReply( {
+        content: 'Could not save the role to the self-assignable list, so the new role was '
+          + 'removed again. Nothing changed — try once more.'
+      } );
+    }
+    catch ( rollbackErr ) {
+      // Both halves failed. Say precisely what is left behind rather than
+      // implying the server is untouched.
+      Utility.log( 'err', `[ROLE-SYS] Rollback failed for ${ role.name }: ${ ( rollbackErr as Error ).message }` );
+      await int.editReply( {
+        content: `Could not save **${ role.name }** to the self-assignable list, and could not `
+          + 'remove the role either. It still exists but is not listed — delete it by hand, or '
+          + 'run `/role add` to list it.'
+      } );
+    }
+
+    return;
+  }
 
   await int.editReply( { content: describeCreated( role.name, game ) } );
 }
 
 async function removeRole ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<void> {
-  const member = int.member as GuildMember | null;
-  if ( member == null || !Auth.hasFlagAuthority( member, int.memberPermissions ) ) {
+  if ( !int.inCachedGuild() || !Auth.hasFlagAuthority( int.member, int.memberPermissions ) ) {
     await int.reply( { content: refusal(), flags: MessageFlags.Ephemeral } );
     return;
   }
@@ -406,8 +457,7 @@ async function removeRole ( LCARS47: LCARSClient, int: ChatInputCommandInteracti
 }
 
 async function listRoles ( LCARS47: LCARSClient, int: ChatInputCommandInteraction ): Promise<void> {
-  const member = int.member as GuildMember | null;
-  if ( member == null || int.guild == null || !Auth.hasFlagAuthority( member, int.memberPermissions ) ) {
+  if ( !int.inCachedGuild() || !Auth.hasFlagAuthority( int.member, int.memberPermissions ) ) {
     await int.reply( { content: refusal(), flags: MessageFlags.Ephemeral } );
     return;
   }
@@ -627,7 +677,11 @@ export function buildListEmbed ( resolved: ResolvedSelfRole[] ): EmbedBuilder {
     } );
   }
 
-  if ( resolved.length > Roles.MAX_RENDERABLE_ROLES ) {
+  // Count the ELIGIBLE roles, not every record. Only eligible ones are paged
+  // into the picker, so measuring the whole allowlist claims roles were dropped
+  // whenever enough entries are blocked or deleted - loudest in the case where
+  // every record is blocked and the picker is simply empty.
+  if ( eligible.length > Roles.MAX_RENDERABLE_ROLES ) {
     embed.setFooter( {
       text: `Only the first ${ Roles.MAX_RENDERABLE_ROLES } can be shown in the picker.`
     } );

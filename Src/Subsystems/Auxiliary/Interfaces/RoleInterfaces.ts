@@ -8,11 +8,12 @@ export interface SelfRoleRecord {
   /** Discord role id. The document key. */
   roleId: Snowflake
   /**
-   * Role name at the time it was added.
+   * Display fallback for a role that no longer exists.
    *
-   * Display only, and deliberately not kept in sync - the live role is the
-   * authority for what it is called now. This exists so /role list can still
-   * name an entry whose role has since been deleted.
+   * The live role is the authority for what an entry is called; every renderer
+   * prefers it and only falls back to this when the role has been deleted.
+   * Refreshed on each /role add, so it tracks renames that happen to coincide
+   * with one - but nothing watches for renames, so it can still drift.
    */
   name: string
   /**

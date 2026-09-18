@@ -68,8 +68,21 @@ export default {
         await cmd.handleSelect( LCARS47, int );
       } catch ( selectErr ) {
         Utility.log( 'err', `[INT-HANDLER] Select handler failed: ${ selectErr as string }` );
-        if ( !int.replied && !int.deferred ) {
-          await int.reply( { content: 'Selection failed!', flags: MessageFlags.Ephemeral } );
+
+        // handleSelect defers immediately, so on a throw `deferred` is almost
+        // always true. Only checking `replied`/`deferred` before replying would
+        // therefore do nothing at all and leave the menu sitting there with no
+        // indication it failed - the one outcome worse than an error message.
+        try {
+          if ( int.deferred || int.replied ) {
+            await int.editReply( { content: 'Selection failed!', components: [] } );
+          }
+          else {
+            await int.reply( { content: 'Selection failed!', flags: MessageFlags.Ephemeral } );
+          }
+        }
+        catch ( replyErr ) {
+          Utility.log( 'err', `[INT-HANDLER] Could not report select failure: ${ replyErr as string }` );
         }
       }
       return;

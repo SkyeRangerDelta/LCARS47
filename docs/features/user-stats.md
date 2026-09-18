@@ -59,7 +59,8 @@ updateOne(
   { id: userId },
   {
     $inc:         { [field]: amount },
-    $set:         { username, lastSeen },
+    $set:         { username },
+    $max:         { lastSeen },
     $setOnInsert: { id, firstSeen, ...otherCountersZeroed }
   },
   { upsert: true }
@@ -74,6 +75,11 @@ requirement between the message and command paths, and no membership backfill to
 The Fishsticks equivalent does select → insert → select on first contact; this does one round
 trip, always.
 
+> **Why `$max` and not `$set` for `lastSeen`.** These writes are fire-and-forget, so two events
+> can reach Mongo in either order and an older one would otherwise drag the timestamp backwards.
+> `$max` makes the field monotonic regardless of arrival order. `firstSeen` needs no such
+> treatment — it is under `$setOnInsert`, and only one upsert can win the insert.
+
 > **One sharp edge.** Mongo rejects an update touching the same field in both `$inc` and
 > `$setOnInsert`, so `bumpUserStat` deletes the incremented field from the seed object before
 > issuing the write. `$inc` on a missing field already yields the right value. There is a test
@@ -84,6 +90,11 @@ trip, always.
 `recordActivity()` wraps the upsert, swallows any rejection and logs a warning. Every call site
 is on a hot path inside an event handler, where an unhandled rejection would take out message
 handling or command dispatch. Callers don't await it and there's nothing to await for.
+
+Index creation is deliberately *not* a startup prerequisite. Without the unique index, two
+simultaneous first-events for one member could in principle both insert and split their
+counters — but the cost of that is one person's message count being slightly wrong. Refusing to
+boot the bot over it would trade a cosmetic inaccuracy for total unavailability.
 
 It also no-ops when `RDS_CONNECTION` is undefined — events can fire between login and the ready
 handler assigning it, and having nowhere to write yet is not an error.

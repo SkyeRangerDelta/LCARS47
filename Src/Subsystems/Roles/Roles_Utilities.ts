@@ -127,9 +127,35 @@ export function botHighestPosition( guild: Guild ): number {
 
 // -- Allowlist storage --
 
-/** Every allowlist entry, oldest first. Unresolved - see resolveSelfRoles. */
+/**
+ * Every allowlist entry, oldest first, one per role.
+ *
+ * The unique index on roleId normally makes duplicates impossible, but index
+ * creation is best-effort at boot: if it failed, two concurrent /role add calls
+ * for the same role could both insert. That matters more than it sounds -
+ * duplicate records become two select options carrying the same value, and
+ * Discord rejects the whole component, taking out /role select entirely.
+ *
+ * So the read path dedupes rather than trusting the invariant. Keeping the
+ * earliest entry preserves the original addedBy and addedAt.
+ */
 export async function listSelfRoles( connection: MongoClient ): Promise<SelfRoleRecord[]> {
-  return await getCollection( connection ).find( {} ).sort( { addedAt: 1 } ).toArray();
+  const records = await getCollection( connection ).find( {} ).sort( { addedAt: 1 } ).toArray();
+
+  const seen = new Set<string>();
+  const unique: SelfRoleRecord[] = [];
+
+  for ( const record of records ) {
+    if ( seen.has( record.roleId ) ) {
+      Utility.log( 'warn', `[ROLE-SYS] Duplicate allowlist entry for ${ record.roleId } ignored.` );
+      continue;
+    }
+
+    seen.add( record.roleId );
+    unique.push( record );
+  }
+
+  return unique;
 }
 
 /**

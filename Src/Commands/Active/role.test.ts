@@ -375,4 +375,32 @@ describe( 'buildListEmbed', () => {
 
     expect( embed.footer?.text ).toContain( '125' );
   } );
+
+  it( 'counts only eligible roles towards the render cap', () => {
+    // Blocked entries are never paged into the picker, so measuring the whole
+    // allowlist would claim roles were dropped when none were.
+    const embed = buildListEmbed( [
+      ...Array.from( { length: 100 }, ( _, i ) => resolved( { role: fakeRole( `ok${i}`, `Game ${i}` ) } ) ),
+      ...Array.from( { length: 30 }, ( _, i ) => resolved( {
+        role: fakeRole( `bad${i}`, `Blocked ${i}` ),
+        eligible: false,
+        reason: 'privileged'
+      } ) )
+    ] ).toJSON();
+
+    // 130 records, but only 100 usable - nothing is dropped.
+    expect( embed.footer?.text ).toBeUndefined();
+  } );
+
+  it( 'does not claim dropped roles when every record is blocked', () => {
+    const embed = buildListEmbed(
+      Array.from( { length: 130 }, ( _, i ) => resolved( {
+        role: fakeRole( `bad${i}`, `Blocked ${i}` ),
+        eligible: false,
+        reason: 'deleted'
+      } ) )
+    ).toJSON();
+
+    expect( embed.footer?.text ).toBeUndefined();
+  } );
 } );

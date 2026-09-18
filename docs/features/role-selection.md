@@ -54,6 +54,11 @@ A game role wrongly excluded is an annoyance a flag officer diagnoses in seconds
 }
 ```
 
+Duplicate `roleId`s are impossible while the unique index exists, but index creation is
+best-effort at boot, so the read path dedupes anyway and keeps the earliest entry. Two options
+sharing a value would make the entire Discord component invalid, taking out `/role select`
+rather than just that one role.
+
 Only `roleId` is load-bearing. It **must** be stored as a string: a snowflake exceeds 2^53, so
 as a BSON Double `732752652202410015` lands as `732752652202410000`, the role lookup misses, and
 the entry reports as *the role no longer exists* — pointing you at Discord instead of at the
@@ -120,8 +125,19 @@ check without any repositioning. The floor still runs afterwards as a backstop �
 fails, the role is left off the list and the reply says so rather than listing something that
 will never render.
 
+**The role is rolled back if the allowlist write fails.** Creating the Discord role and storing
+the entry are two steps, and the first one is the side effect. Leaving a created-but-unlisted
+role behind is the worst outcome available, because the duplicate-name guard above then blocks
+you from re-running `/role create` with the same name. On a storage failure the new role is
+deleted again and the reply says nothing changed. If the rollback *also* fails, the reply says
+exactly what is left behind rather than implying the server is untouched.
+
 `colour` takes `#rrggbb`, `rrggbb`, or the three-digit shorthand, and rejects anything else
 rather than silently producing a black role. `mentionable` defaults to off.
+
+Both `/role create` and `/role add` trim the game and reject a whitespace-only value. Discord's
+"required" only means *present* — a single space satisfies it, and would store as an empty
+string that renders no subtitle, defeating the point of the field.
 
 Failures are reported in terms an officer can act on: a missing Manage Roles permission and
 Discord's 250-role ceiling are named specifically rather than surfacing a raw API error.
@@ -132,6 +148,11 @@ a single slash command should be able to do by accident.
 
 `/role list` exists because a stale entry *vanishes* from the picker. Without somewhere to see
 "Star Citizen — the role no longer exists", a flag officer has no way to notice it broke.
+
+Its "only the first 125 can be shown" footer counts **eligible** roles, not total records. Only
+eligible roles are paged into the picker, so measuring the whole allowlist would claim entries
+were dropped whenever enough of them were blocked — loudest in the case where every record is
+blocked and the picker is simply empty.
 
 ### Who counts as a flag officer
 
@@ -189,6 +210,11 @@ there are tests pinning both the 25 and 26 cases.
 > values from *its own* menu. So the diff is scoped strictly to that page's roles. Diffing
 > against the whole allowlist would strip every role the member holds from every *other* menu
 > in the message, since those ids were never in the submission.
+
+If anything in the submission handler throws, the failure is reported by editing the deferred
+reply. `handleSelect` defers immediately, so a handler that only checked `replied`/`deferred`
+before responding would do nothing at all and leave the menu sitting there with no sign it
+failed — the one outcome worse than an error message.
 
 One accepted race: if the allowlist changes while a menu sits open, the recomputed page may not
 hold quite what was rendered. The window is seconds wide and needs an officer editing the list

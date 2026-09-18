@@ -358,6 +358,32 @@ describe( 'allowlist storage', () => {
     await expect( listSelfRoles( connection ) ).resolves.toEqual( stored );
   } );
 
+  it( 'drops duplicate roleIds, keeping the earliest', async () => {
+    // Duplicates should be impossible thanks to the unique index, but index
+    // creation is best-effort. Two options sharing a value make the whole
+    // Discord component invalid, so the read path must not pass them through.
+    const first = record( { roleId: 'dup', addedBy: 'first', addedAt: new Date( 1 ) } );
+    const second = record( { roleId: 'dup', addedBy: 'second', addedAt: new Date( 2 ) } );
+    const { connection } = fakeConnection( [ first, second ] );
+
+    const result = await listSelfRoles( connection );
+
+    expect( result ).toHaveLength( 1 );
+    expect( result[0].addedBy ).toBe( 'first' );
+  } );
+
+  it( 'keeps distinct roles intact while deduping', async () => {
+    const { connection } = fakeConnection( [
+      record( { roleId: 'a' } ),
+      record( { roleId: 'b' } ),
+      record( { roleId: 'a' } )
+    ] );
+
+    const result = await listSelfRoles( connection );
+
+    expect( result.map( r => r.roleId ) ).toEqual( [ 'a', 'b' ] );
+  } );
+
   it( 'survives a failed index creation at boot', async () => {
     const { connection } = fakeConnection( [], new Error( 'no permission' ) );
 

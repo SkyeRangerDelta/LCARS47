@@ -140,7 +140,17 @@ describe( 'bumpUserStat', () => {
     await bumpUserStat( connection, '111', 'renamed-since', 'MESSAGES' );
 
     expect( updates[0].update.$set.username ).toBe( 'renamed-since' );
-    expect( updates[0].update.$set.lastSeen ).toBeInstanceOf( Date );
+  } );
+
+  it( 'advances lastSeen with $max so out-of-order writes cannot rewind it', async () => {
+    // These writes are fire-and-forget, so two events can reach Mongo in the
+    // wrong order. $set would let the older one win.
+    const { connection, updates } = fakeConnection();
+
+    await bumpUserStat( connection, '111', 'picard', 'MESSAGES' );
+
+    expect( updates[0].update.$max.lastSeen ).toBeInstanceOf( Date );
+    expect( updates[0].update.$set.lastSeen ).toBeUndefined();
   } );
 
   it( 'sets firstSeen only on insert', async () => {

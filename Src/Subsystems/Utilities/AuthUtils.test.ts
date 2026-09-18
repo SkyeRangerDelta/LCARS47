@@ -15,9 +15,13 @@ vi.mock( './EnvUtils.js', () => ( {
 // vi.mock is hoisted above the imports, so the static import below already
 // sees the stubbed EnvUtils - no dynamic import needed.
 import {
+  FLAG_ROLE_NAMES,
   OFFICER_ROLE_NAME,
+  guildHasFlagRole,
   guildHasOfficerRole,
   hasBridgeAuthority,
+  hasFlagAuthority,
+  hasFlagRole,
   hasOfficerRole
 } from './AuthUtils.js';
 
@@ -122,5 +126,96 @@ describe( 'hasBridgeAuthority', () => {
     const member = fakeMember( '1', ['Crew'], ['Crew', 'Officer'] );
 
     expect( hasBridgeAuthority( member, null ) ).toBe( false );
+  } );
+} );
+
+// -- Flag officer authority --
+// Same shape as the bridge gate above, but this one decides who may widen the
+// self-assignable role list, so the fail-closed path matters more than ever.
+
+describe( 'hasFlagRole', () => {
+  it.each( FLAG_ROLE_NAMES )( 'matches %s by name', flagName => {
+    expect( hasFlagRole( fakeMember( '1', [ 'Crew', flagName ] ) ) ).toBe( true );
+  } );
+
+  it( 'ignores case', () => {
+    expect( hasFlagRole( fakeMember( '1', [ 'fleet admiral' ] ) ) ).toBe( true );
+    expect( hasFlagRole( fakeMember( '1', [ 'ADMIRAL' ] ) ) ).toBe( true );
+  } );
+
+  it( 'does not match a member holding neither rank', () => {
+    expect( hasFlagRole( fakeMember( '1', [ 'Crew', OFFICER_ROLE_NAME ] ) ) ).toBe( false );
+  } );
+
+  it( 'does not treat Officer as a flag rank', () => {
+    // The two gates are deliberately separate - bridge authority is not flag
+    // authority, and an Officer must not be able to widen the role list.
+    expect( hasFlagRole( fakeMember( '1', [ OFFICER_ROLE_NAME ] ) ) ).toBe( false );
+  } );
+} );
+
+describe( 'guildHasFlagRole', () => {
+  it( 'finds either rank on the guild', () => {
+    expect( guildHasFlagRole( fakeMember( '1', [], [ 'Admiral' ] ).guild ) ).toBe( true );
+    expect( guildHasFlagRole( fakeMember( '1', [], [ 'Fleet Admiral' ] ).guild ) ).toBe( true );
+  } );
+
+  it( 'reports false when the guild has neither', () => {
+    expect( guildHasFlagRole( fakeMember( '1', [], [ 'Crew', 'Officer' ] ).guild ) ).toBe( false );
+  } );
+} );
+
+describe( 'hasFlagAuthority', () => {
+  it( 'admits a member holding a flag rank', () => {
+    const member = fakeMember( '1', [ 'Admiral' ], [ 'Crew', 'Admiral' ] );
+
+    expect( hasFlagAuthority( member, perms( false ) ) ).toBe( true );
+  } );
+
+  it( 'admits an administrator regardless of rank', () => {
+    // The recovery path when the roles are mid-reshuffle.
+    const member = fakeMember( '1', [ 'Crew' ], [ 'Crew', 'Admiral' ] );
+
+    expect( hasFlagAuthority( member, perms( true ) ) ).toBe( true );
+  } );
+
+  it( 'refuses a member with neither rank nor admin', () => {
+    const member = fakeMember( '1', [ 'Crew' ], [ 'Crew', 'Admiral' ] );
+
+    expect( hasFlagAuthority( member, perms( false ) ) ).toBe( false );
+  } );
+
+  it( 'refuses an Officer, who holds bridge authority but not flag authority', () => {
+    const member = fakeMember( '1', [ OFFICER_ROLE_NAME ], [ OFFICER_ROLE_NAME, 'Admiral' ] );
+
+    expect( hasFlagAuthority( member, perms( false ) ) ).toBe( false );
+  } );
+
+  it( 'fails CLOSED when the guild has no flag role at all', () => {
+    // The important one. A gate that opens because someone renamed a role is
+    // worse than no gate, so a missing rank admits admins only.
+    const member = fakeMember( '1', [ 'Crew' ], [ 'Crew' ] );
+
+    expect( hasFlagAuthority( member, perms( false ) ) ).toBe( false );
+  } );
+
+  it( 'still admits an admin when the guild has no flag role', () => {
+    const member = fakeMember( '1', [ 'Crew' ], [ 'Crew' ] );
+
+    expect( hasFlagAuthority( member, perms( true ) ) ).toBe( true );
+  } );
+
+  it( 'honours ADMIN_USER_IDS over guild permissions when it is set', () => {
+    adminIds.value = '42';
+
+    expect( hasFlagAuthority( fakeMember( '42', [ 'Crew' ], [ 'Crew' ] ), perms( false ) ) ).toBe( true );
+    // Administrator no longer counts once the allowlist is the authority.
+    expect( hasFlagAuthority( fakeMember( '7', [ 'Crew' ], [ 'Crew' ] ), perms( true ) ) ).toBe( false );
+  } );
+
+  it( 'refuses when memberPermissions is null, as it is in DMs', () => {
+    const member = fakeMember( '1', [ 'Crew' ], [ 'Crew' ] );
+
+    expect( hasFlagAuthority( member, null ) ).toBe( false );
   } );
 } );
