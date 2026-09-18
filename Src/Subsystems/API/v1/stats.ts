@@ -1,11 +1,10 @@
-import exp from 'express';
+﻿import exp from 'express';
 import type { LCARSClient } from '../../Auxiliary/LCARSClient';
 import Utility from '../../Utilities/SysUtils.js';
 import type { StatusInterface } from '../../Auxiliary/Interfaces/StatusInterface';
 import RDS_Utilities from '../../RemoteDS/RDS_Utilities';
-import { getEnv } from '../../Utilities/EnvUtils';
-
-const env = getEnv();
+import type { Route } from '../RouterInterfaces';
+import { NO_AUTH_REQUIRED, envelopeResponse } from '../OpenAPISpec';
 
 function loadRoute( LCARS47: LCARSClient ) {
   const rtr = exp();
@@ -15,6 +14,8 @@ function loadRoute( LCARS47: LCARSClient ) {
       res.status( 200 ).send(
         { STATE: false }
       );
+
+      return;
     }
 
     Utility.log( 'info', '[API] Received a request for stats.' );
@@ -25,7 +26,7 @@ function loadRoute( LCARS47: LCARSClient ) {
       .catch( ( err: Error ) => {
         Utility.log( 'error', '[API] Error building stats.\n' + err.message );
         res.status( 500 ).send(
-          { STATE: false }
+          { ERROR: true, MESSAGE: 'Internal Server Error: Failed to build stats.\n' + err.message }
         );
       } );
   });
@@ -45,24 +46,54 @@ async function buildStats ( LCARS47: LCARSClient ): Promise< StatusInterface | n
     diff: timeDiff.toObject()
   };
 
-  const mediaQueue = LCARS47.MEDIA_QUEUE.get( env.PLDYNID );
-  botStats.MEDIA_PLAYER_STATE = !( mediaQueue == null );
+  botStats.MEDIA_PLAYER_STATE = LCARS47.MEDIA_PLAYER.isActive();
 
-  if ( ( mediaQueue?.isPlaying ) === true ) {
-    botStats.MEDIA_PLAYER_DATA = mediaQueue.songs[0];
+  const nowPlaying = LCARS47.MEDIA_PLAYER.getNowPlaying();
+  if ( nowPlaying != null ) {
+    botStats.MEDIA_PLAYER_DATA = {
+      title: nowPlaying.title,
+      url: nowPlaying.url,
+      source: nowPlaying.source,
+      duration: nowPlaying.duration,
+      durationFriendly: nowPlaying.durationFriendly,
+      channelOrAlbumLabel: nowPlaying.channelOrAlbumLabel,
+      requestedBy: nowPlaying.requestedBy.displayName,
+      playStart: nowPlaying.playStart
+    };
   }
   else {
-    botStats.MEDIA_PLAYER_DATA = {
-      info: 'Nothing playing.'
-    };
+    botStats.MEDIA_PLAYER_DATA = { info: 'Nothing playing.' };
   }
 
   return botStats;
 }
 
-const rt = {
+const rt: Route = {
   name: 'stats',
-  router: loadRoute
+  router: loadRoute,
+  spec: {
+    '/stats': {
+      get: {
+        summary: 'Bot telemetry',
+        description:
+          'Returns live LCARS47 statistics: uptime, query counters, memory usage, ' +
+          'websocket latency and media player state. If the client is not yet ready, ' +
+          'only STATE is returned.',
+        operationId: 'getStats',
+        tags: ['Telemetry'],
+        security: NO_AUTH_REQUIRED,
+        responses: {
+          '200': {
+            description: 'Current bot telemetry.',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/StatusResponse' } }
+            }
+          },
+          '500': envelopeResponse( 'Statistics could not be assembled.' )
+        }
+      }
+    }
+  }
 }
 
 export default rt;

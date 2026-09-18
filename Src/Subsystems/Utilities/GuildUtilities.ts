@@ -6,7 +6,7 @@ import { type Snowflake } from 'discord-api-types/globals';
 import { type LCARSClient } from '../Auxiliary/LCARSClient';
 import { type Message } from 'discord.js';
 import Utility from './SysUtils';
-import GPTCore from '../Operations/OPs_GPTCore';
+import AICore from '../Operations/OPs_AICore.js';
 import { getEnv } from './EnvUtils.js';
 
 // Types
@@ -64,10 +64,10 @@ async function runSimData ( LCARS47: LCARSClient, msg: Message, isAdv: boolean )
   }
   if ( !msg.content.toLowerCase().startsWith( 'computer' ) ) return;
 
-  Utility.log( 'proc', '[EVENT] [SIM-DATA] Handling a GPT request.' );
-  const msgContent = msg.content.substring( 7 ).trim();
+  Utility.log( 'proc', '[EVENT] [AI-CORE] Handling a Claude request.' );
+  const msgContent = msg.content.substring( 'computer'.length ).trim().replace( /^[,:]\s*/, '' );
 
-  await GPTCore.handleGPTReq( msg, msgContent, isAdv );
+  await AICore.handleAIReq( msg, msgContent, isAdv );
 }
 
 function runEngineering ( msg: Message ): void {

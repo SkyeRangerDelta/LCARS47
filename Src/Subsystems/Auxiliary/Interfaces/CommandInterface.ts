@@ -1,5 +1,10 @@
 import { type LCARSClient } from '../LCARSClient';
-import { type AutocompleteInteraction, type ButtonInteraction, type ChatInputCommandInteraction } from 'discord.js';
+import {
+  type AutocompleteInteraction,
+  type ButtonInteraction,
+  type ChatInputCommandInteraction,
+  type StringSelectMenuInteraction
+} from 'discord.js';
 import { type SlashCommandBuilder } from '@discordjs/builders';
 
 export interface Command {
@@ -8,5 +13,6 @@ export interface Command {
   ownerOnly?: boolean
   execute: ( LCARSClient: LCARSClient, interaction: ChatInputCommandInteraction | AutocompleteInteraction ) => unknown
   handleButton?: ( LCARSClient: LCARSClient, interaction: ButtonInteraction ) => unknown
+  handleSelect?: ( LCARSClient: LCARSClient, interaction: StringSelectMenuInteraction ) => unknown
   help: () => string
 }

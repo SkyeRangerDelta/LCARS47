@@ -205,7 +205,7 @@ export function getEnv(): LCARSEnv {
     RDS: process.env.RDS!,
     PLDYNID: process.env.PLDYNID!,
     LCARSID: process.env.LCARSID!,
-    OPENAIKEY: process.env.OPENAIKEY!,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY!,
     MEDIALOG: process.env.MEDIALOG!,
     ENGINEERING: process.env.ENGINEERING!,
     SIMLAB: process.env.SIMLAB!,
@@ -213,6 +213,14 @@ export function getEnv(): LCARSEnv {
     BESZEL_URL: process.env.BESZEL_URL,
     BESZEL_EMAIL: process.env.BESZEL_EMAIL,
     BESZEL_PASSWORD: process.env.BESZEL_PASSWORD,
+    BESZEL_ALERT_CHANNEL: process.env.BESZEL_ALERT_CHANNEL,
+    AMP_URL: process.env.AMP_URL,
+    AMP_USERNAME: process.env.AMP_USERNAME,
+    AMP_PASSWORD: process.env.AMP_PASSWORD,
+    AMP_AUDIT_CHANNEL: process.env.AMP_AUDIT_CHANNEL,
+    AMP_ALERT_CHANNEL: process.env.AMP_ALERT_CHANNEL,
+    SHIP_LOG_CHANNEL: process.env.SHIP_LOG_CHANNEL,
+    ASTROMETRICS_REMOTE: process.env.ASTROMETRICS_REMOTE,
     JWST: process.env.JWST,
     JELLYFIN_HOST: process.env.JELLYFIN_HOST,
     JELLYFIN_PORT: process.env.JELLYFIN_PORT,
@@ -221,7 +229,10 @@ export function getEnv(): LCARSEnv {
     JELLYFIN_PASS: process.env.JELLYFIN_PASS,
     API_HOST: process.env.API_HOST!,
     API_PORT: process.env.API_PORT!,
-    API_AUTH_TOKEN: process.env.API_AUTH_TOKEN!
+    API_AUTH_TOKEN: process.env.API_AUTH_TOKEN!,
+    ADMIN_USER_IDS: process.env.ADMIN_USER_IDS,
+    JELLYFIN_PATH_MAP: process.env.JELLYFIN_PATH_MAP,
+    COMPUTER_CMD_COOLDOWN_SEC: process.env.COMPUTER_CMD_COOLDOWN_SEC!
   };
 }
 

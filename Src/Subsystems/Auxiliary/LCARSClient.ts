@@ -7,12 +7,17 @@ import {
   type Guild,
   type GuildMember
 } from 'discord.js';
-import { type LCARSMediaPlayer } from './Interfaces/MediaInterfaces.js';
 import { type MongoClient } from 'mongodb';
 import { type StatusInterface } from './Interfaces/StatusInterface.js';
 import type { Command } from './Interfaces/CommandInterface';
 import type PocketBase from 'pocketbase';
 import type { BeszelSystemRecord } from './Interfaces/BeszelInterfaces.js';
+import type { MediaPlayerService } from '../MediaPlayer/MediaPlayerService.js';
+import type { AMPClient } from '../AMP/AMPClient.js';
+import type { BeszelMonitor } from '../Monitors/BeszelMonitor.js';
+import type { AMPMonitor } from '../Monitors/AMPMonitor.js';
+import type { ShipMonitor } from '../Monitors/ShipMonitor.js';
+import type { ShipPosition } from './Interfaces/ShipInterfaces.js';
 
 // Exports
 export interface LCARSClient extends Client {
@@ -22,9 +27,19 @@ export interface LCARSClient extends Client {
   >
   PLDYN: Guild
   MEMBER: GuildMember
-  MEDIA_QUEUE: Map<string, LCARSMediaPlayer>
+  MEDIA_PLAYER: MediaPlayerService
   RDS_CONNECTION: MongoClient
   BESZEL_CLIENT: PocketBase
   BESZEL_SYSTEMS: BeszelSystemRecord[]
+  /** Undefined when the beszel feature group is unset or the monitor failed to start. */
+  BESZEL_MONITOR?: BeszelMonitor
+  /** Undefined when the amp feature group is unset or the client failed to authenticate. */
+  AMP_CLIENT?: AMPClient
+  /** Undefined when AMP is unavailable or the monitor failed to start. */
+  AMP_MONITOR?: AMPMonitor
   CLIENT_STATS: StatusInterface
+  /** The ship's last persisted position. Mid-voyage positions are derived, not stored - see Ship_Utilities. */
+  SHIP_POSITION: ShipPosition
+  /** Undefined when the arrival monitor failed to start. Not required for correctness - positions are derived. */
+  SHIP_MONITOR?: ShipMonitor
 }

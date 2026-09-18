@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="LCARS47 — Planetary Dynamics Discord Bot">
+  <title>LCARS47 — Planetary Dynamics Discord Bot</title>
+
+  <!-- Console backdrop -->
+  <rect x="0" y="0" width="900" height="260" rx="18" fill="#000000"/>
+
+  <!-- LCARS elbow (top bar + left sidebar joined by a rounded corner) -->
+  <path d="M 24,150 L 24,88 Q 24,24 88,24 L 300,24 L 300,88 L 116,88 Q 88,88 88,116 L 88,150 Z" fill="#FF9966"/>
+
+  <!-- Left sidebar segments -->
+  <rect x="24" y="156" width="64" height="40" rx="4" fill="#CC99CC"/>
+  <rect x="24" y="202" width="64" height="34" rx="4" fill="#9999FF"/>
+
+  <!-- Top bar segments to the right of the elbow -->
+  <rect x="308" y="24" width="150" height="64" rx="4" fill="#FFCC66"/>
+  <rect x="466" y="24" width="96"  height="64" rx="4" fill="#CC99CC"/>
+  <rect x="570" y="24" width="190" height="64" rx="4" fill="#9999FF"/>
+  <rect x="768" y="24" width="108" height="64" rx="4" fill="#CC6666"/>
+
+  <!-- Title block -->
+  <text x="120" y="186" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="86" letter-spacing="8" fill="#FF9966">LCARS 47</text>
+  <text x="124" y="222" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="16" letter-spacing="4" fill="#FFCC66">LIBRARY COMPUTER ACCESS / RETRIEVAL SYSTEM</text>
+
+  <!-- Decorative readout tags (stacked, right-aligned, clear of the subtitle) -->
+  <text x="876" y="132" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="18" letter-spacing="3" fill="#9999FF">UNIT 47 · PLDYN</text>
+  <text x="876" y="164" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="18" letter-spacing="3" fill="#CC99CC">SYS · ONLINE · 47-A</text>
+</svg>

@@ -39,7 +39,7 @@ export interface LCARSEnv {
   LCARSID: string;
 
   // Required
-  OPENAIKEY: string;
+  ANTHROPIC_API_KEY: string;
   MEDIALOG: string;
   ENGINEERING: string;
   SIMLAB: string;
@@ -49,6 +49,14 @@ export interface LCARSEnv {
   BESZEL_URL?: string;
   BESZEL_EMAIL?: string;
   BESZEL_PASSWORD?: string;
+  BESZEL_ALERT_CHANNEL?: string;
+  AMP_URL?: string;
+  AMP_USERNAME?: string;
+  AMP_PASSWORD?: string;
+  AMP_AUDIT_CHANNEL?: string;
+  AMP_ALERT_CHANNEL?: string;
+  SHIP_LOG_CHANNEL?: string;
+  ASTROMETRICS_REMOTE?: string;
   JWST?: string;
   JELLYFIN_HOST?: string;
   JELLYFIN_PORT?: string;
@@ -58,4 +66,7 @@ export interface LCARSEnv {
   API_HOST: string; // Has default
   API_PORT: string; // Has default
   API_AUTH_TOKEN: string; // Has default or auto-generated
+  ADMIN_USER_IDS?: string;
+  JELLYFIN_PATH_MAP?: string;
+  COMPUTER_CMD_COOLDOWN_SEC: string; // Has default
 }

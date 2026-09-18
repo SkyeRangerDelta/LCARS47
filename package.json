@@ -1,13 +1,14 @@
 {
   "name": "lcars47",
-  "version": "7.0.1",
+  "version": "7.1.0-E.6",
+  "private": true,
   "description": "Official PlDyn Development Discord Bot",
   "exports": "./lcars47.js",
   "scripts": {
-    "dev": "tsc && node Deploy/lcars47.js --test",
+    "dev": "tsc && node --experimental-eventsource Deploy/lcars47.js --test",
     "ndev": "nodemon --watch './src/*' dev",
     "lint": "eslint .",
-    "start": "node Deploy/lcars47.js",
+    "start": "node --experimental-eventsource Deploy/lcars47.js",
     "build": "tsc",
     "build-run": "npm run build && npm run start",
     "test": "vitest run 2>&1 | tee logs/tests/vitest-output.log",
@@ -30,30 +31,30 @@
     "tag": "latest"
   },
   "author": "SkyeRangerDelta",
-  "license": "ISC",
+  "license": "SEE LICENSE IN README.md",
   "bugs": {
     "url": "https://github.com/SkyeRangerDelta/LCARS47/issues"
   },
   "homepage": "https://github.com/SkyeRangerDelta/LCARS47#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.2",
     "@discordjs/builders": "^1.13.1",
     "@discordjs/collection": "^2.0.0",
-    "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.19.0",
     "@jellyfin/sdk": "^0.13.0",
-    "@snazzah/davey": "^0.1.11",
+    "@snazzah/davey": "^0.1.12",
     "colors": "^1.4.0",
-    "discord-api-types": "^0.38.37",
-    "discord.js": "^14.25.1",
-    "dotenv": "^17.4.0",
+    "discord-api-types": "^0.38.47",
+    "discord.js": "^14.26.3",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ffmpeg-static": "^5.3.0",
-    "libsodium-wrappers": "^0.8.2",
+    "libsodium-wrappers": "^0.8.4",
     "luxon": "^3.7.2",
-    "mongodb": "^7.1.1",
-    "openai": "^6.33.0",
+    "mongodb": "^7.5.0",
     "opusscript": "^0.1.1",
-    "pocketbase": "^0.26.8",
+    "pocketbase": "^0.27.0",
+    "swagger-ui-express": "^5.0.1",
     "youtube-sr": "^4.3.12",
     "ytdlp-nodejs": "^3.4.4"
   },
@@ -62,17 +63,23 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/express": "^5.0.6",
-    "@types/luxon": "^3.7.1",
-    "@vitest/coverage-v8": "^4.1.2",
-    "eslint": "^10.2.0",
+    "@types/luxon": "^3.7.2",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.7.0",
     "jsdoc": "^4.0.5",
-    "semantic-release": "^25.0.3",
+    "semantic-release": "^25.0.7",
     "type-coverage": "^2.29.7",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.58.0",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=24"
+  },
+  "overrides": {
+    "prism-media": {
+      "opusscript": "$opusscript"
+    }
   }
 }
