@@ -1,3 +1,17 @@
+# [7.1.0-E.6](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.5...V47.7.1.0-E.6) (2026-09-18)
+
+
+### Bug Fixes
+
+* Various corrections, fixes, and tweaks ([19db87e](https://github.com/SkyeRangerDelta/LCARS47/commit/19db87e2ff0014ae2d1f6c4206fd909a2b5de0f1))
+
+
+### Features
+
+* Added role creator ([a46790e](https://github.com/SkyeRangerDelta/LCARS47/commit/a46790e10c37f843d25b4b34a27c1b934dd65fcd))
+* Added user stats ([0f9c1c1](https://github.com/SkyeRangerDelta/LCARS47/commit/0f9c1c1a5487cf2970d871386f0a0a726f600445)), closes [#81](https://github.com/SkyeRangerDelta/LCARS47/issues/81)
+* Enhanced role selection system ([d12043e](https://github.com/SkyeRangerDelta/LCARS47/commit/d12043e18e2996b97d6f2c7b22bd0f5eb95061f9)), closes [#76](https://github.com/SkyeRangerDelta/LCARS47/issues/76)
+
 # [7.1.0-E.5](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0-E.4...V47.7.1.0-E.5) (2026-08-28)
 
 
