@@ -117,6 +117,29 @@ describe( 'buildDocument', () => {
     expect( doc.paths[API_SPEC_PATH]?.get ).toBeDefined();
   } );
 
+  it( 'leaves the index route public, as the only unauthenticated route', () => {
+    const doc = buildDocument( {}, SERVER );
+
+    expect( doc.paths[API_BASE_PATH]?.get?.security ).toEqual( [] );
+  } );
+
+  it( 'keeps the index payload free of any route listing', () => {
+    // The index answers anonymously. Anything it returns is readable by anyone
+    // who can reach the port, so it must not enumerate the API (risk-list R9a).
+    const schema = buildDocument( {}, SERVER ).components?.schemas?.APIIndexResponse;
+
+    expect( Object.keys( schema?.properties ?? {} ) ).toEqual( ['message'] );
+    expect( schema?.properties?.loadedRoutes ).toBeUndefined();
+  } );
+
+  it( 'protects the OpenAPI document, which lists every route', () => {
+    const operation = buildDocument( {}, SERVER ).paths[API_SPEC_PATH]?.get;
+
+    expect( operation?.security ).toEqual( [{ [API_SECURITY_SCHEME]: [] }] );
+    expect( operation?.responses['401'] ).toBeDefined();
+    expect( operation?.responses['403'] ).toBeDefined();
+  } );
+
   it( 'merges caller-supplied route paths alongside the base routes', () => {
     const doc = buildDocument(
       { '/api/v1/example': { get: { responses: { '200': { description: 'ok' } } } } },
@@ -223,6 +246,18 @@ describe( 'route module documentation', () => {
     const operation = paths[`${ API_V1_PREFIX }/sendMessage`]?.post;
 
     expect( operation?.security ).toEqual( [{ [API_SECURITY_SCHEME]: [] }] );
+  } );
+
+  it( 'protects the stats route, which reports member media activity', async () => {
+    // MEDIA_PLAYER_DATA carries a now-playing title and the display name of the
+    // member who requested it. That is member data, not service telemetry, so
+    // the route is gated on the same scheme as sendMessage (risk-list R9a).
+    const paths = mergeSpecs( await loadRouteModules() );
+    const operation = paths[`${ API_V1_PREFIX }/stats`]?.get;
+
+    expect( operation?.security ).toEqual( [{ [API_SECURITY_SCHEME]: [] }] );
+    expect( operation?.responses['401'] ).toBeDefined();
+    expect( operation?.responses['403'] ).toBeDefined();
   } );
 
   it( 'resolves every $ref against a declared component schema', async () => {
