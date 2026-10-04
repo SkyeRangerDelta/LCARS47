@@ -55,7 +55,11 @@ USER lcars47
 # Beszel state-change monitor silently degrades to polling.
 ENV NODE_OPTIONS="--dns-result-order=ipv4first --experimental-eventsource"
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD curl -f http://localhost:9121/api/v1/stats || exit 1
+# Probes /api, not /api/v1/stats. The stats route now requires the auth token,
+# and `curl -f` treats its 401 as a failure, which would fail the container
+# healthy check on every interval. /api is the liveness route and needs no
+# credential, so the probe stays secret-free.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 CMD curl -f http://localhost:9121/api || exit 1
 
 #===========================
 # Post & Run

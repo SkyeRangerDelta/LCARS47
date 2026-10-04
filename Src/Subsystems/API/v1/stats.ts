@@ -4,12 +4,18 @@ import Utility from '../../Utilities/SysUtils.js';
 import type { StatusInterface } from '../../Auxiliary/Interfaces/StatusInterface';
 import RDS_Utilities from '../../RemoteDS/RDS_Utilities';
 import type { Route } from '../RouterInterfaces';
-import { NO_AUTH_REQUIRED, envelopeResponse } from '../OpenAPISpec';
+import { API_SECURITY_SCHEME, envelopeResponse } from '../OpenAPISpec';
+import { requireApiAuth } from '../AuthMiddleware';
 
 function loadRoute( LCARS47: LCARSClient ) {
   const rtr = exp();
 
-  rtr.get( '/stats', ( req, res ) => {
+  // Authenticated: MEDIA_PLAYER_DATA carries the title a member is playing and
+  // the name of whoever asked for it, which makes this member activity rather
+  // than service telemetry. The gate deliberately runs ahead of the readiness
+  // check below, so an anonymous caller cannot tell a starting bot from a
+  // running one either.
+  rtr.get( '/stats', requireApiAuth, ( req, res ) => {
     if ( !LCARS47.isReady() ) {
       res.status( 200 ).send(
         { STATE: false }
@@ -78,10 +84,11 @@ const rt: Route = {
         description:
           'Returns live LCARS47 statistics: uptime, query counters, memory usage, ' +
           'websocket latency and media player state. If the client is not yet ready, ' +
-          'only STATE is returned.',
+          'only STATE is returned. Requires a valid auth token, because the media ' +
+          'player fields report what a member is playing and who requested it.',
         operationId: 'getStats',
         tags: ['Telemetry'],
-        security: NO_AUTH_REQUIRED,
+        security: [{ [API_SECURITY_SCHEME]: [] }],
         responses: {
           '200': {
             description: 'Current bot telemetry.',
@@ -89,6 +96,8 @@ const rt: Route = {
               'application/json': { schema: { $ref: '#/components/schemas/StatusResponse' } }
             }
           },
+          '401': envelopeResponse( 'Authentication header was absent or empty.' ),
+          '403': envelopeResponse( 'Authentication token was invalid.' ),
           '500': envelopeResponse( 'Statistics could not be assembled.' )
         }
       }

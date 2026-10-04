@@ -16,6 +16,7 @@ import {
   buildDocument,
   isDocsAsset
 } from './OpenAPISpec';
+import { requireApiAuth } from './AuthMiddleware';
 
 const env = getEnv();
 
@@ -72,8 +73,13 @@ export class API {
    * @private
    */
   private loadBaseRoutes() {
+    // Liveness only. This is the one route that answers anonymously, and it
+    // says nothing beyond "the service is up" - deliberately no route listing,
+    // no version and no counters. Anything that enumerates the API is a
+    // discovery aid for an unauthenticated reader, so it lives behind the gate
+    // with everything else.
     this.app.get( API_BASE_PATH, ( req, res ) => {
-      res.status( 200 ).send( { message: 'LCARS47 API is operational.', loadedRoutes: this.getAllRoutes() } );
+      res.status( 200 ).send( { message: 'LCARS47 API is operational.' } );
     } );
 
     this.loadDocsRoutes();
@@ -87,15 +93,23 @@ export class API {
    * The document is read from the instance on each request rather than captured
    * here, so the spec reflects the route modules discovered at boot. Swagger UI
    * is pointed at the JSON endpoint for the same reason.
+   *
+   * Both are authenticated. The document lists every path, every schema and the
+   * name of the auth header itself, which makes it a broader route listing than
+   * the index ever was. Note that this puts the docs page out of reach of a
+   * plain browser visit, since the token travels in a header - reach it with a
+   * client that can set one, or front it with something that can authenticate a
+   * browser session.
    * @private
    */
   private loadDocsRoutes() {
-    this.app.get( API_SPEC_PATH, ( req, res ) => {
+    this.app.get( API_SPEC_PATH, requireApiAuth, ( req, res ) => {
       res.status( 200 ).json( this.openAPIDocument );
     } );
 
     this.app.use(
       API_DOCS_PATH,
+      requireApiAuth,
       swaggerUi.serve,
       swaggerUi.setup( null, {
         explorer: true,
@@ -127,20 +141,5 @@ export class API {
 
       next();
     });
-  }
-
-  /**
-   * Retrieves the versioned API routes currently mounted.
-   *
-   * Read from the assembled OpenAPI document rather than the filesystem. The
-   * document reflects what actually loaded, and it exists in the deployed
-   * image — the TypeScript sources do not, as only Deploy/ is copied into the
-   * runtime container.
-   * @private
-   */
-  private getAllRoutes(): string[] {
-    return Object.keys( this.openAPIDocument.paths )
-      .filter( route => route.startsWith( `${ API_V1_PREFIX }/` ) )
-      .sort();
   }
 }

@@ -229,16 +229,18 @@ const SendMessageRequestSchema: OpenAPISchema = {
   }
 };
 
-/** Payload returned by the API index route. */
+/**
+ * Payload returned by the API index route.
+ *
+ * A status line and nothing else. The index used to return `loadedRoutes`
+ * alongside it, which handed an unauthenticated reader the path of every
+ * mounted route; the route listing now lives in the authenticated OpenAPI
+ * document instead.
+ */
 const APIIndexResponseSchema: OpenAPISchema = {
   type: 'object',
   properties: {
-    message: { type: 'string', description: 'Operational status line.' },
-    loadedRoutes: {
-      type: 'array',
-      items: { type: 'string' },
-      description: 'Paths of the route modules discovered at boot.'
-    }
+    message: { type: 'string', description: 'Operational status line.' }
   }
 };
 
@@ -247,7 +249,9 @@ const BASE_PATHS: OpenAPIPaths = {
   [API_BASE_PATH]: {
     get: {
       summary: 'API index',
-      description: 'Reports that the API is operational and lists the discovered route modules.',
+      description:
+        'Liveness probe. Reports that the API is operational and nothing further - ' +
+        'this is the only route that answers without a token.',
       operationId: 'getApiIndex',
       tags: ['System'],
       security: NO_AUTH_REQUIRED,
@@ -264,17 +268,21 @@ const BASE_PATHS: OpenAPIPaths = {
   [API_SPEC_PATH]: {
     get: {
       summary: 'OpenAPI document',
-      description: 'Returns this specification as raw JSON.',
+      description:
+        'Returns this specification as raw JSON. Requires a valid auth token: the ' +
+        'document enumerates every mounted route and schema.',
       operationId: 'getOpenAPIDocument',
       tags: ['System'],
-      security: NO_AUTH_REQUIRED,
+      security: [{ [API_SECURITY_SCHEME]: [] }],
       responses: {
         '200': {
           description: 'The OpenAPI document.',
           content: {
             'application/json': { schema: { type: 'object', additionalProperties: true } }
           }
-        }
+        },
+        '401': envelopeResponse( 'Authentication header was absent or empty.' ),
+        '403': envelopeResponse( 'Authentication token was invalid.' )
       }
     }
   }

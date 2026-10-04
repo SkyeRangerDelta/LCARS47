@@ -46,10 +46,15 @@ document, so it always renders the spec the running process actually assembled.
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api` | None | Index; reports operational state and discovered route modules |
-| `GET` | `/api/openapi.json` | None | This specification, as JSON |
-| `GET` | `/api/v1/stats` | None | Live bot telemetry — uptime, counters, memory, latency, media player state |
+| `GET` | `/api` | None | Liveness probe; reports operational state and nothing else |
+| `GET` | `/api/docs` | `x-lcars-auth` | Swagger UI explorer |
+| `GET` | `/api/openapi.json` | `x-lcars-auth` | This specification, as JSON |
+| `GET` | `/api/v1/stats` | `x-lcars-auth` | Live bot telemetry — uptime, counters, memory, latency, media player state |
+| `GET` | `/api/v1/ship` | None | Resolved ship position |
 | `POST` | `/api/v1/sendMessage` | `x-lcars-auth` | Posts a message to a Discord text channel as LCARS47 |
+
+`/api` is the only route that answers without a token. The container `HEALTHCHECK` probes
+it for that reason — a probe pointed at `/api/v1/stats` would have to carry the secret.
 
 ## Architecture
 
@@ -174,12 +179,26 @@ specification as an `apiKey` security scheme named `LCARSAuth`. The token comes 
 `API_AUTH_TOKEN` environment variable; if unset, a session token is generated at boot and
 logged by `EnvUtils`.
 
-In Swagger UI, use **Authorize** to supply the token before exercising `POST /api/v1/sendMessage`.
+One middleware enforces it for every protected route: `requireApiAuth` in
+`Src/Subsystems/API/AuthMiddleware.ts`. Gate a new route by adding that middleware and
+declaring `security: [{ [API_SECURITY_SCHEME]: [] }]` in its spec — do not re-implement the
+header check.
 
-The API — including the docs — is LAN-only and is not exposed to the public internet. The
-docs and index routes are deliberately unauthenticated; they publish no secrets, and the
-specification marks them with an explicit empty `security` array so that this is a stated
-decision rather than an omission.
+An absent or empty header is a `401`; a present but wrong token is a `403`. The two are kept
+distinct so a caller can tell "you sent no credential" from "your credential is wrong".
+
+In Swagger UI, use **Authorize** to supply the token before exercising a protected route.
+
+The API is LAN-only and is not exposed to the public internet, but LAN-only is not a
+substitute for a credential — anything reachable on the LAN can read an open route. Only
+`/api` is unauthenticated, and the specification marks it with an explicit empty `security`
+array so that this is a stated decision rather than an omission.
+
+`/api/openapi.json` and `/api/docs` are authenticated. The document names every route, every
+schema and the auth header itself, which makes it a broader route listing than the index
+ever was. The cost is that the docs page can no longer be opened by simply visiting the URL
+in a browser, because the token travels in a header: use a client that can set one, or front
+the route with something that can authenticate a browser session.
 
 ## Request Logging
 
