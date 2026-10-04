@@ -1,3 +1,10 @@
+## [7.1.1-E.1](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.1.0...V47.7.1.1-E.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* **api:** require auth on stats and stop advertising routes anonymously ([dcc6f03](https://github.com/SkyeRangerDelta/LCARS47/commit/dcc6f03aebe093f48a0bb1e5db8a76940ace0cee))
+
 # [7.1.0](https://github.com/SkyeRangerDelta/LCARS47/compare/V47.7.0.1...V47.7.1.0) (2026-09-18)
 
 
